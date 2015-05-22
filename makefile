@@ -17,8 +17,8 @@ OBJDIR = ./objects
 BINDIR = ./bin
 
 #Header and libraries
-ASYNCH_HEADERS = -I/Group/IFC/Asynch/
-ASYNCH_LIBSLOC = -L/Group/IFC/Asynch/libs/ -Wl,-rpath=/Group/IFC/Asynch/libs/
+ASYNCH_HEADERS = -I/Groups/IFC/Asynch/
+ASYNCH_LIBSLOC = -L/Groups/IFC/Asynch/libs/ -Wl,-rpath=/Groups/IFC/Asynch/libs/
 ASYNCH_LIBS = -lasynch
 LIBS = -lm -lpq
 
