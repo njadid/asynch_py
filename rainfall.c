@@ -300,6 +300,165 @@ int Create_Rain_Data_GZ(Link** sys,unsigned int N,unsigned int my_N,UnivVars* Gl
 	return 0;
 }
 
+
+//This reads in a set of binary files for the rainfall at each link.
+//The data is given as intensities per grid cell.
+//Link** sys: An array of links.
+//int N: The number of links in sys.
+//int my_N: The number of links assigned to this process.
+//UnivVars* GlobalVars: Contains all the information that is shared by every link in the system.
+//int* my_sys: Array of links assigned to this process (value is location in sys array).
+//int* assignments (set by this method): Will be an array with N entries. assignments[i] will the process link sys[i] is assigned to.
+//char strfilename[]: String of the filename for the rain file to read (NOT .str files). Filenames should be indexed.
+//unsigned int first: The index of the file to read first.
+//unsigned int last: The index of the file to read last.
+//double t_0: The time at which the first file starts.
+//double increment: The amount of time between consecutively indexed files.
+//int** id_to_loc (set by this method): Will be an array with N rows and 2 columns, sorted by first col. First col is a link id and second is
+//				the location of the id in sys.
+//unsigned int max_files: The maximum number of files to be read.
+int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* GlobalVars,unsigned int* my_sys,int* assignments,char strfilename[],unsigned int first,unsigned int last,double t_0,double increment,Forcing* forcing,unsigned int** id_to_loc,unsigned int max_files,unsigned int forcing_idx)
+{
+	unsigned int i,j,curr_idx,k,holder,endianness,cell;
+	unsigned short int intensity;
+	Link* current;
+	char filename[128];
+	float forcing_buffer;
+	FILE* stormdata = NULL;
+	unsigned int numfiles = last - first + 1;
+	size_t result;
+
+	//This is a time larger than any time in which the integrator is expected to get
+	double ceil_time = 1e300;
+	if(sys[my_sys[0]]->last_t > ceil_time*0.1)
+		printf("[%i]: Warning: integrator time is extremely large (about %e). Loss of precision may occur.\n",my_rank,sys[my_sys[i]]->last_t);
+
+	//Check that space for rain data has been allocated.
+	if(sys[my_sys[0]]->forcing_buff[forcing_idx] == NULL)
+	{
+		for(i=0;i<my_N;i++)
+		{
+			sys[my_sys[i]]->forcing_buff[forcing_idx] = (ForcingData*) malloc(sizeof(ForcingData));
+			sys[my_sys[i]]->forcing_buff[forcing_idx]->rainfall = (double**) malloc((max_files + 1)*sizeof(double*));
+			sys[my_sys[i]]->forcing_buff[forcing_idx]->n_times = numfiles + 1;
+			for(j=0;j<max_files+1;j++)	sys[my_sys[i]]->forcing_buff[forcing_idx]->rainfall[j] = (double*) malloc(2*sizeof(double));
+		}
+	}
+
+	//Read through the files.
+	for(k=0;k<numfiles;k++)
+	{
+		if(my_rank == 0)
+		{
+			sprintf(filename,"%s%i",strfilename,first+k);
+			stormdata = fopen(filename,"r");
+			if(stormdata)
+			{
+				for(i=0;i<forcing->num_cells;i++)
+					forcing->received[i] = 0;
+
+				//Check endianness
+				fread(&i,sizeof(int),1,stormdata);
+				if(i == 0x1)			endianness = 0;
+				else if(i == 0x80000000)	endianness = 1;
+				else
+				{
+					printf("Error: Cannot read endianness flag in binary file %s.\n",filename);
+					MPI_Abort(MPI_COMM_WORLD,1);
+				}
+
+				//Read file
+				while(!feof(stormdata))
+				{
+					//Read intensity
+					result = fread(&cell,sizeof(int),1,stormdata);
+					if(!result)	break;
+					fread(&intensity,sizeof(short int),1,stormdata);
+					if(endianness)
+					{
+						holder = (((cell & 0x0000ffff)<<16) | ((cell & 0xffff0000)>>16));
+						cell = (((holder & 0x00ff00ff)<<8) | ((holder & 0xff00ff00)>>8));
+
+						intensity = (((intensity & 0x00ff00ff)<<8) | ((intensity & 0xff00ff00)>>8));
+					}
+
+					if(forcing->received[cell])	printf("Warning: Received multiple intensities for cell %u in file %s.\n",cell,filename);
+					forcing->received[cell] = 1;
+					forcing->intensities[cell] = intensity * forcing->factor;
+				}
+
+				fclose(stormdata);
+
+				//Store 0's for remaining cells
+				for(i=0;i<forcing->num_cells;i++)
+					if(!forcing->received[i])	forcing->intensities[i] = 0.0;
+			}
+			else	//No file, no rain
+			{
+				for(i=0;i<forcing->num_cells;i++)
+					forcing->intensities[i] = 0.0;
+			}
+		}
+
+		MPI_Bcast(forcing->intensities,forcing->num_cells,MPI_FLOAT,0,MPI_COMM_WORLD);
+
+		//Load the data
+		for(cell=0;cell<forcing->num_cells;cell++)
+		{
+			for(i=0;i<forcing->num_links_in_grid[cell];i++)	//!!!! Assuming only links on this proc !!!!
+			{
+				curr_idx = forcing->grid_to_linkid[cell][i];
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][0] = t_0 + k*increment;
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][1] = forcing->intensities[cell];
+			}
+		}
+	}
+
+	//Add in terms for no rainfall if max_files > numfiles
+	for(i=0;i<my_N;i++)
+	{
+		curr_idx = sys[my_sys[i]]->location;
+		for(j=numfiles;j<max_files;j++)
+		{
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][0] = sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j-1][0] + .0001;
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][1] = 0.0;
+		}
+	}
+
+	//Add a ceiling term
+	for(i=0;i<my_N;i++)
+	{
+		curr_idx = sys[my_sys[i]]->location;
+		//sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[max_files][0] = GlobalVars->maxtime + 1.0;
+		sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[max_files][0] = ceil_time;
+		sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[max_files][1] = -1.0;
+	}
+
+	//Calculate the first rain change time and set rain_value
+	for(i=0;i<my_N;i++)
+	{
+		current = sys[my_sys[i]];
+		forcing_buffer = current->forcing_buff[forcing_idx]->rainfall[0][1];
+		current->forcing_values[forcing_idx] = forcing_buffer;
+		current->forcing_indices[forcing_idx] = 0;
+
+		for(j=1;j<current->forcing_buff[forcing_idx]->n_times;j++)
+		{
+			if( fabs(forcing_buffer - current->forcing_buff[forcing_idx]->rainfall[j][1]) > 1e-14 )
+			{
+				current->forcing_change_times[forcing_idx] = current->forcing_buff[forcing_idx]->rainfall[j][0];
+				break;
+			}
+		}
+		if(j == current->forcing_buff[forcing_idx]->n_times)
+		{
+			current->forcing_change_times[forcing_idx] = current->forcing_buff[forcing_idx]->rainfall[j-1][0];
+		}
+	}
+
+	return 0;
+}
+
 //This reads in rainfall data at each link from an SQL database.
 //Link** sys: An array of links.
 //int N: The number of links in sys.

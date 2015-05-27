@@ -1291,26 +1291,7 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 		current->forcing_change_times = (double*) calloc(GlobalVars->num_forcings,sizeof(double));
 		current->forcing_indices = (unsigned int*) malloc(GlobalVars->num_forcings*sizeof(double));
 	}
-/*
-	//Check where state forcings should be set
-	if(GlobalVars->res_flag)
-	{
-		res_list = Create_SAV_Data(GlobalVars->rsv_filename,system,N,&res_size,db_connections[ASYNCH_DB_LOC_RSV],GlobalVars->res_flag);
 
-		//Setup links with forcing
-		for(j=0;j<res_size;j++)
-		{
-			loc = find_link_by_idtoloc(res_list[j],id_to_loc,N);
-			if(loc < N)
-				system[loc]->res = 1;
-			else
-			{
-				if(my_rank == 0)
-					printf("Warning: ignoring reservoir at ID %u. ID not found in network.\n",res_list[j]);
-			}
-		}
-	}
-*/
 	//Setup forcings. Read uniform forcing data and open .str files. Also initialize rainfall from database.
 	for(l=0;l<GlobalVars->num_forcings;l++)
 	{
@@ -1540,6 +1521,114 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 			{
 				if(assignments[i] == my_rank)
 					system[i]->forcing_buff[l] = NULL;
+			}
+		}
+		else if(forcings[l]->flag == 8)	//Grid cell based files
+		{
+			//Set routines
+			forcings[l]->GetPasses = &PassesBinaryFiles;
+			forcings[l]->GetNextForcing = &NextForcingGridCell;
+
+			//Setup buffers at each link
+			//!!!! This should really be improved... !!!!
+			for(i=0;i<N;i++)
+			{
+				if(assignments[i] == my_rank)
+					system[i]->forcing_buff[l] = NULL;
+			}
+
+			//Read the index file
+			if(my_rank == 0)
+			{
+				forcingfile = fopen(forcings[l]->filename,"r");
+				if(!forcingfile)
+				{
+					printf("Error: forcing file %s not found.\n",forcings[l]->filename);
+					return 1;
+				}
+
+				forcings[l]->lookup_filename = (char*) malloc(1024*sizeof(char));
+				forcings[l]->fileident = (char*) malloc(1024*sizeof(char));
+				FindPath(forcings[l]->filename,forcings[l]->fileident);
+				i = strlen(forcings[l]->fileident);
+				strcpy(forcings[l]->lookup_filename,forcings[l]->fileident);
+
+				fscanf(forcingfile,"%lf %lf %u %s %s",&(forcings[l]->file_time),&(forcings[l]->factor),&(forcings[l]->num_cells),&(forcings[l]->fileident[i]),&(forcings[l]->lookup_filename[i]));
+				fclose(forcingfile);
+
+				//Process the lookup file
+				forcingfile = fopen(forcings[l]->lookup_filename,"r");
+				if(!forcingfile)
+				{
+					printf("Error: lookup file %s not found.\n",forcings[l]->lookup_filename);
+					return 1;
+				}
+				forcings[l]->grid_to_linkid = (unsigned int**) malloc(forcings[l]->num_cells*sizeof(unsigned int*));
+				forcings[l]->num_links_in_grid = (unsigned int*) calloc(forcings[l]->num_cells,sizeof(unsigned int));
+
+				while(!feof(forcingfile))	//Count the number of links in each grid cell
+				{
+					if(!fscanf(forcingfile,"%*u %u",&j))	break;
+					(forcings[l]->num_links_in_grid[j])++;
+				}
+
+				rewind(forcingfile);
+				for(i=0;i<forcings[l]->num_cells;i++)
+					forcings[l]->grid_to_linkid[i] = (unsigned int*) malloc(forcings[l]->num_links_in_grid[i]*sizeof(unsigned int));
+				unsigned int* counters = (unsigned int*) calloc(forcings[l]->num_cells,sizeof(unsigned int));
+
+				while(!feof(forcingfile))	//Read in the link ids
+				{
+					if(!fscanf(forcingfile,"%u %u",&id,&j))	break;
+					forcings[l]->grid_to_linkid[j][counters[j]++] = id;
+				}
+/*
+for(i=0;i<forcings[l]->num_cells;i++)
+{
+for(j=0;j<forcings[l]->num_links_in_grid[i];j++)
+	printf("%u ",forcings[l]->grid_to_linkid[i][j]);
+printf("\n");
+}
+*/
+				fclose(forcingfile);
+				free(counters);
+			}
+
+			//Broadcast data
+			MPI_Bcast(&(forcings[l]->file_time),1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+			MPI_Bcast(&(forcings[l]->factor),1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+			MPI_Bcast(&(forcings[l]->num_cells),1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+			if(my_rank != 0)
+			{
+				forcings[l]->grid_to_linkid = (unsigned int**) malloc(forcings[l]->num_cells*sizeof(unsigned int*));
+				forcings[l]->num_links_in_grid = (unsigned int*) malloc(forcings[l]->num_cells*sizeof(unsigned int*));
+			}
+			MPI_Bcast(forcings[l]->num_links_in_grid,forcings[l]->num_cells,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+			if(my_rank != 0)
+			{
+				for(i=0;i<forcings[l]->num_cells;i++)
+					forcings[l]->grid_to_linkid[i] = (unsigned int*) malloc(forcings[l]->num_links_in_grid[i]*sizeof(unsigned int));
+			}
+			for(i=0;i<forcings[l]->num_cells;i++)
+				MPI_Bcast(forcings[l]->grid_to_linkid[i],forcings[l]->num_links_in_grid[i],MPI_UNSIGNED,0,MPI_COMM_WORLD);
+
+			forcings[l]->received = (char*) malloc(forcings[l]->num_cells*sizeof(char));
+			forcings[l]->intensities = (float*) malloc(forcings[l]->num_cells*sizeof(float));
+
+			//Remove from grid_to_linkid all links not on this proc
+			unsigned int drop;
+			for(i=0;i<forcings[l]->num_cells;i++)
+			{
+				drop = 0;
+				for(j=0;j<forcings[l]->num_links_in_grid[i];j++)
+				{
+					if(assignments[forcings[l]->grid_to_linkid[i][j]] != my_rank)
+						drop++;
+					else
+						forcings[l]->grid_to_linkid[i][j-drop] = forcings[l]->grid_to_linkid[i][j];
+				}
+				forcings[l]->num_links_in_grid[i] -= drop;
+				forcings[l]->grid_to_linkid[i] = (unsigned int*) realloc(forcings[l]->grid_to_linkid[i],forcings[l]->num_links_in_grid[i]*sizeof(unsigned int));
 			}
 		}
 		else if(forcings[l]->flag == 3)	//Database
@@ -2607,7 +2696,7 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 		valsread = sscanf(linebuffer,"%hi",&(forcings[i]->flag));
 		if(ReadLineError(valsread,1,"forcings flag"))	return NULL;
 
-		if(forcings[i]->flag == 1 || forcings[i]->flag == 2 || forcings[i]->flag == 4 || forcings[i]->flag == 6)
+		if(forcings[i]->flag == 1 || forcings[i]->flag == 2 || forcings[i]->flag == 4 || forcings[i]->flag == 6 || forcings[i]->flag == 8)
 		{
 			forcings[i]->filename = (char*) malloc(string_size*sizeof(char));
 			valsread = sscanf(linebuffer,"%*i %s",forcings[i]->filename);
@@ -2620,6 +2709,12 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 				ReadLineFromTextFile(globalfile,linebuffer,buff_size,string_size);
 				valsread = sscanf(linebuffer,"%u %lf %u %u",&(forcings[i]->increment),&(forcings[i]->file_time),&(forcings[i]->first_file),&(forcings[i]->last_file));
 				if(ReadLineError(valsread,4,"time increment, file time, first file, and last file"))	return NULL;
+			}
+			else if(forcings[i]->flag == 8)
+			{
+				ReadLineFromTextFile(globalfile,linebuffer,buff_size,string_size);
+				valsread = sscanf(linebuffer,"%u %u %u",&(forcings[i]->increment),&(forcings[i]->first_file),&(forcings[i]->last_file));
+				if(ReadLineError(valsread,3,"time increment, first file, and last file"))	return NULL;
 			}
 		}
 		else if(forcings[i]->flag == 3)	//Database
@@ -3191,4 +3286,41 @@ int CheckWinFormat(FILE* file)
 	return 0;
 }
 
+//Finds the path in filename. The path is copied into variable path.
+//Returns 0 if the path is is extracted successfully.
+//Returns 1 if filename does not contain a path (path variable set to empty).
+//Returns 2 if filename is just a path (the path variable is still set).
+int FindPath(char* filename,char* path)
+{
+	int i;
+	unsigned int len = strlen(filename);
+	char holder;
+
+	if(len == 0)
+	{
+		path[0] = '\0';
+		return 1;
+	}
+
+	if(filename[len-1] == '/')
+	{
+		strcpy(path,filename);
+		return 2;
+	}
+
+	for(i=len-2;i>-1;i--)
+	{
+		if(filename[i] == '/')
+		{
+			holder = filename[i+1];
+			filename[i+1] = '\0';
+			strcpy(path,filename);
+			filename[i+1] = holder;
+			return 0;
+		}
+	}
+
+	path[0] = '\0';
+	return 1;
+}
 

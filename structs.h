@@ -370,6 +370,14 @@ typedef struct Forcing
 	unsigned int iteration;
 	unsigned short int active;
 	unsigned int good_timestamp;	//A timestamp in the db where a forcing actually exists
+	double factor;
+	char* lookup_filename;
+	char* fileident;
+	unsigned int** grid_to_linkid;
+	unsigned int* num_links_in_grid;
+	char* received;
+	float* intensities;
+	unsigned int num_cells;
 } Forcing;
 
 //Structure to hold information about how data is to be transfered between processes.
