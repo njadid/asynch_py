@@ -6,15 +6,33 @@ Forcing* InitializeForcings()
 	Forcing* forcing = (Forcing*) malloc(sizeof(Forcing));
 	forcing->filename = NULL;
 	forcing->GlobalForcing = NULL;
+	forcing->lookup_filename = NULL;
+	forcing->grid_to_linkid = NULL;
+	forcing->num_links_in_grid = NULL;
+	forcing->received = NULL;
+	forcing->intensities = NULL;
+	forcing->fileident = NULL;
 	return forcing;
 }
 
 
 void FreeForcing(Forcing** forcings)
 {
+	unsigned int i;
 	if(forcings && *forcings)
 	{
 		if((*forcings)->filename)	free((*forcings)->filename);
+		if((*forcings)->lookup_filename)	free((*forcings)->lookup_filename);
+		if((*forcings)->grid_to_linkid)
+		{
+			for(i=0;i<(*forcings)->num_cells;i++)
+				free((*forcings)->grid_to_linkid[i]);
+			free((*forcings)->grid_to_linkid);
+		}
+		if((*forcings)->num_links_in_grid)	free((*forcings)->num_links_in_grid);
+		if((*forcings)->received)	free((*forcings)->received);
+		if((*forcings)->intensities)	free((*forcings)->intensities);
+		if((*forcings)->fileident)	free((*forcings)->fileident);
 		Destroy_ForcingData(&((*forcings)->GlobalForcing));
 		free(*forcings);
 		*forcings = NULL;
@@ -33,7 +51,7 @@ unsigned int PassesOther(Forcing* forcing,double maxtime)
 	//return 1;
 }
 
-//For flag = 2,6
+//For flag = 2,6,8
 unsigned int PassesBinaryFiles(Forcing* forcing,double maxtime)
 {
 	unsigned int passes = (forcing->last_file - forcing->first_file + 1) / forcing->increment;
@@ -87,6 +105,21 @@ double NextForcingGZBinaryFiles(Link** sys,unsigned int N,unsigned int* my_sys,u
 	int maxfileindex = (int) min((double) forcing->first_file+(iteration+1)*forcing->increment,(double) (forcing->last_file + 1));
 
 	Create_Rain_Data_GZ(sys,N,my_N,GlobalVars,my_sys,assignments,forcing->filename,forcing->first_file+iteration*forcing->increment,maxfileindex,iteration*forcing->file_time*forcing->increment,forcing->file_time,forcing,id_to_loc,forcing->increment+1,forcing_idx);
+
+	(forcing->iteration)++;
+	return maxtime;
+}
+
+//For flag = 8
+double NextForcingGridCell(Link** sys,unsigned int N,unsigned int* my_sys,unsigned int my_N,int* assignments,UnivVars* GlobalVars,Forcing* forcing,ConnData** db_connections,unsigned int** id_to_loc,unsigned int forcing_idx)
+{
+	unsigned int passes = forcing->passes, iteration = forcing->iteration;
+	double maxtime;
+	if(iteration == passes-1)	maxtime = GlobalVars->maxtime;
+	else				maxtime = min(GlobalVars->maxtime,(iteration+1)*forcing->file_time*forcing->increment);
+	int maxfileindex = (int) min((double) forcing->first_file+(iteration+1)*forcing->increment,(double) (forcing->last_file + 1));
+
+	Create_Rain_Data_Grid(sys,N,my_N,GlobalVars,my_sys,assignments,forcing->fileident,forcing->first_file+iteration*forcing->increment,maxfileindex,iteration*forcing->file_time*forcing->increment,forcing->file_time,forcing,id_to_loc,forcing->increment+1,forcing_idx);
 
 	(forcing->iteration)++;
 	return maxtime;

@@ -19,6 +19,8 @@ int Create_Rain_Data_Par(Link** sys,unsigned int N,unsigned int my_N,UnivVars* G
 
 int Create_Rain_Data_GZ(Link** sys,unsigned int N,unsigned int my_N,UnivVars* GlobalVars,unsigned int* my_sys,int* assignments,char strfilename[],unsigned int first,unsigned int last,double t_0,double increment,Forcing* forcing,unsigned int** id_to_loc,unsigned int max_files,unsigned int forcing_idx);
 
+int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* GlobalVars,unsigned int* my_sys,int* assignments,char strfilename[],unsigned int first,unsigned int last,double t_0,double increment,Forcing* forcing,unsigned int** id_to_loc,unsigned int max_files,unsigned int forcing_idx);
+
 int Create_Rain_Database(Link** sys,unsigned int N,unsigned int my_N,UnivVars* GlobalVars,unsigned int* my_sys,int* assignments,ConnData *conninfo,unsigned int first,unsigned int last,Forcing* forcing,unsigned int** id_to_loc,double maxtime,unsigned int forcing_idx);
 
 void SetRain0(Link** sys,unsigned int my_N,double maxtime,unsigned int* my_sys,UnivVars* GlobalVars,Forcing* forcing,unsigned int forcing_idx);
