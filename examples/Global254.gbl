@@ -22,22 +22,22 @@ Classic
 30 10 30
 
 %Topology (0 = .rvr, 1 = database)
-0 examples/ClearCreek.rvr
+0 ClearCreek.rvr
 
 %DEM Parameters (0 = .prm, 1 = database)
-0 examples/ClearCreek.prm
+0 ClearCreek.prm
 
 %Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc)
-1 examples/252_0.uini
+1 252_0.uini
 
 %Forcings (0 = none, 1 = .str, 2 = binary, 3 = database, 4 = .ustr, 5 = forecasting, 6 = .gz binary, 7 = recurring)
 3
 
 %Rain
-1 examples/ClearCreek.str
+1 ClearCreek.str
 
 %Evaporation
-7 examples/evap.mon
+7 evap.mon
 1398902400 1588291200
 
 %Reservoirs
@@ -51,19 +51,19 @@ Classic
 
 %Where to put write hydrographs
 %(0 = no output, 1 = .dat file, 2 = .csv file, 3 = database)
-1 5.0 examples/clearcreek.dat
+1 5.0 clearcreek.dat
 
 %Where to put peakflow data
 %(0 = no output, 1 = .pea file, 2 = database)
-1 examples/clearcreek.pea
+1 clearcreek.pea
 
 %.sav files for hydrographs and peak file
 %(0 = save no data, 1 = .sav file, 2 = .dbc file, 3 = all links)
-1 examples/clearcreek.sav %Hydrographs
+1 clearcreek.sav %Hydrographs
 3 %Peakflows
 
 %Snapshot information (0 = none, 1 = to file, 2 = to database)
-1 examples/clearcreek
+1 clearcreek.rec
 
 %Filename for scratch work
 tmp

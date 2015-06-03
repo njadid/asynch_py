@@ -9,8 +9,8 @@
 ####$ -l mf=16G
 #$ -l ib=1
 ####$ -q UI
-#$ -q IFC
-####$ -q all.q
+####$ -q IFC
+#$ -q all.q
 ####$ -q COE
 
 /bin/echo Running on host: `hostname`.
@@ -21,5 +21,5 @@
 /bin/echo 
 /bin/echo 
 
-mpirun -np 8 ./ASYNCH examples/Global254.gbl
+mpirun -np 8 /Groups/IFC/Asynch/bin_neon/ASYNCH Global254.gbl
 
