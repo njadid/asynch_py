@@ -1547,14 +1547,27 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 					return 1;
 				}
 
+
+				char* tempspace1 = (char*) malloc(1024*sizeof(char));
+				char* tempspace2 = (char*) malloc(1024*sizeof(char));
 				forcings[l]->lookup_filename = (char*) malloc(1024*sizeof(char));
 				forcings[l]->fileident = (char*) malloc(1024*sizeof(char));
 				FindPath(forcings[l]->filename,forcings[l]->fileident);
 				i = strlen(forcings[l]->fileident);
 				strcpy(forcings[l]->lookup_filename,forcings[l]->fileident);
-
-				fscanf(forcingfile,"%lf %lf %u %s %s",&(forcings[l]->file_time),&(forcings[l]->factor),&(forcings[l]->num_cells),&(forcings[l]->fileident[i]),&(forcings[l]->lookup_filename[i]));
+				//fscanf(forcingfile,"%lf %lf %u %s %s",&(forcings[l]->file_time),&(forcings[l]->factor),&(forcings[l]->num_cells),&(forcings[l]->fileident[i]),&(forcings[l]->lookup_filename[i]));
+				fscanf(forcingfile,"%lf %lf %u %s %s",&(forcings[l]->file_time),&(forcings[l]->factor),&(forcings[l]->num_cells),tempspace1,tempspace2);
 				fclose(forcingfile);
+
+				//Add path from index file?
+				if(tempspace1[0] == '/')	//Use absolute path
+					strcpy(forcings[l]->fileident,tempspace1);
+				else		//Relative path
+					strcpy(&(forcings[l]->fileident[i]),tempspace1);
+				if(tempspace2[0] == '/')	//Use absolute path
+					strcpy(forcings[l]->lookup_filename,tempspace2);
+				else		//Relative path
+					strcpy(&(forcings[l]->lookup_filename[i]),tempspace2);
 
 				//Process the lookup file
 				forcingfile = fopen(forcings[l]->lookup_filename,"r");
@@ -1592,6 +1605,8 @@ printf("\n");
 */
 				fclose(forcingfile);
 				free(counters);
+				free(tempspace1);
+				free(tempspace2);
 			}
 
 			//Broadcast data
