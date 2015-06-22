@@ -1133,4 +1133,11 @@ void Asynch_Set_Size_Local_OutputUser_Data(asynchsolver* asynch,unsigned int loc
 	//printf("Setting to size %u %p\n",size,asynch->sys[asynch->my_sys[location]]->output_user);
 }
 
+//Returns the forcing index used for reservoirs. Returns -1 if reservoir forcing is not set.
+int Asynch_Get_Reservoir_Forcing(asynchsolver* asynch)
+{
+	if(asynch->GlobalVars->res_flag == 0)	return -1;
+	else	return asynch->GlobalVars->res_forcing_idx;
+}
+
 

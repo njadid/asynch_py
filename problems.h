@@ -22,6 +22,8 @@ void nodam_rain_hillslope3(double t,VEC* y_i,VEC** y_p,unsigned short int numpar
 void dam_rain_hillslope3(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);
 void nodam_rain_hillslope_qsv(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);
 void dam_rain_hillslope_qsv(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);
+void TopLayerHillslope_variable(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);
+void dam_TopLayerHillslope_variable(VEC* y,VEC* global_params,VEC* params,QVSData* qvs,int state,void* user,VEC* ans);
 
 //Rodica's Models
 void simple_river(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);

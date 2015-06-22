@@ -136,6 +136,7 @@ int Asynch_Set_Init_Timestamp(asynchsolver* asynch,unsigned int epoch_timestamp)
 unsigned int Asynch_Get_Init_Timestamp(asynchsolver* asynch);
 int Asynch_Get_Snapshot_Filename(asynchsolver* asynch,char* filename);
 int Asynch_Set_Snapshot_Filename(asynchsolver* asynch,char* filename);
+int Asynch_Get_Reservoir_Forcing(asynchsolver* asynch);
 
 //Routines for output
 int Asynch_Set_Output(asynchsolver* asynch,char* name,short int data_type,void (*func)(double,VEC*,VEC*,VEC*,int,void*),int* used_states,int num_states);

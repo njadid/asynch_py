@@ -95,8 +95,8 @@ Link** Create_River_Network(UnivVars* GlobalVars,unsigned int* N,unsigned int***
 				}
 				mainres = PQexec(db_connections[ASYNCH_DB_LOC_TOPO]->conn,db_connections[ASYNCH_DB_LOC_TOPO]->queries[0]);	//For all link ids
 				res = PQexec(db_connections[ASYNCH_DB_LOC_TOPO]->conn,db_connections[ASYNCH_DB_LOC_TOPO]->queries[1]);		//For parent data
-				CheckResError(res,"querying connectivity");
-				CheckResError(mainres,"querying DEM data");
+				if(CheckResError(res,"querying connectivity") || CheckResError(mainres,"querying DEM data"))
+					return NULL;
 				DisconnectPGDB(db_connections[ASYNCH_DB_LOC_TOPO]);
 
 				*N = PQntuples(mainres);
@@ -121,7 +121,7 @@ Link** Create_River_Network(UnivVars* GlobalVars,unsigned int* N,unsigned int***
 				//Be careful to not overload the database
 				sprintf(db_connections[ASYNCH_DB_LOC_TOPO]->query,db_connections[ASYNCH_DB_LOC_TOPO]->queries[2],GlobalVars->outletlink);	//For parent data
 				res = PQexec(db_connections[ASYNCH_DB_LOC_TOPO]->conn,db_connections[ASYNCH_DB_LOC_TOPO]->query);
-				CheckResError(res,"querying connectivity");
+				if(CheckResError(res,"querying connectivity"))	return NULL;
 				DisconnectPGDB(db_connections[ASYNCH_DB_LOC_TOPO]);
 
 				*N = PQntuples(res) + 1;
@@ -402,7 +402,7 @@ int Load_Local_Parameters(Link** system,unsigned int N,unsigned int* my_sys,unsi
 					return 1;
 				}
 				res = PQexec(db_connections[ASYNCH_DB_LOC_PARAMS]->conn,db_connections[ASYNCH_DB_LOC_PARAMS]->queries[0]);
-				CheckResError(res,"querying DEM data");
+				if(CheckResError(res,"querying DEM data"))	return 1;
 				DisconnectPGDB(db_connections[ASYNCH_DB_LOC_PARAMS]);
 			}
 			else	//Grab a sub basin
@@ -417,7 +417,7 @@ int Load_Local_Parameters(Link** system,unsigned int N,unsigned int* my_sys,unsi
 				//Make the queries
 				sprintf(db_connections[ASYNCH_DB_LOC_PARAMS]->query,db_connections[ASYNCH_DB_LOC_PARAMS]->queries[1],GlobalVars->outletlink);
 				res = PQexec(db_connections[ASYNCH_DB_LOC_PARAMS]->conn,db_connections[ASYNCH_DB_LOC_PARAMS]->query);
-				CheckResError(res,"querying DEM data");
+				if(CheckResError(res,"querying DEM data"))	return 1;
 				DisconnectPGDB(db_connections[ASYNCH_DB_LOC_PARAMS]);
 			}
 
@@ -3082,7 +3082,7 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 //Returns 1 if an error occured. 0 otherwise.
 int Create_SAV_Data(char filename[],Link** sys,unsigned int N,unsigned int** save_list,unsigned int* size,ConnData *conninfo,unsigned short int flag)
 {
-	unsigned int i,id,error = 0;
+	unsigned int i,id,error = 0,list_size = N;
 	FILE* save_file = NULL;
 	*size = 0;
 	*save_list = NULL;
@@ -3108,13 +3108,18 @@ int Create_SAV_Data(char filename[],Link** sys,unsigned int N,unsigned int** sav
 					return 1;
 				}
 
-				*save_list = malloc(N*sizeof(unsigned int));
+				*save_list = (unsigned int*) malloc(list_size*sizeof(unsigned int));
 
 				//Read the save file
 				while( fscanf(save_file,"%u",&id) != EOF )
 				{
 					(*save_list)[*size] = id;
 					(*size)++;
+					if((*size) == list_size)
+					{
+						list_size *= 2;
+						*save_list = (unsigned int*) realloc(*save_list,list_size*sizeof(unsigned int));
+					}
 				}
 
 				//Close save file

@@ -357,7 +357,7 @@ int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* 
 					forcing->received[i] = 0;
 
 				//Check endianness
-				fread(&i,sizeof(int),1,stormdata);
+				fread(&i,sizeof(unsigned int),1,stormdata);
 				if(i == 0x1)			endianness = 0;
 				else if(i == 0x80000000)	endianness = 1;
 				else
@@ -370,7 +370,7 @@ int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* 
 				while(!feof(stormdata))
 				{
 					//Read intensity
-					result = fread(&cell,sizeof(int),1,stormdata);
+					result = fread(&cell,sizeof(unsigned int),1,stormdata);
 					if(!result)	break;
 					fread(&intensity,sizeof(unsigned int),1,stormdata);
 					if(endianness)
@@ -382,9 +382,14 @@ int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* 
 						intensity = (((holder & 0x00ff00ff)<<8) | ((holder & 0xff00ff00)>>8));
 					}
 
-					if(forcing->received[cell])	printf("Warning: Received multiple intensities for cell %u in file %s.\n",cell,filename);
-					forcing->received[cell] = 1;
-					forcing->intensities[cell] = (int) intensity * forcing->factor;
+					if(cell < forcing->num_cells)
+					{
+						if(forcing->received[cell])	printf("Warning: Received multiple intensities for cell %u in file %s.\n",cell,filename);
+						forcing->received[cell] = 1;
+						forcing->intensities[cell] = (int) intensity * forcing->factor;
+					}
+					else
+						printf("Warning: bad grid cell id in file %s.\n",filename);
 				}
 
 				fclose(stormdata);

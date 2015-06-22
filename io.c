@@ -46,73 +46,121 @@ io* BuildIO(UnivVars* GlobalVars)
 
 //Reads a .dbc file and creates a corresponding database connection.
 //This does NOT connect to the database.
+//Returns NULL if there was an error.
 ConnData* ReadDBC(char* filename,unsigned int string_size)
 {
-	unsigned int i,j;
-	FILE* input = fopen(filename,"r");
-	if(!input)
-	{
-		if(my_rank == 0)	printf("Error opening .dbc file %s.\n",filename);
-		return NULL;
-	}
-	if(CheckWinFormat(input))
-	{
-		if(my_rank == 0)	printf("Error: File %s appears to be in Windows format. Try converting to unix format using 'dos2unix' at the command line.\n",filename);
-		fclose(input);
-		return NULL;
-	}
+	unsigned int i,j,errorcode = 0;
+	ConnData* conninfo = NULL;
+	char c,*connectstring = (char*) malloc(string_size*sizeof(char));
 
-	//Read connection information
-	//Currently, this expects 4 things like:
-	//dbname=rm_model host=s-iihr58.iihr.uiowa.edu user=***REMOVED*** password=my_pass
-	char* connectstring = (char*) malloc(string_size*sizeof(char));
-	fgets(connectstring,string_size,input);
-	ConnData* conninfo = CreateConnData(connectstring);
-	free(connectstring);
-	if(!conninfo)	return NULL;
-
-	//Get number of queries
-	fscanf(input,"%u",&(conninfo->num_queries));
-	conninfo->queries = (char**) malloc(conninfo->num_queries*sizeof(char*));
-	for(i=0;i<conninfo->num_queries;i++)
-		conninfo->queries[i] = (char*) malloc(ASYNCH_MAX_QUERY_SIZE*sizeof(char));
-
-	//Get queries. They are delineated by a ;
-	char c;
-	for(j=0;j<conninfo->num_queries;j++)
+	if(my_rank == 0)
 	{
-		//Get rid of whitespace
-		c = fgetc(input);
-		while(c != EOF && (c == ' ' || c == '\n' || c == '\t'))	c = fgetc(input);
-		if(c == EOF)
+		FILE* input = fopen(filename,"r");
+
+		if(!input)
 		{
-			printf("[%i]: Warning: did not see %u queries in %s.\n",my_rank,conninfo->num_queries,filename);
-			break;
+			printf("Error opening .dbc file %s.\n",filename);
+			goto finish;
+		}
+		if(CheckWinFormat(input))
+		{
+			printf("Error: File %s appears to be in Windows format. Try converting to unix format using 'dos2unix' at the command line.\n",filename);
+			fclose(input);
+			goto finish;
 		}
 
-		//Read in query
-		for(i=0;i<ASYNCH_MAX_QUERY_SIZE-2 && c != ';' && c != EOF;i++)
+		//Read connection information
+		//Currently, this expects 4 things like:
+		//dbname=rm_model host=s-iihr58.iihr.uiowa.edu user=***REMOVED*** password=my_pass
+		fgets(connectstring,string_size,input);
+		conninfo = CreateConnData(connectstring);
+		if(!conninfo)
 		{
-			conninfo->queries[j][i] = c;
+			fclose(input);
+			goto finish;
+		}
+
+		//Get number of queries
+		fscanf(input,"%u",&(conninfo->num_queries));
+		conninfo->queries = (char**) malloc(conninfo->num_queries*sizeof(char*));
+		for(i=0;i<conninfo->num_queries;i++)
+			conninfo->queries[i] = (char*) malloc(ASYNCH_MAX_QUERY_SIZE*sizeof(char));
+
+		//Get queries. They are delineated by a ;
+		for(j=0;j<conninfo->num_queries;j++)
+		{
+			//Get rid of whitespace
 			c = fgetc(input);
+			while(c != EOF && (c == ' ' || c == '\n' || c == '\t'))	c = fgetc(input);
+			if(c == EOF)
+			{
+				printf("[%i]: Warning: did not see %u queries in %s.\n",my_rank,conninfo->num_queries,filename);
+				break;
+			}
+
+			//Read in query
+			for(i=0;i<ASYNCH_MAX_QUERY_SIZE-2 && c != ';' && c != EOF;i++)
+			{
+				conninfo->queries[j][i] = c;
+				c = fgetc(input);
+			}
+
+			//Check for problems and put stuff on the end
+			if(i == ASYNCH_MAX_QUERY_SIZE)
+				printf("[%i]: Warning: query %u is too long in %s.\n",my_rank,j,filename);
+			else if(c == EOF)
+			{
+				printf("[%i]: Warning: did not see %u queries in %s.\n",my_rank,conninfo->num_queries,filename);
+				break;
+			}
+			else
+			{
+				conninfo->queries[j][i] = ';';
+				conninfo->queries[j][i+1] = '\0';
+			}
 		}
 
-		//Check for problems and put stuff on the end
-		if(i == ASYNCH_MAX_QUERY_SIZE)
-			printf("[%i]: Warning: query %u is too long in %s.\n",my_rank,j,filename);
-		else if(c == EOF)
+		fclose(input);
+
+		//Get string length for other procs
+		j = strlen(connectstring) + 1;
+	}
+
+	//Check if an error occurred
+	finish:
+	MPI_Bcast(&errorcode,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+
+	//Transfer info from .dbc file
+	if(!errorcode)
+	{
+		MPI_Bcast(&j,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		MPI_Bcast(connectstring,j,MPI_CHAR,0,MPI_COMM_WORLD);
+		if(my_rank != 0)
+			conninfo = CreateConnData(connectstring);
+		MPI_Bcast(&(conninfo->num_queries),1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		if(my_rank == 0)
 		{
-			printf("[%i]: Warning: did not see %u queries in %s.\n",my_rank,conninfo->num_queries,filename);
-			break;
+			for(i=0;i<conninfo->num_queries;i++)
+			{
+				j = strlen(conninfo->queries[i]) + 1;
+				MPI_Bcast(&j,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+				MPI_Bcast(conninfo->queries[i],j,MPI_CHAR,0,MPI_COMM_WORLD);
+			}
 		}
 		else
 		{
-			conninfo->queries[j][i] = ';';
-			conninfo->queries[j][i+1] = '\0';
+			conninfo->queries = (char**) malloc(conninfo->num_queries*sizeof(char*));
+			for(i=0;i<conninfo->num_queries;i++)
+			{
+				conninfo->queries[i] = (char*) malloc(ASYNCH_MAX_QUERY_SIZE*sizeof(char));
+				MPI_Bcast(&j,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+				MPI_Bcast(conninfo->queries[i],j,MPI_CHAR,0,MPI_COMM_WORLD);
+			}
 		}
+
 	}
 
-	fclose(input);
+	free(connectstring);
 	return conninfo;
 }
 
