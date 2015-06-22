@@ -160,7 +160,7 @@ void TopLayerHillslope(double t,VEC* y_i,VEC** y_p,unsigned short int numparents
 	double Corr = s_p + s_t / S_L + s_s / (h_b-S_L);
 	if(e_pot > 0.0 && Corr > 1e-12)
 	{
-		e_p = s_p * e_pot / Corr;
+		e_p = s_p * 1e3 * e_pot / Corr;
 		e_t = s_t/S_L * e_pot / Corr;
 		e_s = s_s/(h_b-S_L) * e_pot / Corr;
 	}
@@ -193,7 +193,7 @@ void TopLayerHillslope(double t,VEC* y_i,VEC** y_p,unsigned short int numparents
 }
 
 
-//Type 253
+//Type 253 / 255
 //Contains 3 layers on hillslope: ponded, top layer, soil
 //Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
 //The numbering is:	0   1   2     3    4   5   6   7
@@ -250,7 +250,7 @@ void TopLayerHillslope_extras(double t,VEC* y_i,VEC** y_p,unsigned short int num
 	double Corr = s_p + s_t / S_L + s_s / (h_b-S_L);
 	if(e_pot > 0.0 && Corr > 1e-12)
 	{
-		e_p = s_p * e_pot / Corr;
+		e_p = s_p * 1e3 * e_pot / Corr;
 		e_t = s_t/S_L * e_pot / Corr;
 		e_s = s_s/(h_b-S_L) * e_pot / Corr;
 	}
@@ -289,6 +289,119 @@ void TopLayerHillslope_extras(double t,VEC* y_i,VEC** y_p,unsigned short int num
 		ans->ve[6] += y_p[i]->ve[6] * 60.0;
 		//ans->ve[6] += k_3*y_p[i]->ve[3]*A_h;
 	ans->ve[6] *= v_B/L;
+}
+
+
+//Type 255
+//Contains 2 layers in the channel: discharge, storage. Contains 3 layers on hillslope: ponded, top layer, soil.
+//Order of the states is:              0          1                                        2        3       4
+//Order of parameters: A_i,L_i,A_h,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent | invtau,k_2,k_i,c_1,c_2
+//The numbering is:	0   1   2   3   4      5       6   7  8 9   10        11    12  13  14  15
+//Order of global_params: v_0,lambda_1,lambda_2
+//The numbering is:        0      1        2
+void TopLayerHillslope_variable(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans)
+{
+	unsigned short int i;
+
+	double lambda_1 = global_params->ve[1];
+	double e_pot = forcing_values[1] * (1e-3/(30.0*24.0*60.0));	//[mm/month] -> [m/min]
+
+	double L = params->ve[1];	//[m]
+	double A_h = params->ve[2];	//[m^2]
+	double k_3 = params->ve[4];	//[1/min]
+	double h_b = params->ve[6];	//[m]
+	double S_L = params->ve[7];	//[m]
+	double A = params->ve[8];
+	double B = params->ve[9];
+	double exponent = params->ve[10];
+	double k_2 = params->ve[12];	//[1/min]
+	double k_i = params->ve[13];	//[1/min]
+	double c_1 = params->ve[14];
+	double c_2 = params->ve[15];
+
+	double q = y_i->ve[0];		//[m^3/s]
+	double S = y_i->ve[1];		//[m^3]
+	double s_p = y_i->ve[2];	//[m]
+	double s_t = y_i->ve[3];	//[m]
+	double s_s = y_i->ve[4];	//[m]
+
+	//Evaporation
+	double e_p,e_t,e_s;
+	double Corr = s_p + s_t / S_L + s_s / (h_b-S_L);
+	if(e_pot > 0.0 && Corr > 1e-12)
+	{
+		e_p = s_p * 1e3 * e_pot / Corr;
+		e_t = s_t/S_L * e_pot / Corr;
+		e_s = s_s/(h_b-S_L) * e_pot / Corr;
+	}
+	else
+	{
+		e_p = 0.0;
+		e_t = 0.0;
+		e_s = 0.0;
+	}
+
+	double pow_term = (1.0-s_t/S_L > 0.0) ? pow(1.0-s_t/S_L,exponent) : 0.0;
+	double k_t = (A + B * pow_term) * k_2;
+
+	//Fluxes
+	double q_pl = k_2 * s_p;
+	double q_pt = k_t * s_p;
+	double q_ts = k_i * s_t;
+	double q_sl = k_3 * s_s;
+
+	//Discharge
+	dam_TopLayerHillslope_variable(y_i,global_params,params,qvs,state,user,ans);	//ans is used for convenience !!!! Is q available in y_i? !!!!
+	double qm = ans->ve[0] * 60.0;
+
+	//Storage
+	ans->ve[1] = (q_pl + q_sl) * A_h - qm;
+	for(i=0;i<numparents;i++)
+		ans->ve[1] += y_p[i]->ve[0] * 60.0;
+
+	//Hillslope
+	ans->ve[2] = forcing_values[0]*c_1 - q_pl - q_pt - e_p;
+	ans->ve[3] = q_pt - q_ts - e_t;
+	ans->ve[4] = q_ts - q_sl - e_s;
+}
+
+//Type 255
+//Contains 2 layers in the channel: discharge, storage. Contains 3 layers on hillslope: ponded, top layer, soil.
+//Order of the states is:              0          1                                        2        3       4
+//Order of parameters: A_i,L_i,A_h,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent | invtau,k_2,k_i,c_1,c_2
+//The numbering is:	0   1   2   3   4      5       6   7  8 9   10        11    12  13  14  15
+//Order of global_params: v_0,lambda_1,lambda_2
+//The numbering is:        0      1        2
+void dam_TopLayerHillslope_variable(VEC* y,VEC* global_params,VEC* params,QVSData* qvs,int state,void* user,VEC* ans)
+{
+	double q1,q2,S1,S2,S_max,q_max,S;
+
+	//Parameters
+	double lambda_1 = global_params->ve[1];
+	double invtau = params->ve[11];	//[1/min]
+
+	//Find the discharge in [m^3/s]
+	if(state == -1)
+	{
+		S = (y->ve[1] < 0.0) ? 0.0 : y->ve[1];
+		//ans->ve[0] = invtau/60.0*pow(S,1.0/(1.0-lambda_1));
+		ans->ve[0] = pow((1.0-lambda_1)*invtau/60.0 * S,1.0/(1.0-lambda_1));
+	}
+	else if(state == (int) qvs->n_values - 1)
+	{
+		S_max = qvs->points[qvs->n_values - 1][0];
+		q_max = qvs->points[qvs->n_values - 1][1];
+		ans->ve[0] = q_max;
+	}
+	else
+	{
+		S = (y->ve[1] < 0.0) ? 0.0 : y->ve[1];
+		q2 = qvs->points[state+1][1];
+		q1 = qvs->points[state][1];
+		S2 = qvs->points[state+1][0];
+		S1 = qvs->points[state][0];
+		ans->ve[0] = (q2-q1)/(S2-S1) * (S-S1) + q1;
+	}
 }
 
 
@@ -333,7 +446,7 @@ void TopLayerNonlinearExp(double t,VEC* y_i,VEC** y_p,unsigned short int numpare
 	double Corr = s_p + s_t / T_L + s_s / (h_b-T_L);
 	if(e_pot > 0.0 && Corr > 1e-12)
 	{
-		e_p = s_p * e_pot / Corr;
+		e_p = s_p * 1e3 * e_pot / Corr;
 		e_t = s_t/T_L * e_pot / Corr;
 		e_s = s_s/(h_b-T_L) * e_pot / Corr;
 	}
@@ -418,7 +531,7 @@ void TopLayerNonlinearExpSoilvel(double t,VEC* y_i,VEC** y_p,unsigned short int 
 	double Corr = s_p + s_t / T_L + s_s / (h_b-T_L);
 	if(e_pot > 0.0 && Corr > 1e-12)
 	{
-		e_p = s_p * e_pot / Corr;
+		e_p = s_p * 1e3 * e_pot / Corr;
 		e_t = s_t/T_L * e_pot / Corr;
 		e_s = s_s/(h_b-T_L) * e_pot / Corr;
 	}
@@ -571,7 +684,7 @@ void TopLayerNonlinearExpSoilvel_ConstEta(double t,VEC* y_i,VEC** y_p,unsigned s
 	double Corr = s_p + s_t / T_L + s_s / (h_b-T_L);
 	if(e_pot > 0.0 && Corr > 1e-12)
 	{
-		e_p = s_p * e_pot / Corr;
+		e_p = s_p * 1e3 * e_pot / Corr;
 		e_t = s_t/T_L * e_pot / Corr;
 		e_s = s_s/(h_b-T_L) * e_pot / Corr;
 	}
