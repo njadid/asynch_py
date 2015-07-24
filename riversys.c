@@ -725,9 +725,11 @@ int Build_RKData(Link** system,char rk_filename[],unsigned int N,unsigned int* m
 }
 
 //Runs the init routine for the model. Also performs precalculations.
+//Returns 0 if everything is ok, 1 if an error occurred.
 int Initialize_Model(Link** system,unsigned int N,unsigned int* my_sys,unsigned int my_N,int* assignments,short int* getting,UnivVars* GlobalVars,model* custom_model,void* external)
 {
-	unsigned int i,j,max_dim = 0;
+	unsigned int i,j,max_dim = 0,smallest_dim;
+	int my_error_code = 0,error_code;
 
 	for(i=0;i<N;i++)
 	{
@@ -745,10 +747,29 @@ int Initialize_Model(Link** system,unsigned int N,unsigned int* my_sys,unsigned 
 			}
 
 			max_dim = (max_dim < system[i]->dim) ? system[i]->dim : max_dim;
+
+			//Be sure the problem dimension and number of error tolerances are compatible
+			if(assignments[i] == my_rank)
+			{
+				smallest_dim = system[i]->errorinfo->abstol->dim;
+				if(smallest_dim > system[i]->errorinfo->reltol->dim)	smallest_dim = system[i]->errorinfo->reltol->dim;
+				if(smallest_dim > system[i]->errorinfo->abstol_dense->dim)	smallest_dim = system[i]->errorinfo->abstol_dense->dim;
+				if(smallest_dim > system[i]->errorinfo->reltol_dense->dim)	smallest_dim = system[i]->errorinfo->reltol_dense->dim;
+				if(system[i]->dim > smallest_dim)
+				{
+					printf("[%i] Error: link id %u does not have enough error tolerances (got %u, expected %u)\n",my_rank,system[i]->ID,smallest_dim,system[i]->dim);
+					my_error_code = 1;
+					break;
+				}
+			}
 		}
 	}
 
-	//Make sure all procs know how large the problem is everywhere.
+	//Check if an error occurred
+	MPI_Allreduce(&my_error_code,&error_code,1,MPI_INT,MPI_LOR,MPI_COMM_WORLD);
+	if(error_code)	return 1;
+
+	//Make sure all procs know how large the problem is everywhere
 	MPI_Allreduce(&max_dim,&(GlobalVars->max_dim),1,MPI_UNSIGNED,MPI_MAX,MPI_COMM_WORLD);
 	for(i=0;i<N;i++)
 		MPI_Bcast(&(system[i]->dim),1,MPI_UNSIGNED,assignments[i],MPI_COMM_WORLD);
