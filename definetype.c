@@ -21,596 +21,411 @@ void SetParamSizes(UnivVars* GlobalVars,void* external)
 	switch(type)
 	{
 //--------------------------------------------------------------------------------------------
-		case 0:	//GlobalVars->dim = GlobalVars->problem_dim = 1;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 1;
-			num_global_params = 6;
+		case 0:	num_global_params = 6;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 0;
+			GlobalVars->min_error_tolerances = 1;
 			break;
 //--------------------------------------------------------------------------------------------
-		case 1: //GlobalVars->dim = GlobalVars->problem_dim = 2;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 2;
-			num_global_params = 6;
+		case 1: num_global_params = 6;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 1;
+			GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 			break;
 //--------------------------------------------------------------------------------------------
-		case 2: //GlobalVars->dim = GlobalVars->problem_dim = 2;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 2;
-			num_global_params = 6;
+		case 2: num_global_params = 6;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 1;
+			GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 			break;
 //--------------------------------------------------------------------------------------------
-		case 3: //GlobalVars->dim = GlobalVars->problem_dim = 2;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 2;
-			num_global_params = 6;
+		case 3: num_global_params = 6;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 1;
+			GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 			break;
 //--------------------------------------------------------------------------------------------
-		case 4: //GlobalVars->dim = GlobalVars->problem_dim = 4;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 4;
-			num_global_params = 6;
+		case 4: num_global_params = 6;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 1;
+			GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 			break;
 //--------------------------------------------------------------------------------------------
-		case 5: //GlobalVars->dim = GlobalVars->problem_dim = 4;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 4;
-			num_global_params = 6;
+		case 5: num_global_params = 6;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 1;
+			GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 			break;
 //--------------------------------------------------------------------------------------------
-		case 6: //GlobalVars->dim = GlobalVars->problem_dim = 4;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 4;
-			num_global_params = 5;
+		case 6: num_global_params = 5;
 			GlobalVars->uses_dam = 0;
 			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
 			GlobalVars->dam_params_size = 0;
 			GlobalVars->area_idx = 2;
 			GlobalVars->areah_idx = 1;
 			GlobalVars->disk_params = 14;
-			//GlobalVars->num_dense = 1;
 			GlobalVars->convertarea_flag = 1;
 			GlobalVars->num_forcings = 1;
+			GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 			break;
 //--------------------------------------------------------------------------------------------
-		case 15: //GlobalVars->dim = GlobalVars->problem_dim = 2;
-			//GlobalVars->assim_flag = 0;
-			//GlobalVars->diff_start = 0;
-			//GlobalVars->no_ini_start = 2;
-			num_global_params = 6;
-			GlobalVars->uses_dam = 0;
-			GlobalVars->params_size = 20;
-			//GlobalVars->iparams_size = 0;
-			GlobalVars->dam_params_size = 0;
-			GlobalVars->area_idx = 2;
-			GlobalVars->areah_idx = 1;
-			GlobalVars->disk_params = 12;
-			//GlobalVars->num_dense = 1;
-			GlobalVars->convertarea_flag = 0;
-			GlobalVars->num_forcings = 1;
-			break;
+		case 15: 	num_global_params = 6;
+				GlobalVars->uses_dam = 0;
+				GlobalVars->params_size = 20;
+				GlobalVars->dam_params_size = 0;
+				GlobalVars->area_idx = 2;
+				GlobalVars->areah_idx = 1;
+				GlobalVars->disk_params = 12;
+				GlobalVars->convertarea_flag = 0;
+				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
+				break;
 //--------------------------------------------------------------------------------------------
-		case 19:	//GlobalVars->dim = GlobalVars->problem_dim = 3;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 7;
+		case 19:	num_global_params = 7;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 20:	//GlobalVars->dim = GlobalVars->problem_dim = 3;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 9;
+		case 20:	num_global_params = 9;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 6;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 21:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 1;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 7;
+		case 21:	num_global_params = 7;
 				GlobalVars->uses_dam = 1;
 				GlobalVars->params_size = 7;	//Need 1 extra for orifice_area
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 15;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 22:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 1;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 4;
+		case 22:	num_global_params = 4;
 				GlobalVars->uses_dam = 1;
 				GlobalVars->params_size = 10;		//Need 1 extra for orifice_area
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 18;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 6;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 23:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 1;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 4;
+		case 23:	num_global_params = 4;
 				GlobalVars->uses_dam = 1;
 				GlobalVars->params_size = 10;		//Need 1 extra for orifice_area
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 18;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 6;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 30:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 4;
-				num_global_params = 7;
+		case 30:	num_global_params = 7;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 21;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 2;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 40:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 1;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 4;
+		case 40:	num_global_params = 4;
 				GlobalVars->uses_dam = 1;
 				GlobalVars->params_size = 9;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 6;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 6;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 60:	//GlobalVars->dim = GlobalVars->problem_dim = 3;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 6;
+		case 60:	num_global_params = 6;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 4;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 101:	//GlobalVars->dim = GlobalVars->problem_dim = 3;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 0;
-				//GlobalVars->num_dense = 3;
+		case 101:	num_global_params = 0;
 				GlobalVars->convertarea_flag = 1;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 105:	//GlobalVars->dim = GlobalVars->problem_dim = 2;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 0;
+		case 105:	num_global_params = 0;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 16;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 1;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 190:	//GlobalVars->dim = GlobalVars->problem_dim = 3;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 6;
+		case 190:	num_global_params = 6;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 2;
+				GlobalVars->min_error_tolerances = 3;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 191:	//GlobalVars->dim = GlobalVars->problem_dim = 6;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 7;
+		case 191:	num_global_params = 7;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 2;
 				GlobalVars->convertarea_flag = 0;
-				GlobalVars->num_forcings = 3;
+				GlobalVars->num_forcings = 6;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 200:	//GlobalVars->dim = GlobalVars->problem_dim = 2;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 1;
-				num_global_params = 10;
+		case 200:	num_global_params = 10;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 20;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 2;
 				GlobalVars->convertarea_flag = 1;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 219:	//GlobalVars->dim = GlobalVars->problem_dim = 1;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 1;
-				num_global_params = 3;
+		case 219:	num_global_params = 3;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 5;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 250:	//GlobalVars->dim = GlobalVars->problem_dim = 3;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 9;
+		case 250:	num_global_params = 9;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 9;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 4;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 252:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 4;
-				num_global_params = 11;
+		case 252:	num_global_params = 11;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 2;
+				GlobalVars->min_error_tolerances = 4;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 253:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 4;
-				num_global_params = 11;
+		case 253:	num_global_params = 11;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 3;
+				GlobalVars->min_error_tolerances = 4;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 254:	//GlobalVars->dim = GlobalVars->problem_dim = 7;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 4;
-				num_global_params = 12;
+		case 254:	num_global_params = 12;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 8;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 2;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 3;
+				GlobalVars->min_error_tolerances = 7;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 260:	//GlobalVars->dim = GlobalVars->problem_dim = 4;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 4;
-				num_global_params = 11;
+		case 255:	num_global_params = 3;
+				GlobalVars->uses_dam = 1;
+				GlobalVars->params_size = 16;
+				GlobalVars->dam_params_size = 0;
+				GlobalVars->area_idx = 0;
+				GlobalVars->areah_idx = 2;
+				GlobalVars->disk_params = 11;
+				GlobalVars->convertarea_flag = 0;
+				GlobalVars->num_forcings = 3;
+				GlobalVars->min_error_tolerances = 5;
+				break;
+//--------------------------------------------------------------------------------------------
+		case 260:	num_global_params = 11;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 6;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 3;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 2;
+				GlobalVars->min_error_tolerances = 4;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 261:	//GlobalVars->dim = GlobalVars->problem_dim = 8;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 1;
-				//GlobalVars->no_ini_start = 5;
-				num_global_params = 6;
+		case 261:	num_global_params = 6;
 				GlobalVars->uses_dam = 1;
 				GlobalVars->params_size = 13;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 9;
-				//GlobalVars->num_dense = 2;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 4;
+				GlobalVars->min_error_tolerances = 8;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 262:	//GlobalVars->dim = GlobalVars->problem_dim = 8;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 1;
-				//GlobalVars->no_ini_start = 5;
-				num_global_params = 6;
+		case 262:	num_global_params = 6;
 				GlobalVars->uses_dam = 1;
 				GlobalVars->params_size = 14;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 0;
 				GlobalVars->areah_idx = 2;
 				GlobalVars->disk_params = 10;
-				//GlobalVars->num_dense = 2;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 3;
+				GlobalVars->min_error_tolerances = 8;
 				break;
 //--------------------------------------------------------------------------------------------
-		case 300:	//GlobalVars->dim = 2;		//Make this a little bigger for the variational errors
-				//GlobalVars->problem_dim = 1;
-				//GlobalVars->assim_flag = 1;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 1;
-				num_global_params = 6;
+		case 300:	num_global_params = 6;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 20;
-				//GlobalVars->iparams_size = 1;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 301:	//GlobalVars->dim = 3;		//Make this a little bigger for the variational errors
-				//GlobalVars->problem_dim = 2;
-				//GlobalVars->assim_flag = 1;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 6;
+		case 301:	num_global_params = 6;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 20;
-				//GlobalVars->iparams_size = 1;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 315:	//GlobalVars->dim = 3;
-				//GlobalVars->problem_dim = 2;
-				//GlobalVars->assim_flag = 1;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 3;
-				num_global_params = 6;
+		case 315:	num_global_params = 6;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 20;
-				//GlobalVars->iparams_size = 1;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 0;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
-		case 2000: 	//GlobalVars->dim = GlobalVars->problem_dim = 2;
-				//GlobalVars->assim_flag = 0;
-				//GlobalVars->diff_start = 0;
-				//GlobalVars->no_ini_start = 2;
-				num_global_params = 6;
+		case 2000: 	num_global_params = 6;
 				GlobalVars->uses_dam = 0;
 				GlobalVars->params_size = 20;
-				//GlobalVars->iparams_size = 0;
 				GlobalVars->dam_params_size = 0;
 				GlobalVars->area_idx = 2;
 				GlobalVars->areah_idx = 1;
 				GlobalVars->disk_params = 12;
-				//GlobalVars->num_dense = 1;
 				GlobalVars->convertarea_flag = 1;
 				GlobalVars->num_forcings = 1;
+				GlobalVars->min_error_tolerances = 1;	//This should probably be higher...
 				break;
 //--------------------------------------------------------------------------------------------
 		default:	printf("Error: Invalid type (%u) in SetParamSizes.\n",type);
 				MPI_Abort(MPI_COMM_WORLD,1);
 //--------------------------------------------------------------------------------------------
 	}
-
-/*
-	//Create the dense_indices list
-	//Note: If assim_flag is set, the variational eqs stuff is set outside here
-	GlobalVars->dense_indices = (unsigned int*) malloc(GlobalVars->num_dense * sizeof(unsigned int));
-	if(type == 21 || type == 22 || type == 23 || type == 40)
-	{
-		GlobalVars->dense_indices[0] = 1;	//Storage
-	}
-	else if(type == 261 || type == 262)
-	{
-		GlobalVars->dense_indices[0] = 1;	//Storage
-		GlobalVars->dense_indices[1] = 7;	//Baseflow
-	}
-	else if(type == 254)
-	{
-		GlobalVars->dense_indices[0] = 0;	//Discharge
-		GlobalVars->dense_indices[1] = 6;	//Baseflow
-	}
-	else if(type == 191)
-	{
-		GlobalVars->dense_indices[0] = 0;	//Discharge
-		GlobalVars->dense_indices[1] = 5;	//Baseflow
-	}
-	else	//For all other types, just needed the first entry
-	{
-		GlobalVars->dense_indices[0] = 0;	//Discharge
-	}
-*/
 
 	//Make sure the appropriate number of global parameters are given
 	if(GlobalVars->global_params->dim < num_global_params)
@@ -723,6 +538,11 @@ void ConvertParams(VEC* params,unsigned int type,void* external)
 		params->ve[1] *= 1000;		//L_h: km -> m
 		params->ve[2] *= 1e6;		//A_h: km^2 -> m^2
 	}
+	else if (type == 255)
+	{
+		params->ve[1] *= 1000;		//L_h: km -> m
+		params->ve[2] *= 1e6;		//A_h: km^2 -> m^2
+	}
 	else if(type == 300 || type == 301)
 	{
 		params->ve[0] *= 1000;	//km -> m
@@ -748,14 +568,10 @@ void ConvertParams(VEC* params,unsigned int type,void* external)
 void InitRoutines(Link* link,unsigned int type,unsigned int exp_imp,unsigned short int dam,void* external)
 {
 	//Select appropriate RK Solver for the numerical method (link->RKSolver)
-//	if(type == 19)
-//		link->RKSolver = &ExplicitRKSolverDiscont;
 	if( (type == 21 || type == 22 || type == 23 || type == 40 || type == 261 || type == 262) && dam == 1)
 		link->RKSolver = &ExplicitRKIndex1SolverDam;
 	else if( (type == 21 || type == 22 || type == 23 || type == 40 || type == 261 || type == 262) && dam == 0)
 		link->RKSolver = &ExplicitRKIndex1Solver;
-	//else if(type == 315)
-	//	link->RKSolver = &ExplicitRKSolver_DataAssim;
 	else if(exp_imp == 0)
 		link->RKSolver = &ExplicitRKSolver;
 //	else if(link->method->exp_imp == 1)
@@ -1163,6 +979,31 @@ void InitRoutines(Link* link,unsigned int type,unsigned int exp_imp,unsigned sho
 		link->state_check = NULL;
 		link->CheckConsistency = &CheckConsistency_Nonzero_AllStates_q;
 	}
+	else if(type == 255)
+	{
+		link->dim = 5;
+		link->no_ini_start = 5;
+		link->diff_start = 1;
+
+		link->num_dense = 1;
+		link->dense_indices = (unsigned int*) realloc(link->dense_indices,link->num_dense*sizeof(unsigned int));
+
+		if(link->res)
+		{
+			link->dense_indices[0] = 0;	//Discharge
+			link->f = &TopLayerHillslope_Reservoirs;
+			link->RKSolver = &ForcedSolutionSolver;
+		}
+		else
+		{
+			link->dense_indices[0] = 1;	//Storage
+			link->f = &TopLayerHillslope_variable;
+			link->RKSolver = &ExplicitRKIndex1SolverDam;
+		}
+		link->alg = &dam_TopLayerHillslope_variable;
+		link->state_check = &dam_check_qvs;
+		link->CheckConsistency = &CheckConsistency_Nonzero_AllStates_q;
+	}
 	else if(type == 260)
 	{
 		link->dim = 4;
@@ -1500,7 +1341,6 @@ void Precalculations(Link* link_i,VEC* global_params,VEC* params,unsigned int di
 		double v_g = global_params->ve[3];
 
 		vals[6] = v_h * L_i / A_h * 60.0;	//[1/min]  k2
-		//vals[7] = vals[6] / 20.0;		//[1/min]  k3
 		vals[7] = v_g * L_i / A_h * 60.0;	//[1/min]  k3
 		vals[8] = pow(v_r*pow(A_i,lambda_2)/L_i,1.0/(1.0-lambda_1)) * 60.0; //[1/min]  invtau
 	}
@@ -1743,6 +1583,29 @@ void Precalculations(Link* link_i,VEC* global_params,VEC* params,unsigned int di
 		vals[5] = vals[4] * k_i_factor;	//[1/min] k_i
 		vals[6] = (0.001/60.0);		//(mm/hr->m/min)  c_1
 		vals[7] = A_h/60.0;	//  c_2
+	}
+	else if(type == 255)
+	{
+		//Order of parameters: A_i,L_i,A_h,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent | invtau,k_2,k_i,c_1,c_2
+		//The numbering is:	0   1   2   3   4      5       6   7  8 9   10        11    12  13  14  15
+		//Order of global_params: v_0,lambda_1,lambda_2
+		//The numbering is:        0      1        2
+		double* vals = params->ve;
+		double A_i = params->ve[0];
+		double L_i = params->ve[1];
+		double A_h = params->ve[2];
+		double v_h = params->ve[3];
+		double k_i_factor = params->ve[5];
+
+		double v_0 = global_params->ve[0];
+		double lambda_1 = global_params->ve[1];
+		double lambda_2 = global_params->ve[2];
+
+		vals[11] = 60.0*v_0*pow(A_i,lambda_2) / ((1.0-lambda_1)*L_i);	//[1/min]  invtau
+		vals[12] = v_h * L_i/A_h * 60.0;	//[1/min] k_2
+		vals[13] = vals[12] * k_i_factor;	//[1/min] k_i
+		vals[14] = (0.001/60.0);		//(mm/hr->m/min)  c_1
+		vals[15] = A_h/60.0;	//  c_2
 	}
 	else if(type == 260)
 	{
@@ -1989,6 +1852,7 @@ int ReadInitData(VEC* global_params,VEC* params,QVSData* qvs,unsigned short int 
 
 		state = dam_check_qvs(y_0,global_params,params,qvs,dam);
 		dam_q_qvs(y_0,global_params,params,qvs,state,user,y_0);
+
 		return state;
 	}
 	else if(type == 30)
@@ -2036,6 +1900,49 @@ params->ve[11] = 0.0;
 		y_0->ve[4] = 0.0;
 		y_0->ve[5] = 0.0;
 		y_0->ve[6] = y_0->ve[0];
+	}
+	else if(type == 255)
+	{
+		//Discharges are initially read into y_0[1] when no dam is present. So y_0[1] is copied to y_0[0],
+		//then the corresponding storage is moved into y_0[1]. When a dam is present, y_0[1] will have the storage.
+		//So the discharge can be calculated and stored into y_0[0].
+
+		//Contains 2 layers in the channel: discharge, storage. Contains 3 layers on hillslope: ponded, top layer, soil.
+		//Order of the states is:              0          1                                        2        3       4
+		//Order of parameters: A_i,L_i,A_h,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent | invtau,k_2,k_i,c_1,c_2
+		//The numbering is:	0   1   2   3   4      5       6   7  8 9   10        11    12  13  14  15
+		//Order of global_params: v_0,lambda_1,lambda_2
+		//The numbering is:        0      1        2
+
+		if(dam)
+		{
+			int i;
+			y_0->ve[0] = y_0->ve[1];
+			for(i=0;i<qvs->n_values-1;i++)
+				if(qvs->points[i][1] <= y_0->ve[0] && y_0->ve[0] < qvs->points[i+1][1])	break;
+			if(i == qvs->n_values - 1)
+			{
+				y_0->ve[0] = qvs->points[i][1];
+				y_0->ve[1] = qvs->points[i][0];
+			}
+			else
+			{
+				double q2 = qvs->points[i+1][1];
+				double q1 = qvs->points[i][1];
+				double S2 = qvs->points[i+1][0];
+				double S1 = qvs->points[i][0];
+				y_0->ve[1] = (S2-S1)/(q2-q1) * (y_0->ve[0] - q1) + S1;
+			}
+			return i;
+		}
+		else
+		{
+			double lambda_1 = global_params->ve[1];
+			double tau_in_secs = 1.0/params->ve[11] * 60.0;
+			y_0->ve[0] = y_0->ve[1];
+			y_0->ve[1] = tau_in_secs / (1.0-lambda_1) * pow(y_0->ve[0],1.0-lambda_1);
+			return -1;
+		}
 	}
 	else if(type == 261)
 	{

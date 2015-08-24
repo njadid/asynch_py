@@ -38,7 +38,7 @@ ASYNCHLIB:
 	$(MAKE) ASYNCHLIB_TARGET EXTRA_FLAGS=-fPIC
 
 ASYNCHLIB_TARGET: $(SHAREDOBJS)
-	$(PCC) $(SHAREDOBJS) $(LIBS) $(FLAGS) $(DBFLAGS) $(OPTFLAGS) -shared -Wl,-soname,libasynch.so -lpython2.4 -o $(LIBDIR)/libasynch.so
+	$(PCC) $(SHAREDOBJS) $(LIBS) $(FLAGS) $(DBFLAGS) $(OPTFLAGS) -shared -Wl,-soname,libasynch.so -o $(LIBDIR)/libasynch.so
 
 #ASYNCHLIB_PY:
 #	$(MAKE) ASYNCHLIB_PY_TARGET EXTRA_FLAGS="-fPIC -I/usr/include/python2.4/ -L/usr/lib/python2.4/ -lpython2.4"

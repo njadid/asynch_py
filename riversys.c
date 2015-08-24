@@ -755,7 +755,7 @@ int Initialize_Model(Link** system,unsigned int N,unsigned int* my_sys,unsigned 
 				if(smallest_dim > system[i]->errorinfo->reltol->dim)	smallest_dim = system[i]->errorinfo->reltol->dim;
 				if(smallest_dim > system[i]->errorinfo->abstol_dense->dim)	smallest_dim = system[i]->errorinfo->abstol_dense->dim;
 				if(smallest_dim > system[i]->errorinfo->reltol_dense->dim)	smallest_dim = system[i]->errorinfo->reltol_dense->dim;
-				if(system[i]->dim > smallest_dim)
+				if(GlobalVars->min_error_tolerances > smallest_dim)
 				{
 					printf("[%i] Error: link id %u does not have enough error tolerances (got %u, expected %u)\n",my_rank,system[i]->ID,smallest_dim,system[i]->dim);
 					my_error_code = 1;
@@ -2853,17 +2853,19 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 	GlobalVars->hydros_loc_filename = NULL;
 	GlobalVars->hydro_table = NULL;
 
-	if(GlobalVars->hydros_loc_flag == 1 || GlobalVars->hydros_loc_flag == 2)
+	if(GlobalVars->hydros_loc_flag == 1 || GlobalVars->hydros_loc_flag == 2 || GlobalVars->hydros_loc_flag == 4)
 	{
 		GlobalVars->hydros_loc_filename = (char*) malloc(string_size*sizeof(char));
 		valsread = sscanf(linebuffer,"%*u %lf %s",&(GlobalVars->print_time),GlobalVars->hydros_loc_filename);
 		if(ReadLineError(valsread,2,"hydrographs location"))	return NULL;
 		if(GlobalVars->hydros_loc_flag == 1 && !CheckFilenameExtension(GlobalVars->hydros_loc_filename,".dat"))	return NULL;
 		if(GlobalVars->hydros_loc_flag == 2 && !CheckFilenameExtension(GlobalVars->hydros_loc_filename,".csv"))	return NULL;
-		GlobalVars->output_flag = (GlobalVars->hydros_loc_flag == 1) ? 0 : 1;
+		if(GlobalVars->hydros_loc_flag == 4 && !CheckFilenameExtension(GlobalVars->hydros_loc_filename,".rad"))	return NULL;
+		//GlobalVars->output_flag = (GlobalVars->hydros_loc_flag == 1) ? 0 : 1;
 
 		if(GlobalVars->hydros_loc_flag == 1)	RemoveSuffix(GlobalVars->hydros_loc_filename,".dat");
 		else if(GlobalVars->hydros_loc_flag == 2)	RemoveSuffix(GlobalVars->hydros_loc_filename,".csv");
+		else if(GlobalVars->hydros_loc_flag == 4)	RemoveSuffix(GlobalVars->hydros_loc_filename,".rad");
 	}
 	else if(GlobalVars->hydros_loc_flag == 3)
 	{
@@ -3363,5 +3365,30 @@ int FindPath(char* filename,char* path)
 
 	path[0] = '\0';
 	return 1;
+}
+
+//Finds the filename from the full path. The filename is copied into variable filename.
+//Returns 0 if the filename is is extracted successfully.
+//Returns 1 if fullpath is just a path (the filename variable is set to empty).
+int FindFilename(char* fullpath,char* filename)
+{
+	int i;
+	unsigned int len = strlen(fullpath);
+
+	if(len == 0 || fullpath[len-1] == '/')
+	{
+		filename[0] = '\0';
+		return 1;
+	}
+
+	for(i=len-2;i>-1;i--)
+	{
+		if(fullpath[i] == '/')
+			break;
+	}
+
+	i++;
+	sprintf(filename,"%s",&(fullpath[i]));
+	return 0;
 }
 

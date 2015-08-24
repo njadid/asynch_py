@@ -183,7 +183,7 @@ typedef struct UnivVars
 	unsigned short int init_flag;		//0 if reading .ini file, 1 if reading .uini file, 2 if reading .rec file
 	unsigned short int rvr_flag;		//0 if reading .rvr file, 1 if using database
 	unsigned short int prm_flag;		//0 if reading .prm file, 1 if using database
-	unsigned short int output_flag;		//0 for matlab (.dat), 1 for .csv
+	//unsigned short int output_flag;		//0 for matlab (.dat), 1 for .csv
 	//char* results_folder;
 	//char* temp_folder;
 	char* temp_filename;
@@ -210,6 +210,7 @@ typedef struct UnivVars
 	double discont_tol;			//The error tolerance to use for locating discontinuities.
 	//unsigned short int template_flag;
 
+	unsigned int min_error_tolerances;	//The minimum number of error tolerances needed at every link. Used for uniform error tolerances.
 	unsigned int num_forcings;
 
 	short unsigned int hydros_loc_flag;
