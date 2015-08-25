@@ -84,6 +84,9 @@ int Create_Rain_Data_Par(Link** sys,unsigned int N,unsigned int my_N,UnivVars* G
 		fclose(stormdata);
 	}
 
+	if(my_rank == 0)
+		printf("Read %i binary files.\n",numfiles);
+
 	//Add in terms for no rainfall if max_files > numfiles
 	for(i=0;i<my_N;i++)
 	{
@@ -256,6 +259,9 @@ int Create_Rain_Data_GZ(Link** sys,unsigned int N,unsigned int my_N,UnivVars* Gl
 			}
 		}
 	}
+
+	if(my_rank == 0)
+		printf("Read %i binary files.\n",numfiles);
 
 	//Add in terms for no rainfall if max_files > numfiles
 	for(i=0;i<my_N;i++)
@@ -528,7 +534,7 @@ int Create_Rain_Database(Link** sys,unsigned int N,unsigned int my_N,UnivVars* G
 		else
 			sprintf(query,conninfo->queries[1],GlobalVars->outletlink,first,last);
 //printf("*************************\n");
-//printf("First = %u Last = %u\n",first,last);
+//printf("First = %u Last = %u t = %e increment = %u\n",first,last,sys[my_sys[0]]->last_t,forcing->increment);
 //printf("*************************\n");
 //printf("Gmax = %e maxtime = %e\n",GlobalVars->maxtime,maxtime);
 //printf("query: %s\n",query);

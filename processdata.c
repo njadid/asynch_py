@@ -14,15 +14,13 @@
 //!!!! Is additional_temp needed? !!!!
 int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* save_list,unsigned int save_size,unsigned int my_save_size,unsigned int** id_to_loc,int* assignments,char* additional_temp,char* additional_out,ConnData* conninfo,FILE** my_tempfile)
 {
-	unsigned int blocks = 10;
 	int i,proc,k;
 	unsigned int j,l,m,loc,id,counter,total_spaces,my_max_disk,max_disk,*space_counter,size = 16;
-	char filename[GlobalVars->string_size],filenamespace[GlobalVars->string_size],outputfilename[GlobalVars->string_size];
-	double total_time;
+	char filename[GlobalVars->string_size],filenamespace[GlobalVars->string_size],outputfilename[GlobalVars->string_size],outputfilename_index[GlobalVars->string_size];
 	char data_storage[size];
 	fpos_t *positions;
 	unsigned int dim = GlobalVars->num_print;
-	FILE *inputfile = NULL,*outputfile = NULL;
+	FILE *inputfile = NULL,*outputfile = NULL,*outputfile_index = NULL;
 	long long int jump_size;
 	Link* current;
 
@@ -33,13 +31,13 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 		*my_tempfile = NULL;
 	}
 
-	for(i=0;i<16;i++)
+	for(i=0;i<size;i++)
 		data_storage[i] = 0;
 
 	//Find total size of a line in the temp files
 	unsigned int line_size = CalcTotalOutputSize(GlobalVars);
 
-	if(GlobalVars->output_flag == 0)	//.dat
+	if(GlobalVars->hydros_loc_flag == 1)	//.dat
 	{
 		//Create output .dat file
 		if(my_rank == 0)
@@ -174,7 +172,7 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 		if(inputfile)	fclose(inputfile);
 		if(outputfile)	fclose(outputfile);
 	}
-	else if(GlobalVars->output_flag == 1)	//.csv
+	else if(GlobalVars->hydros_loc_flag == 2)	//.csv
 	{
 		//Create output file
 		if(my_rank == 0)
@@ -346,6 +344,298 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 		free(positions);
 		free(space_counter);
 	}
+	else if(GlobalVars->hydros_loc_flag == 4)	//Radek's patented compact binary files
+	{
+		//Create output .rad and .irad files
+		//if(my_rank == 0)
+		{
+			if(GlobalVars->print_par_flag == 1)
+			{
+				if(!additional_out)
+					sprintf(outputfilename,"%s",GlobalVars->hydros_loc_filename);
+				else
+					sprintf(outputfilename,"%s_%s",GlobalVars->hydros_loc_filename,additional_out);
+				for(i=0;i<GlobalVars->global_params->dim;i++)
+				{
+					sprintf(filenamespace,"_%.4e",GlobalVars->global_params->ve[i]);
+					strcat(outputfilename,filenamespace);
+				}
+
+				sprintf(outputfilename_index,"%s_%i.irad",outputfilename,my_rank);
+				sprintf(filenamespace,"_%i.rad",my_rank);
+				strcat(outputfilename,filenamespace);
+			}
+			else
+			{
+				if(!additional_out)
+				{
+					sprintf(outputfilename_index,"%s_%i.irad",GlobalVars->hydros_loc_filename,my_rank);
+					sprintf(outputfilename,"%s_%i.rad",GlobalVars->hydros_loc_filename,my_rank);
+				}
+				else
+				{
+					sprintf(outputfilename_index,"%s_%s_%i.irad",GlobalVars->hydros_loc_filename,additional_out,my_rank);
+					sprintf(outputfilename,"%s_%s_%i.rad",GlobalVars->hydros_loc_filename,additional_out,my_rank);
+				}
+			}
+
+			outputfile = fopen(outputfilename,"wb");
+			if(!outputfile)
+			{
+				printf("[%i]: Error creating outputfile %s.\n",my_rank,outputfilename);
+				return 2;
+			}
+
+			outputfile_index = fopen(outputfilename_index,"wb");
+			if(!outputfile_index)
+			{
+				printf("[%i]: Error creating index outputfile %s.\n",my_rank,outputfilename_index);
+				fclose(outputfile);
+				return 2;
+			}
+
+			//Write index file
+			for(i=0;i<save_size;i++)
+			{
+				loc = find_link_by_idtoloc(save_list[i],id_to_loc,N);
+				if(assignments[loc] == my_rank)
+					fwrite(&(save_list[i]),sizeof(unsigned int),1,outputfile_index);
+			}
+			//fwrite(save_list,sizeof(unsigned int),save_size,outputfile_index);
+			fclose(outputfile_index);
+		}
+
+		if(my_save_size)
+		{
+			//Open temporary file
+			if(!additional_temp)
+				sprintf(filename,"%s",GlobalVars->temp_filename);
+			else
+				sprintf(filename,"%s_%s",GlobalVars->temp_filename,additional_temp);				//!!!! When is additional_temp useful? Get rid of it? Global params?? !!!!
+			inputfile = fopen(filename,"rb");
+			if(!inputfile)
+			{
+				printf("\n[%i]: Error opening inputfile %s.\n",my_rank,filename);
+				return 2;
+			}
+
+			//Move data to final output
+			for(i=0;i<save_size;i++)
+			{
+				loc = find_link_by_idtoloc(save_list[i],id_to_loc,N);
+				proc = assignments[loc];
+				current = sys[loc];
+
+				if(proc == my_rank)
+				{
+					//Find the link in the temp file inputfile
+					fread(&id,sizeof(unsigned int),1,inputfile);
+					fread(&total_spaces,sizeof(unsigned int),1,inputfile);
+					while(id != save_list[i] && !feof(inputfile))
+					{
+						jump_size = (long long int) total_spaces * (long long int) line_size;	//Watch overflows!
+						fseek(inputfile,jump_size,SEEK_CUR);
+						fread(&id,sizeof(unsigned int),1,inputfile);
+						fread(&total_spaces,sizeof(unsigned int),1,inputfile);
+					}
+					if(feof(inputfile))
+					{
+						printf("\n[%i]: Error: could not find id %u in temp file %s.\n",my_rank,save_list[i],filename);
+						return 2;
+					}
+
+					//Read data in the temp file
+					//if(my_rank == 0)
+					{
+						for(k=0;k<current->disk_iterations;k++)
+						{
+							for(m=0;m<dim;m++)
+							{
+								fread(data_storage,GlobalVars->output_sizes[m],1,inputfile);
+								fwrite(data_storage,GlobalVars->output_sizes[m],1,outputfile);
+							}
+						}
+					}
+
+					//Skip over the last unused space. This is done so that the file does not need to be rewound.
+					for(k=0;k<total_spaces-current->disk_iterations;k++)
+						for(j=0;j<dim;j++)
+							fread(data_storage,GlobalVars->output_sizes[j],1,inputfile);
+				}
+			}
+		}
+
+		//Cleanup
+		if(inputfile)	fclose(inputfile);
+		if(outputfile)	fclose(outputfile);
+	}
+/*
+		//Create output .dat file
+		if(my_rank == 0)
+		{
+			if(GlobalVars->print_par_flag == 1)
+			{
+				if(!additional_out)
+					sprintf(outputfilename,"%s",GlobalVars->hydros_loc_filename);
+				else
+					sprintf(outputfilename,"%s_%s",GlobalVars->hydros_loc_filename,additional_out);
+				for(i=0;i<GlobalVars->global_params->dim;i++)
+				{
+					sprintf(filenamespace,"_%.4e",GlobalVars->global_params->ve[i]);
+					strcat(outputfilename,filenamespace);
+				}
+
+				sprintf(outputfilename_index,"%s.irad",outputfilename);
+				sprintf(filenamespace,".rad");
+				strcat(outputfilename,filenamespace);
+			}
+			else
+			{
+				if(!additional_out)
+				{
+					sprintf(outputfilename_index,"%s.irad",GlobalVars->hydros_loc_filename);
+					sprintf(outputfilename,"%s.rad",GlobalVars->hydros_loc_filename);
+				}
+				else
+				{
+					sprintf(outputfilename_index,"%s_%s.irad",GlobalVars->hydros_loc_filename,additional_out);
+					sprintf(outputfilename,"%s_%s.rad",GlobalVars->hydros_loc_filename,additional_out);
+				}
+			}
+
+			outputfile = fopen(outputfilename,"wb");
+			if(!outputfile)
+			{
+				printf("[%i]: Error creating outputfile %s.\n",my_rank,outputfilename);
+				return 2;
+			}
+
+			outputfile_index = fopen(outputfilename_index,"wb");
+			if(!outputfile_index)
+			{
+				printf("[%i]: Error creating index outputfile %s.\n",my_rank,outputfilename_index);
+				fclose(outputfile);
+				return 2;
+			}
+
+			//Write index file
+			fwrite(save_list,sizeof(unsigned int),save_size,outputfile_index);
+			fclose(outputfile_index);
+		}
+
+		//Open temporary files
+		if(my_save_size)
+		{
+			if(!additional_temp)
+				sprintf(filename,"%s",GlobalVars->temp_filename);
+			else
+				sprintf(filename,"%s_%s",GlobalVars->temp_filename,additional_temp);				//!!!! When is additional_temp useful? Get rid of it? Global params?? !!!!
+			inputfile = fopen(filename,"rb");
+			if(!inputfile)
+			{
+				printf("\n[%i]: Error opening inputfile %s.\n",my_rank,filename);
+				return 2;
+			}
+		}
+
+		//Move data to final output
+		for(i=0;i<save_size;i++)
+		{
+			loc = find_link_by_idtoloc(save_list[i],id_to_loc,N);
+			proc = assignments[loc];
+			current = sys[loc];
+
+			if(proc == my_rank)
+			{
+				//Find the link in the temp file inputfile
+				counter = 0;	//index of link in my_save_list of its process
+				fread(&id,sizeof(unsigned int),1,inputfile);
+				fread(&total_spaces,sizeof(unsigned int),1,inputfile);
+				while(id != save_list[i] && !feof(inputfile))
+				{
+					jump_size = (long long int) total_spaces * (long long int) line_size;	//Watch overflows!
+					fseek(inputfile,jump_size,SEEK_CUR);
+					counter++;
+					fread(&id,sizeof(unsigned int),1,inputfile);
+					fread(&total_spaces,sizeof(unsigned int),1,inputfile);
+				}
+				if(feof(inputfile))
+				{
+					printf("\n[%i]: Error: could not find id %u in temp file %s.\n",my_rank,save_list[i],filename);
+					return 2;
+				}
+
+				//Write id and number of steps
+				//if(my_rank == 0)
+					//fprintf(outputfile,"\n%u %u\n",save_list[i],current->disk_iterations);
+				//else
+				//if(!my_rank)
+				//	MPI_Send(&(current->disk_iterations),1,MPI_UNSIGNED,0,save_list[i],MPI_COMM_WORLD);
+
+				//Read data in the temp file
+				if(my_rank == 0)
+				{
+					for(k=0;k<current->disk_iterations;k++)
+					{
+						for(m=0;m<dim;m++)
+						{
+							fread(data_storage,GlobalVars->output_sizes[m],1,inputfile);
+							fwrite(data_storage,GlobalVars->output_sizes[m],1,outputfile);
+							//WriteValue(outputfile,GlobalVars->output_specifiers[m],data_storage,GlobalVars->output_types[m]," ");
+						}
+					}
+				}
+				else
+				{
+//printf("[%i] Sending iters about %i...\n",my_rank,save_list[i]);
+					MPI_Send(&(current->disk_iterations),1,MPI_UNSIGNED,0,save_list[i],MPI_COMM_WORLD);
+//printf("[%i] Sent iters\n",my_rank);
+					for(k=0;k<current->disk_iterations;k++)
+					{
+//printf("[%i] Sending data about %i (%i/%i)...\n",my_rank,save_list[i],k,current->disk_iterations);
+						for(m=0;m<dim;m++)
+						{
+							fread(data_storage,GlobalVars->output_sizes[m],1,inputfile);
+							//MPI_Send(&data_storage,size,MPI_CHAR,0,save_list[i],MPI_COMM_WORLD);
+							MPI_Send(data_storage,size,MPI_CHAR,0,save_list[i],MPI_COMM_WORLD);		//!!!! Why do some sends/recvs have & and some don't? !!!!
+						}
+//printf("[%i] Sent data (%i/%i)\n",my_rank,k,current->disk_iterations);
+					}
+				}
+
+				//Skip over the last unused space. This is done so that the file does not need to be rewound.
+				for(k=0;k<total_spaces-current->disk_iterations;k++)
+					for(j=0;j<dim;j++)
+						fread(data_storage,GlobalVars->output_sizes[j],1,inputfile);
+			}
+			else if(my_rank == 0)
+			{
+//printf("[%i] Recving iters from %i about %i...\n",my_rank,proc,save_list[i]);
+				//Write to file
+				MPI_Recv(&(current->disk_iterations),1,MPI_UNSIGNED,proc,save_list[i],MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+				//fprintf(outputfile,"\n%u %u\n",save_list[i],current->disk_iterations);
+//printf("[%i] Recved iters\n",my_rank);
+
+				for(k=0;k<current->disk_iterations;k++)
+				{
+//printf("[%i] Recving data about %i (%i/%i)...\n",my_rank,save_list[i],k,current->disk_iterations);
+					for(m=0;m<dim;m++)
+					{
+						MPI_Recv(data_storage,size,MPI_CHAR,proc,save_list[i],MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+						fwrite(data_storage,GlobalVars->output_sizes[m],1,outputfile);
+						//WriteValue(outputfile,GlobalVars->output_specifiers[m],data_storage,GlobalVars->output_types[m]," ");
+					}
+//printf("[%i] Recved data about (%i/%i)\n",my_rank,k,current->disk_iterations);
+				}
+			}
+		}
+
+		//Cleanup
+		if(inputfile)	fclose(inputfile);
+		if(outputfile)	fclose(outputfile);
+
+	}
+*/
 
 	if(my_rank == 0)
 		printf("\nResults written to file %s.\n",outputfilename);
@@ -476,7 +766,7 @@ void PrepareDatabaseTable(UnivVars* GlobalVars,ConnData* conninfo)
 //2 means a file system related error.
 int UploadHydrosDB(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* save_list,unsigned int save_size,unsigned int my_save_size,unsigned int** id_to_loc,int* assignments,char* additional_temp,char* additional_out,ConnData* conninfo,FILE** my_tempfile)
 {
-	int i,k,nbytes,my_result,result = 0,return_val = 0;
+	int i,k,nbytes,my_result = 0,result = 0,return_val = 0;
 	unsigned int j,l,m,loc,id,total_spaces,max_disk;
 	char filename[GlobalVars->string_size],filenamespace[GlobalVars->string_size],temptablename[GlobalVars->query_size],tempfilename[GlobalVars->string_size];
 	char* submission;
@@ -507,12 +797,17 @@ int UploadHydrosDB(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* 
 	else
 		sprintf(filename,"%s_%s",GlobalVars->temp_filename,additional_temp);
 	inputfile = fopen(filename,"rb");
-	if(!inputfile)
+
+	if(my_save_size > 0)	//!!!! This wasn't here before. But I think it should be... !!!!
 	{
-		printf("\n[%i]: Error opening inputfile %s.\n",my_rank,filename);
-		my_result = 1;
+		if(!inputfile)
+		{
+			printf("\n[%i]: Error opening inputfile %s.\n",my_rank,filename);
+			my_result = 1;
+		}
+		else
+			my_result = 0;
 	}
-		else my_result = 0;
 
 	//Check if an error occurred
 	MPI_Allreduce(&my_result,&result,1,MPI_INT,MPI_LOR,MPI_COMM_WORLD);
@@ -728,7 +1023,7 @@ int UploadHydrosDB(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* 
 			printf("[%i]: Error reopening temp file %s.\n",my_rank,filename);
 	}
 
-	fclose(inputfile);
+	if(inputfile)	fclose(inputfile);
 	free(submission);
 
 	return return_val;
