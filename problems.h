@@ -96,7 +96,7 @@ void CheckConsistency_Nonzero_4States(VEC* y,VEC* params,VEC* global_params);
 void CheckConsistency_Model5(VEC* y,VEC* params,VEC* global_params);
 void CheckConsistency_Model30(VEC* y,VEC* params,VEC* global_params);
 void CheckConsistency_Nonzero_AllStates_q(VEC* y,VEC* params,VEC* global_params);
-
+void CheckConsistency_Nonzero_AllStates_qs(VEC* y,VEC* params,VEC* global_params);
 
 #endif
 
