@@ -280,7 +280,7 @@ class asynchsolver:
 		return self.lib.Asynch_Get_Total_Simulation_Time(self.asynch_obj)
 
 	def Set_Total_Simulation_Time(self,new_time):
-		self.lib.Asynch_Set_Total_Simulation_Time(self.asynch_obj,new_time);
+		self.lib.Asynch_Set_Total_Simulation_Time(self.asynch_obj,c_double(new_time));
 
 	def Get_Last_Rainfall_Timestamp(self,forcing_idx):
 		return self.lib.Asynch_Get_Last_Rainfall_Timestamp(self.asynch_obj,forcing_idx)
@@ -337,7 +337,8 @@ class asynchsolver:
 		return self.lib.Asynch_Reset_Temp_Files(self.asynch_obj,c_double(set_time))
 
 	def Get_Peakflow_Output_Name(self,peakflowname):
-		return self.lib.Asynch_Get_Peakflow_Output_Name(self.asynch_obj,peakflowname)
+		if peakflowname == None:	peakflowname = 1024*'\0'
+		return [peakflowname, self.lib.Asynch_Get_Peakflow_Output_Name(self.asynch_obj,peakflowname)]
 
 	def Set_Peakflow_Output_Name(self,peakflowname):
 		return self.lib.Asynch_Set_Peakflow_Output_Name(self.asynch_obj,peakflowname)

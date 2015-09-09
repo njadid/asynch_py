@@ -1069,7 +1069,7 @@ void InitRoutines(Link* link,unsigned int type,unsigned int exp_imp,unsigned sho
 			link->alg = &dam_TopLayerNonlinearExpSoilvel_ConstEta;
 		}
 		link->state_check = &dam_check_qvs;
-		link->CheckConsistency = &CheckConsistency_Nonzero_AllStates_q;
+		link->CheckConsistency = &CheckConsistency_Nonzero_AllStates_qs;
 	}
 	else if(type == 300)
 	{

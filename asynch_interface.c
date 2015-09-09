@@ -658,16 +658,24 @@ int Asynch_Create_Peakflows_Output(asynchsolver* asynch)
 	return -1;
 }
 
-//Return 0 means ok, 1 means no peakflows to output
+//Return 0 means ok, 1 means no peakflows to output, 2 means the filename is a bad format
 int Asynch_Set_Peakflow_Output_Name(asynchsolver* asynch,char* peakflowname)
 {
+	int l;
+
 	if(asynch->GlobalVars->peaks_loc_filename)
 	{
-		sprintf(asynch->GlobalVars->peaks_loc_filename,peakflowname);
-		return 0;
+		l = strlen(peakflowname);
+		if(l > 3 && peakflowname[l-4] == '.' && peakflowname[l-3] == 'p' && peakflowname[l-2] == 'e' && peakflowname[l-1] == 'a')
+		{
+			peakflowname[l-4] = '\0';
+			sprintf(asynch->GlobalVars->peaks_loc_filename,peakflowname);
+			peakflowname[l-4] = '.';
+			return 0;
+		}
+		else	return 2;
 	}
-	else
-		return 1;
+	else	return 1;
 }
 
 //Return 0 means ok, 1 means no peakflows to output

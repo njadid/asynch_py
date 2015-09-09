@@ -325,7 +325,8 @@ int Create_Rain_Data_GZ(Link** sys,unsigned int N,unsigned int my_N,UnivVars* Gl
 //unsigned int max_files: The maximum number of files to be read.
 int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* GlobalVars,unsigned int* my_sys,int* assignments,char strfilename[],unsigned int first,unsigned int last,double t_0,double increment,Forcing* forcing,unsigned int** id_to_loc,unsigned int max_files,unsigned int forcing_idx)
 {
-	unsigned int i,j,curr_idx,k,holder,endianness,cell,intensity;
+	unsigned int i,j,curr_idx,k,holder,endianness,cell;
+	short unsigned int intensity;
 	Link* current;
 	char filename[128];
 	float forcing_buffer;
@@ -373,29 +374,48 @@ int Create_Rain_Data_Grid(Link** sys,unsigned int N,unsigned int my_N,UnivVars* 
 				}
 
 				//Read file
-				while(!feof(stormdata))
+				if(endianness)
 				{
-					//Read intensity
-					result = fread(&cell,sizeof(unsigned int),1,stormdata);
-					if(!result)	break;
-					fread(&intensity,sizeof(unsigned int),1,stormdata);
-					if(endianness)
+					while(!feof(stormdata))
 					{
+						//Read intensity
+						result = fread(&cell,sizeof(unsigned int),1,stormdata);
+						if(!result)	break;
+						fread(&intensity,sizeof(short unsigned int),1,stormdata);
+
+						//Swap byte order
 						holder = (((cell & 0x0000ffff)<<16) | ((cell & 0xffff0000)>>16));
 						cell = (((holder & 0x00ff00ff)<<8) | ((holder & 0xff00ff00)>>8));
+						intensity = (((intensity & 0x00ff00ff)<<8) | ((intensity & 0xff00ff00)>>8));
 
-						holder = (((intensity & 0x0000ffff)<<16) | ((intensity & 0xffff0000)>>16));
-						intensity = (((holder & 0x00ff00ff)<<8) | ((holder & 0xff00ff00)>>8));
+						if(cell < forcing->num_cells)
+						{
+							if(forcing->received[cell])	printf("Warning: Received multiple intensities for cell %u in file %s.\n",cell,filename);
+							forcing->received[cell] = 1;
+							forcing->intensities[cell] = (short int) intensity * forcing->factor;
+						}
+						else
+							printf("Warning: bad grid cell id in file %s.\n",filename);
 					}
-
-					if(cell < forcing->num_cells)
+				}
+				else
+				{
+					while(!feof(stormdata))
 					{
-						if(forcing->received[cell])	printf("Warning: Received multiple intensities for cell %u in file %s.\n",cell,filename);
-						forcing->received[cell] = 1;
-						forcing->intensities[cell] = (int) intensity * forcing->factor;
+						//Read intensity
+						result = fread(&cell,sizeof(unsigned int),1,stormdata);
+						if(!result)	break;
+						fread(&intensity,sizeof(short unsigned int),1,stormdata);
+
+						if(cell < forcing->num_cells)
+						{
+							if(forcing->received[cell])	printf("Warning: Received multiple intensities for cell %u in file %s.\n",cell,filename);
+							forcing->received[cell] = 1;
+							forcing->intensities[cell] = (short int) intensity * forcing->factor;
+						}
+						else
+							printf("Warning: bad grid cell id in file %s.\n",filename);
 					}
-					else
-						printf("Warning: bad grid cell id in file %s.\n",filename);
 				}
 
 				fclose(stormdata);

@@ -2943,6 +2943,14 @@ void CheckConsistency_Nonzero_AllStates_q(VEC* y,VEC* params,VEC* global_params)
 		if(y->ve[i] < 0.0)	y->ve[i] = 0.0;
 }
 
+void CheckConsistency_Nonzero_AllStates_qs(VEC* y,VEC* params,VEC* global_params)
+{
+	unsigned int i;
 
+	if(y->ve[0] < 1e-14)	y->ve[0] = 1e-14;
+	if(y->ve[1] < 1e-14)	y->ve[1] = 1e-14;
+	for(i=2;i<y->dim;i++)
+		if(y->ve[i] < 0.0)	y->ve[i] = 0.0;
+}
 
 
