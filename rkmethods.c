@@ -964,8 +964,10 @@ int ExplicitRKIndex1Solver(Link* link_i,UnivVars* GlobalVars,int* assignments,sh
 	v_copy_u(temp_k[0],sum,link_i->dim);
 	sv_mlt_u(h * d->ve[0],sum,1,link_i->dim);
 	for(i=1;i<s;i++)	daxpy_u(h*d->ve[i],temp_k[i],sum,1,link_i->dim);
-	for(i=0;i<dim;i++)
+
+	for(i=1;i<dim;i++)
 		temp->ve[i] = max(fabs(new_y->ve[i]),fabs(y_0->ve[i])) * error->reltol_dense->ve[i] + error->abstol_dense->ve[i];
+
 	err_d = norm_inf_u(sum,temp,1,link_i->dim);
 	double value_d = pow(1.0/err_d,1.0/meth->d_order);
 
