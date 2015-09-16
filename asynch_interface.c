@@ -822,7 +822,7 @@ unsigned int Asynch_Get_Local_LinkID(asynchsolver* asynch,unsigned int location)
 //Copies data dump filename to filename
 //Returns 0 if filename was copied. 1 if an error occured.
 //!!!! Make sure filename has enough space !!!!
-int Asynch_Get_Snapshot_Filename(asynchsolver* asynch,char* filename)
+int Asynch_Get_Snapshot_Output_Name(asynchsolver* asynch,char* filename)
 {
 	if(asynch->GlobalVars->dump_loc_filename == NULL)	return 1;
 	strcpy(filename,asynch->GlobalVars->dump_loc_filename);
@@ -831,9 +831,11 @@ int Asynch_Get_Snapshot_Filename(asynchsolver* asynch,char* filename)
 
 //Copies filename to data dump filename
 //Returns 0 if filename was copied. 1 if an error occured.
-int Asynch_Set_Snapshot_Filename(asynchsolver* asynch,char* filename)
+int Asynch_Set_Snapshot_Output_Name(asynchsolver* asynch,char* filename)
 {
 	if(strlen(filename) > asynch->GlobalVars->string_size)	return 1;
+	if(!asynch->GlobalVars->dump_loc_filename)
+		asynch->GlobalVars->dump_loc_filename = (char*) malloc(asynch->GlobalVars->string_size * sizeof(char));
 	strcpy(asynch->GlobalVars->dump_loc_filename,filename);
 	return 0;
 }

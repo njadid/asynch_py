@@ -134,8 +134,8 @@ int Asynch_Set_Peakflow_Output_Name(asynchsolver* asynch,char* peakflowname);
 unsigned int Asynch_Get_Local_LinkID(asynchsolver* asynch,unsigned int location);
 int Asynch_Set_Init_Timestamp(asynchsolver* asynch,unsigned int epoch_timestamp);
 unsigned int Asynch_Get_Init_Timestamp(asynchsolver* asynch);
-int Asynch_Get_Snapshot_Filename(asynchsolver* asynch,char* filename);
-int Asynch_Set_Snapshot_Filename(asynchsolver* asynch,char* filename);
+int Asynch_Get_Snapshot_Output_Name(asynchsolver* asynch,char* filename);
+int Asynch_Set_Snapshot_Output_Name(asynchsolver* asynch,char* filename);
 int Asynch_Get_Reservoir_Forcing(asynchsolver* asynch);
 
 //Routines for output
