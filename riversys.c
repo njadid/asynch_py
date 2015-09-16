@@ -1568,7 +1568,6 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 					return 1;
 				}
 
-
 				char* tempspace1 = (char*) malloc(1024*sizeof(char));
 				char* tempspace2 = (char*) malloc(1024*sizeof(char));
 				forcings[l]->lookup_filename = (char*) malloc(1024*sizeof(char));
@@ -1616,17 +1615,25 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 					if(!fscanf(forcingfile,"%u %u",&id,&j))	break;
 					forcings[l]->grid_to_linkid[j][counters[j]++] = id;
 				}
-/*
-for(i=0;i<forcings[l]->num_cells;i++)
-{
-for(j=0;j<forcings[l]->num_links_in_grid[i];j++)
-	printf("%u ",forcings[l]->grid_to_linkid[i][j]);
-printf("\n");
-}
-*/
+
 				fclose(forcingfile);
 				free(counters);
 				free(tempspace1);
+
+				//Check if a grid cell file actually exists
+				for(i=forcings[l]->first_file;i<forcings[l]->last_file;i++)
+				{
+					sprintf(tempspace2,"%s%u",forcings[l]->fileident,i);
+					forcingfile = fopen(tempspace2,"rb");
+					if(forcingfile)
+					{
+						fclose(forcingfile);
+						break;
+					}
+				}
+				if(i == forcings[l]->last_file)
+					printf("Warning: No forcing files found at %s for forcing %u. Be sure this is the correct directory.\n",forcings[l]->fileident,l);
+
 				free(tempspace2);
 			}
 
@@ -2972,7 +2979,7 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 		valsread = sscanf(linebuffer,"%*u %s %s",db_filename,GlobalVars->dump_table);
 		if(ReadLineError(valsread,2,".dbc for snapshots"))	return NULL;
 		if(!CheckFilenameExtension(db_filename,".dbc"))	return NULL;
-		GlobalVars->dump_loc_filename = NULL;
+		//GlobalVars->dump_loc_filename = NULL;
 		db_connections[ASYNCH_DB_LOC_SNAPSHOT_OUTPUT] = ReadDBC(db_filename,string_size);
 	}
 

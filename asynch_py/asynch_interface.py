@@ -338,16 +338,27 @@ class asynchsolver:
 
 	def Get_Peakflow_Output_Name(self):
 		peakflowname = 1024*'\0'
-		return [peakflowname, self.lib.Asynch_Get_Peakflow_Output_Name(self.asynch_obj,peakflowname)]
+		ret_value = self.lib.Asynch_Get_Peakflow_Output_Name(self.asynch_obj,c_char_p(peakflowname))
+		i = 0
+		for i in range(0,1024):
+			if peakflowname[i] == '\0':	break
+		true_peakflowname = peakflowname[0:i]
+		return [true_peakflowname, ret_value]
 
 	def Set_Peakflow_Output_Name(self,peakflowname):
-		return self.lib.Asynch_Set_Peakflow_Output_Name(self.asynch_obj,peakflowname)
+		return self.lib.Asynch_Set_Peakflow_Output_Name(self.asynch_obj,c_char_p(peakflowname))
 
-	def Get_Snapshot_Filename(self,filename):
-		return self.lib.Asynch_Get_Snapshot_Filename(self.asynch_obj,filename)
+	def Get_Snapshot_Output_Name(self):
+		filename = 1024*'\0'
+		ret_value = self.lib.Asynch_Get_Snapshot_Output_Name(self.asynch_obj,filename)
+		i = 0
+		for i in range(0,1024):
+			if filename[i] == '\0':	break
+		true_filename = filename[0:i]
+		return [true_filename, ret_value]
 
-	def Set_Snapshot_Filename(self,filename):
-		return self.lib.Asynch_Set_Snapshot_Filename(asynch,filename)
+	def Set_Snapshot_Output_Name(self,filename):
+		return self.lib.Asynch_Get_Snapshot_Output_Name(asynch,filename)
 
 	#Routines for output
 	def Set_Output(self,name,data_type,func,used_states_list):
