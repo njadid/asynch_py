@@ -17,7 +17,7 @@ io* BuildIO(UnivVars* GlobalVars)
 	else					output_data->PreparePeakflowOutput = NULL;
 
 	//Create Final Time Series Output
-	if(GlobalVars->hydros_loc_flag == 1 || GlobalVars->hydros_loc_flag == 2)
+	if(GlobalVars->hydros_loc_flag == 1 || GlobalVars->hydros_loc_flag == 2 || GlobalVars->hydros_loc_flag == 4)
 		output_data->CreateOutput = &Process_Data;
 	else if(GlobalVars->hydros_loc_flag == 3)
 		output_data->CreateOutput = &UploadHydrosDB;

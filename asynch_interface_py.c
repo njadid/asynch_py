@@ -24,7 +24,7 @@ void Free_PythonInterface(asynchsolver* asynch)
 asynchsolver* Asynch_Init_py(int numprocs,int* ranks)
 {
 	//!!!! Assumes MPI_COMM_WORLD. This should create a new communicator and pass that along. !!!!
-	asynchsolver* asynch = Asynch_Init(MPI_COMM_WORLD);
+	asynchsolver* asynch = Asynch_Init(MPI_COMM_WORLD,NULL,NULL);
 
 	asynch->ExternalInterface = malloc(sizeof(PythonInterface));
 

@@ -169,6 +169,7 @@ class asynchsolver:
 		self.lib.Asynch_Get_Init_Timestamp.restype = c_uint
 		self.lib.Asynch_Copy_Local_OutputUser_Data.restype = None
 		self.lib.Asynch_Set_Size_Local_OutputUser_Data.restype = None
+		self.lib.Asynch_Get_Size_Global_Parameters.restype = c_uint
 
 		#Functions created specifically for the Python interface
 		self.lib.C_inc_ref.restype = None
@@ -314,6 +315,23 @@ class asynchsolver:
 
 	def Get_Init_Timestamp(self):
 		return self.lib.Asynch_Get_Init_Timestamp(self.asynch_obj)
+
+	def Get_Size_Global_Parameters(self):
+		return self.lib.Asynch_Get_Size_Global_Parameters(self.asynch_obj)
+
+	def Get_Global_Parameters(self):
+		n = self.lib.Asynch_Get_Size_Global_Parameters(self.asynch_obj)
+		c_array_type = (c_double*(n))
+		arr = c_array_type()
+		ret_val = self.lib.Asynch_Get_Global_Parameters(self.asynch_obj,arr)
+		return [list(arr), ret_val]
+
+	def Set_Global_Parameters(self,gparams):
+		c_array_type = (c_double*len(gparams))
+		arr = c_array_type()
+		for i in range(len(gparams)):
+			arr[i] = gparams[i]
+		return self.lib.Asynch_Set_Global_Parameters(self.asynch_obj,arr,len(gparams))
 
 	#Probably not the most efficient. This currently assumes every proc has space for every link.
 	def Set_System_State(self,t_0,values):

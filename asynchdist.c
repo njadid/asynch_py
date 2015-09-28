@@ -39,7 +39,7 @@ int main(int argc,char* argv[])
 	start = time(NULL);
 
 	//Init asynch object and the river network
-	asynch = Asynch_Init(MPI_COMM_WORLD);
+	asynch = Asynch_Init(MPI_COMM_WORLD,&argc,&argv);
 	if(my_rank == 0)	printf("Reading global file...\n");
 	Asynch_Parse_GBL(asynch,argv[1]);
 	if(my_rank == 0)	printf("Loading network...\n");
@@ -125,6 +125,7 @@ int main(int argc,char* argv[])
 	//Clean up
 	Asynch_Delete_Temporary_Files(asynch);
 	Asynch_Free(asynch);
+	MPI_Finalize();
 	return 0;
 }
 

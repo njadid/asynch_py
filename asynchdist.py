@@ -33,6 +33,7 @@ print "Finalizing network..."
 asynch.Finalize_Network()
 print "Calculating initial step sizes..."
 asynch.Calculate_Step_Sizes()
+
 N = asynch.Get_Number_Links()
 print 'I see',N,'links.'
 
@@ -53,8 +54,4 @@ asynch.Take_System_Snapshot(None)
 #Create output files
 asynch.Create_Output(None)
 asynch.Create_Peakflows_Output()
-
-#Cleanup
-#asynch.Delete_Temporary_Files()
-
 
