@@ -346,6 +346,8 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 	}
 	else if(GlobalVars->hydros_loc_flag == 4)	//Radek's patented compact binary files
 	{
+		size_t io_val;
+
 		//Create output .rad and .irad files
 		//if(my_rank == 0)
 		{
@@ -399,7 +401,15 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 			{
 				loc = find_link_by_idtoloc(save_list[i],id_to_loc,N);
 				if(assignments[loc] == my_rank)
-					fwrite(&(save_list[i]),sizeof(unsigned int),1,outputfile_index);
+				{
+					io_val = fwrite(&(save_list[i]),sizeof(unsigned int),1,outputfile_index);
+					while(io_val != 1)
+					{
+						printf("[%i]: Error writing id %u to .irad file. Trying again...\n",my_rank,save_list[i]);
+						sleep(2);
+						io_val = fwrite(&(save_list[i]),sizeof(unsigned int),1,outputfile_index);
+					}
+				}
 			}
 			//fwrite(save_list,sizeof(unsigned int),save_size,outputfile_index);
 			fclose(outputfile_index);
@@ -452,7 +462,13 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 							for(m=0;m<dim;m++)
 							{
 								fread(data_storage,GlobalVars->output_sizes[m],1,inputfile);
-								fwrite(data_storage,GlobalVars->output_sizes[m],1,outputfile);
+								io_val = fwrite(data_storage,GlobalVars->output_sizes[m],1,outputfile);
+								while(io_val != 1)
+								{
+									printf("[%i]: Error writing data for id %u to .rad file. Trying again...\n",my_rank,save_list[i]);
+									sleep(2);
+									io_val = fwrite(data_storage,GlobalVars->output_sizes[m],1,outputfile);
+								}
 							}
 						}
 					}

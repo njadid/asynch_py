@@ -36,6 +36,7 @@ typedef struct
 	short int setup_stepsizes;
 	short int setup_savelists;
 	short int setup_finalized;
+	short int mpi_initialized;	//1 if MPI was initialized by asynch, 0 if not
 
 	//Solver Stuff
 	ErrorData* GlobalErrors;	//Object for global error data
@@ -73,7 +74,7 @@ typedef struct
 } asynchsolver;
 
 //Constructor / Destructor related routings
-asynchsolver* Asynch_Init(MPI_Comm comm);
+asynchsolver* Asynch_Init(MPI_Comm comm,int* argc,char** argv[]);
 int Asynch_Custom_Model(asynchsolver* asynch,void (*SetParamSizes)(UnivVars*,void*),void (*Convert)(VEC*,unsigned int,void*),void (*Routines)(Link*,unsigned int,unsigned int,unsigned short int,void*),
 	void (*Precalculations)(Link*,VEC*,VEC*,unsigned int,unsigned int,unsigned short int,unsigned int,void*),int (*InitializeEqs)(VEC*,VEC*,QVSData*,unsigned short int,VEC*,unsigned int,unsigned int,unsigned int,void*,void*));
 int Asynch_Custom_Partitioning(asynchsolver* asynch,int* (*Partition_Routine)(Link**,unsigned int,Link**,unsigned int,unsigned int**,unsigned int*,TransData*,short int*));
@@ -137,6 +138,9 @@ unsigned int Asynch_Get_Init_Timestamp(asynchsolver* asynch);
 int Asynch_Get_Snapshot_Output_Name(asynchsolver* asynch,char* filename);
 int Asynch_Set_Snapshot_Output_Name(asynchsolver* asynch,char* filename);
 int Asynch_Get_Reservoir_Forcing(asynchsolver* asynch);
+unsigned int Asynch_Get_Size_Global_Parameters(asynchsolver* asynch);
+int Asynch_Get_Global_Parameters(asynchsolver* asynch,double* gparams);
+int Asynch_Set_Global_Parameters(asynchsolver* asynch,double* gparams,unsigned int n);
 
 //Routines for output
 int Asynch_Set_Output(asynchsolver* asynch,char* name,short int data_type,void (*func)(double,VEC*,VEC*,VEC*,int,void*),int* used_states,int num_states);

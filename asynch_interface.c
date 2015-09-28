@@ -2,18 +2,19 @@
 
 
 //Initializes the asynch solver object. Also initializes MPI, if it's not set.
-asynchsolver* Asynch_Init(MPI_Comm comm)
+asynchsolver* Asynch_Init(MPI_Comm comm,int* argc,char** argv[])
 {
 	unsigned int i;
+	int init_flag;
 
 	asynchsolver* asynch = (asynchsolver*) malloc(sizeof(asynchsolver));
 	asynch->comm = comm;
-	int init_flag;
 	if(comm != MPI_COMM_WORLD)	printf("Warning: asynchsolver object my not work fully with in a comm other than MPI_COMM_WORLD.\n");
 
 	//Initialize MPI stuff
 	MPI_Initialized(&init_flag);
-	if(!init_flag)	MPI_Init(NULL,NULL);
+	asynch->mpi_initialized = !init_flag;
+	if(asynch->mpi_initialized)	MPI_Init(argc,argv);	//Initialize MPI
 	MPI_Comm_rank(comm,&(asynch->my_rank));
 	MPI_Comm_size(comm,&(asynch->np));
 
@@ -429,11 +430,14 @@ void Asynch_Free(asynchsolver* asynch)
 	Destroy_UnivVars(asynch->GlobalVars);
 	if(asynch->custom_model)	free(asynch->custom_model);
 
-	free(asynch);
-
 	//Finalize MPI
-	MPI_Finalized(&finalized_flag);
-	if(!finalized_flag)	MPI_Finalize();
+	if(asynch->mpi_initialized)
+	{
+		MPI_Finalized(&finalized_flag);
+		if(!finalized_flag)	MPI_Finalize();
+	}
+
+	free(asynch);
 }
 
 
@@ -1149,5 +1153,38 @@ int Asynch_Get_Reservoir_Forcing(asynchsolver* asynch)
 	if(asynch->GlobalVars->res_flag == 0)	return -1;
 	else	return asynch->GlobalVars->res_forcing_idx;
 }
+
+//Returns the number of global parameters in the system.
+unsigned int Asynch_Get_Size_Global_Parameters(asynchsolver* asynch)
+{
+	return asynch->GlobalVars->global_params->dim;
+}
+
+//Returns in gparams the global parameters of the system.
+//This assumes gparams has enough memory allocated.
+//Returns 1 if an error occurred. 0 otherwise.
+int Asynch_Get_Global_Parameters(asynchsolver* asynch,double* gparams)
+{
+	if(!asynch || !asynch->GlobalVars)	return 1;
+	unsigned int i,n = asynch->GlobalVars->global_params->dim;
+	for(i=0;i<n;i++)
+		gparams[i] = asynch->GlobalVars->global_params->ve[i];
+	return 0;
+}
+
+//Sets the global parameters. n is the number of new parameters.
+//Internally, memory is allocated/deallocated automatically.
+//Returns 1 if an error occurred. 0 otherwise.
+int Asynch_Set_Global_Parameters(asynchsolver* asynch,double* gparams,unsigned int n)
+{
+	unsigned int i;
+	if(!asynch || !asynch->GlobalVars)	return 1;
+	asynch->GlobalVars->global_params->dim = n;
+	asynch->GlobalVars->global_params->ve = (double*) realloc(asynch->GlobalVars->global_params->ve,n*sizeof(double));
+	for(i=0;i<n;i++)
+		asynch->GlobalVars->global_params->ve[i] = gparams[i];
+	return 0;
+}
+
 
 

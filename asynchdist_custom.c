@@ -64,7 +64,7 @@ int main(int argc,char* argv[])
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	//Init asynch object and the river network
-	asynch = Asynch_Init(MPI_COMM_WORLD);
+	asynch = Asynch_Init(MPI_COMM_WORLD,&argc,&argv);
 
 	//Model 191
 	//Asynch_Custom_Model(asynch,&SetParamSizes_MyModel,&ConvertParams_MyModel,&InitRoutines_MyModel,&Precalculations_MyModel,&ReadInitData_MyModel);

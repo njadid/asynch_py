@@ -49,6 +49,7 @@ int AttachParameters(char* filename,unsigned int max_size,VEC* v,unsigned int st
 int CheckFilenameExtension(char* filename,char* extension);
 int CheckWinFormat(FILE* file);
 int FindPath(char* filename,char* path);
+int FindFilename(char* fullpath,char* filename);
 
 #endif
 
