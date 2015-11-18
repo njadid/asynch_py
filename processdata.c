@@ -1374,7 +1374,15 @@ int DataDump2(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,ch
 		//else		sprintf(filename,"%s.rec",GlobalVars->dump_loc_filename);
 		//output = fopen(filename,"w");
 		output = fopen(GlobalVars->dump_loc_filename,"w");
-		if(output == NULL)	printf("[%i]: Error opening file %s.\n",my_rank,GlobalVars->dump_loc_filename);
+		if(output == NULL)
+		{
+			printf("[%i]: Error opening file %s.\n",my_rank,GlobalVars->dump_loc_filename);
+			i = 1;
+		}
+		else	i = 0;
+		MPI_Bcast(&i,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		if(i)	return 1;
+
 		fprintf(output,"%hu\n%u\n0.0\n\n",GlobalVars->type,N);
 
 		for(i=0;i<N;i++)
@@ -1393,6 +1401,10 @@ int DataDump2(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,ch
 	}
 	else			//Sending data to proc 0
 	{
+		//Check for error
+		MPI_Bcast(&i,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		if(i)	return 1;
+
 		for(i=0;i<N;i++)
 		{
 			if(assignments[i] == my_rank)

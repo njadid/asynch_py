@@ -1674,21 +1674,31 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 				forcings[l]->grid_to_linkid[i] = (unsigned int*) realloc(forcings[l]->grid_to_linkid[i],forcings[l]->num_links_in_grid[i]*sizeof(unsigned int));
 			}
 		}
-		else if(forcings[l]->flag == 3)	//Database
+		else if(forcings[l]->flag == 3 || forcings[l]->flag == 9)	//Database (could be irregular timesteps)
 		{
 			//Set routines
-			forcings[l]->GetPasses = &PassesDatabase;
-			forcings[l]->GetNextForcing = &NextForcingDatabase;
+			if(forcings[l]->flag == 3)
+			{
+				forcings[l]->GetPasses = &PassesDatabase;
+				forcings[l]->GetNextForcing = &NextForcingDatabase;
+			}
+			else
+			{
+				forcings[l]->GetPasses = &PassesDatabase_Irregular;
+				forcings[l]->GetNextForcing = &NextForcingDatabase_Irregular;
+			}
 
 			//Get good_timestamp
 			unsigned int good_time,is_null;
+			char* query = db_connections[ASYNCH_DB_LOC_FORCING_START+l]->query;
 			if(my_rank == 0)
 			{
 				ConnectPGDB(db_connections[ASYNCH_DB_LOC_FORCING_START+l]);
-				res = PQexec(db_connections[ASYNCH_DB_LOC_FORCING_START+l]->conn,db_connections[ASYNCH_DB_LOC_FORCING_START+l]->queries[2]);
+				sprintf(query,db_connections[ASYNCH_DB_LOC_FORCING_START+l]->queries[2],forcings[l]->first_file);
+				res = PQexec(db_connections[ASYNCH_DB_LOC_FORCING_START+l]->conn,query);
 				if(CheckResError(res,"querying a valid forcing time"))	return 1;
 				is_null = PQgetisnull(res,0,0);
-				if(is_null)	printf("Warning: forcing %u has no data...\n",i);
+				if(is_null)	printf("Warning: forcing %u may have no data...\n",i);
 				else		good_time = atoi(PQgetvalue(res,0,0));
 				PQclear(res);
 				DisconnectPGDB(db_connections[ASYNCH_DB_LOC_FORCING_START+l]);
@@ -1702,6 +1712,9 @@ int Load_Forcings(Link** system,unsigned int N,unsigned int* my_sys,unsigned int
 				MPI_Bcast(&good_time,1,MPI_INT,0,MPI_COMM_WORLD);
 				forcings[l]->good_timestamp = good_time;
 			}
+
+			if(forcings[l]->flag == 9)	//Download some extra data if the first_file is not on a timestamp with a forcing
+				forcings[l]->next_timestamp = forcings[l]->good_timestamp;	//!!!! Could probably do something similar for flag 3 !!!!
 
 			//Allocate space
 			for(i=0;i<N;i++)
@@ -2763,7 +2776,7 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 		else if(forcings[i]->flag == 3)	//Database
 		{
 			valsread = sscanf(linebuffer,"%*i %s",db_filename);
-			if(ReadLineError(valsread,1,".dbc for rainfall"))	return NULL;
+			if(ReadLineError(valsread,1,".dbc for forcing"))	return NULL;
 			if(!CheckFilenameExtension(db_filename,".dbc"))	return NULL;
 			db_connections[ASYNCH_DB_LOC_FORCING_START+i] = ReadDBC(db_filename,string_size);
 
@@ -2771,6 +2784,22 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 			valsread = sscanf(linebuffer,"%u %lf %u %u",&(forcings[i]->increment),&(forcings[i]->file_time),&(forcings[i]->first_file),&(forcings[i]->last_file));
 			if(ReadLineError(valsread,4,"time increment, file time, first file, and last file"))	return NULL;
 			forcings[i]->raindb_start_time = forcings[i]->first_file;
+		}
+		else if(forcings[i]->flag == 9)	//Database with irregular timesteps
+		{
+			valsread = sscanf(linebuffer,"%*i %s",db_filename);
+			if(ReadLineError(valsread,1,".dbc for forcing"))	return NULL;
+			if(!CheckFilenameExtension(db_filename,".dbc"))	return NULL;
+			db_connections[ASYNCH_DB_LOC_FORCING_START+i] = ReadDBC(db_filename,string_size);
+
+			ReadLineFromTextFile(globalfile,linebuffer,buff_size,string_size);
+			valsread = sscanf(linebuffer,"%u %u %u",&(forcings[i]->increment),&(forcings[i]->first_file),&(forcings[i]->last_file));
+			if(ReadLineError(valsread,3,"time increment, file time, first file, and last file"))	return NULL;
+			forcings[i]->raindb_start_time = forcings[i]->first_file;
+
+			forcings[i]->lastused_first_file = forcings[i]->lastused_last_file = 0;
+			forcings[i]->next_timestamp = forcings[i]->first_file;
+			forcings[i]->number_timesteps = 0;
 		}
 		else if(forcings[i]->flag == 7)	//Recurring
 		{

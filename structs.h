@@ -350,7 +350,7 @@ typedef struct
 
 typedef struct Forcing
 {
-	unsigned int (*GetPasses)(struct Forcing*,double maxtime);
+	unsigned int (*GetPasses)(struct Forcing*,double maxtime,ConnData* conninfo);
 	double (*GetNextForcing)(Link**,unsigned int,unsigned int*,unsigned int,int*,UnivVars*,struct Forcing*,ConnData**,unsigned int**,unsigned int);
 	unsigned short int flag;
 	char* filename;
@@ -358,7 +358,7 @@ typedef struct Forcing
 	double file_time;
 	unsigned int first_file;
 	unsigned int last_file;
-	unsigned int raindb_start_time;
+	unsigned int raindb_start_time;	//This is the unix time corresponding to the local intergrator time 0
 	//char* hydro_table;
 	//char* peak_table;
 	//char* dump_location;
@@ -379,6 +379,12 @@ typedef struct Forcing
 	char* received;
 	float* intensities;
 	unsigned int num_cells;
+
+	//For irregular timesteps
+	unsigned int next_timestamp;	//Holds the next timestep to use for pulling data.
+	unsigned int lastused_first_file;	//The value of first_file when the GetPasses routine was last called. 0 if never set.
+	unsigned int lastused_last_file;	//The value of last_file when the GetPasses routine was last called. 0 if never set.
+	unsigned int number_timesteps;		//The number of times which feature a forcing at some link.
 } Forcing;
 
 //Structure to hold information about how data is to be transfered between processes.

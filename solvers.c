@@ -21,7 +21,7 @@ void AsynchSolver(Link** sys,unsigned int N,unsigned int* my_sys,unsigned int my
 	{
 		if(forcings[i]->active)
 		{
-			forcings[i]->passes = forcings[i]->GetPasses(forcings[i],GlobalVars->maxtime);
+			forcings[i]->passes = forcings[i]->GetPasses(forcings[i],GlobalVars->maxtime,db_connections[ASYNCH_DB_LOC_FORCING_START+i]);
 			passes = max(passes,forcings[i]->passes);
 //printf("Before: %u, %u, %u\n",i,forcings[i]->passes,passes);
 		}
@@ -98,6 +98,7 @@ void AsynchSolver(Link** sys,unsigned int N,unsigned int* my_sys,unsigned int my
 {
 	printf("[%i]: ID = %u time = %e step = %e\n",my_rank,current->ID,current->last_t,current->h);
 	Print_Vector(current->list->tail->y_approx);
+//	sleep(1);
 }
 */
 			if(around >= two_my_N)
