@@ -738,6 +738,318 @@ printf("!!!! i = %i k = %i received = %i unix_time = %i raindb_start = %i\n",i,k
 	return 0;
 }
 
+
+//This reads in rainfall data at each link from an SQL database. The timestamps are assumed to be irregularly spaced.
+//Link** sys: An array of links.
+//int N: The number of links in sys.
+//int my_N: The number of links assigned to this process.
+//UnivVars* GlobalVars: Contains all the information that is shared by every link in the system.
+//int* my_sys: Array of links assigned to this process (value is location in sys array).
+//int* assignments (set by this method): Will be an array with N entries. assignments[i] will the process link sys[i] is assigned to.
+//char strfilename[]: String of the filename for the rain file to read (NOT .str files). Filenames should be indexed.
+//unsigned int first: The index of the file to read first.
+//unsigned int last: The index of the file to read last.
+//double t_0: The time at which the first file starts.
+//double increment: The amount of time between consecutively indexed files.
+//int** id_to_loc (set by this method): Will be an array with N rows and 2 columns, sorted by first col. First col is a link id and second is
+//				the location of the id in sys.
+//unsigned int max_files: The maximum number of files to be read.
+int Create_Rain_Database_Irregular(Link** sys,unsigned int N,unsigned int my_N,UnivVars* GlobalVars,unsigned int* my_sys,int* assignments,ConnData *conninfo,unsigned int first,unsigned int last,Forcing* forcing,unsigned int** id_to_loc,double maxtime,unsigned int forcing_idx)
+{
+	unsigned int i,j,k,curr_idx,tuple_count,current_timestamp;
+	Link* current;
+	float forcing_buffer;
+	int received_time;
+	char* query = conninfo->query;
+	PGresult *res;
+	unsigned int *db_unix_time,*db_link_id;
+	float *db_rain_intens;
+	unsigned int *actual_timestamps,num_actual_timestamps,max_timestamps = forcing->increment;	//The maximum number of intensities to get for each link
+
+/*
+	unsigned int *total_times = (unsigned int*) calloc(my_N,sizeof(unsigned int));
+	for(i=0;i<my_N;i++)
+	{
+		if(sys[my_sys[i]]->forcing_buff[forcing_idx])
+		{
+			total_times[i] = sys[my_sys[i]]->forcing_buff[forcing_idx]->n_times;
+			sys[my_sys[i]]->forcing_buff[forcing_idx]->n_times = 1;
+		}
+	}
+*/
+
+	//This is a time larger than any time in which the integrator is expected to get
+	double ceil_time = 1e300;
+	static short int gave_warning = 0;
+	if(sys[my_sys[0]]->last_t > ceil_time*0.1 && !gave_warning)
+	{
+		gave_warning = 1;
+		printf("[%i]: Warning: integrator time is extremely large (about %e). Loss of precision may occur.\n",my_rank,sys[my_sys[i]]->last_t);
+	}
+
+	//Query the database
+	if(my_rank == 0)
+	{
+		//Connect to the database
+		ConnectPGDB(conninfo);
+
+		//Download timestamps
+		sprintf(query,conninfo->queries[3],first,max_timestamps);
+		res = PQexec(conninfo->conn,query);
+		CheckResError(res,"downloading rainfall timestamps");
+		num_actual_timestamps = PQntuples(res);
+
+		//Unpack and broadcast the timestamps
+		actual_timestamps = (unsigned int*) malloc(num_actual_timestamps*sizeof(unsigned int));
+		for(i=0;i<num_actual_timestamps;i++)
+			actual_timestamps[i] = atoi(PQgetvalue(res,i,0));
+		MPI_Bcast(&num_actual_timestamps,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		MPI_Bcast(actual_timestamps,num_actual_timestamps,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		last = actual_timestamps[num_actual_timestamps-1];
+		PQclear(res);
+
+		//Download intensities
+		if(GlobalVars->outletlink == 0)
+			sprintf(query,conninfo->queries[0],first,last);
+		else
+			sprintf(query,conninfo->queries[1],GlobalVars->outletlink,first,last);
+//printf("*************************\n");
+//printf("First = %u Last = %u t = %e increment = %u\n",first,last,sys[my_sys[0]]->last_t,forcing->increment);
+//printf("*************************\n");
+//printf("Gmax = %e maxtime = %e\n",GlobalVars->maxtime,maxtime);
+printf("query: %s\n",query);
+//printf("*************************\n");
+		res = PQexec(conninfo->conn,query);
+		CheckResError(res,"downloading rainfall data");
+		tuple_count = PQntuples(res);
+printf("Received %u intensities.\n",tuple_count);
+		//Disconnect
+		DisconnectPGDB(conninfo);
+
+		//Allocate space
+		MPI_Bcast(&tuple_count,1,MPI_INT,0,MPI_COMM_WORLD);
+		db_unix_time = malloc(tuple_count*sizeof(unsigned int));
+		db_rain_intens = malloc(tuple_count*sizeof(float));
+		db_link_id = malloc(tuple_count*sizeof(unsigned int));
+
+		//Load up the buffers
+		for(i=0;i<tuple_count;i++)
+		{
+			db_unix_time[i] = atoi(PQgetvalue(res,i,0));
+			db_rain_intens[i] = atof(PQgetvalue(res,i,1));
+			db_link_id[i] = atoi(PQgetvalue(res,i,2));
+		}
+
+		//Broadcast the data
+		MPI_Bcast(db_unix_time,tuple_count,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(db_rain_intens,tuple_count,MPI_FLOAT,0,MPI_COMM_WORLD);
+		MPI_Bcast(db_link_id,tuple_count,MPI_INT,0,MPI_COMM_WORLD);
+
+		//Clean up
+		PQclear(res);
+	}
+	else
+	{
+		MPI_Bcast(&num_actual_timestamps,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		actual_timestamps = (unsigned int*) malloc(num_actual_timestamps*sizeof(unsigned int));
+		MPI_Bcast(actual_timestamps,num_actual_timestamps,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+		last = actual_timestamps[num_actual_timestamps-1];
+
+		//Allocate space
+		MPI_Bcast(&tuple_count,1,MPI_INT,0,MPI_COMM_WORLD);
+		db_unix_time = malloc(tuple_count*sizeof(unsigned int));
+		db_rain_intens = malloc(tuple_count*sizeof(float));
+		db_link_id = malloc(tuple_count*sizeof(unsigned int));
+
+		//Receive the data
+		MPI_Bcast(db_unix_time,tuple_count,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(db_rain_intens,tuple_count,MPI_FLOAT,0,MPI_COMM_WORLD);
+		MPI_Bcast(db_link_id,tuple_count,MPI_INT,0,MPI_COMM_WORLD);
+	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+//double stop = time(NULL);
+//if(my_rank == 0)	printf("Total time to get rain: %f\n%u %u\n",difftime(stop,start),first,last);
+
+/*
+printf("+++++++++\n");
+for(i=0;i<num_actual_timestamps;i++)
+{
+printf("%u\n",actual_timestamps[i]);
+}
+printf("+++++++++\n");
+*/
+
+	//Set the times and zero out the intensities (some of these might change later)
+	for(i=0;i<my_N;i++)
+	{
+		for(j=0;j<num_actual_timestamps;j++)
+		{
+			sys[my_sys[i]]->forcing_buff[forcing_idx]->rainfall[j][0] = (double)(actual_timestamps[j] - forcing->raindb_start_time)/60.0;
+			sys[my_sys[i]]->forcing_buff[forcing_idx]->rainfall[j][1] = 0.0;
+		}
+	}
+
+	//Setup the forcing values
+	i = 0;
+	for(j=0;j<num_actual_timestamps;j++)
+	{
+		current_timestamp = actual_timestamps[j];
+		for(;i < tuple_count && db_unix_time[i] <= current_timestamp;i++)
+		{
+			received_time = db_unix_time[i] - forcing->raindb_start_time;	//In seconds
+			curr_idx = find_link_by_idtoloc(db_link_id[i],id_to_loc,N);
+			if(curr_idx < N && assignments[curr_idx] == my_rank)
+			{
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][0] = received_time / 60.0;
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][1] = db_rain_intens[i];
+//if(sys[curr_idx]->ID == 456117)
+//printf("j = %u received_time = %u intensity = %f\n",j,received_time,sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][1]);
+			}
+//else
+//printf("!!!! Huh, wtf? !!!!\n");
+		}
+	}
+
+/*
+	current_timestamp = actual_timestamps[0];
+	for(i=0;i < tuple_count && current_timestamp <= db_unix_time[i];i++)
+	{
+		received_time = db_unix_time[i] - forcing->raindb_start_time;	//In seconds
+		//if(received_time > (int) (sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] * 60.0 + 0.01))	break;
+		curr_idx = find_link_by_idtoloc(db_link_id[i],id_to_loc,N);
+		if(curr_idx < N && assignments[curr_idx] == my_rank)
+		{
+			//k = sys[curr_idx]->forcing_buff[forcing_idx]->n_times;
+			//if(received_time <= (int) (sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] * 60.0 + 0.01))	//If the initial rate needs to be reset
+			{
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[0][0] = received_time / 60.0;
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[0][1] = db_rain_intens[i];
+			}
+		}
+	}
+	
+	//!!!! Uh, any difference between this and j=0? !!!!
+	for(j=1;j<num_actual_timestamps;j++)
+	{
+		current_timestamp = actual_timestamps[j];
+		for(;i < tuple_count && current_timestamp <= db_unix_time[i];i++)
+		{
+			received_time = db_unix_time[i] - forcing->raindb_start_time;	//In seconds
+			curr_idx = find_link_by_idtoloc(db_link_id[i],id_to_loc,N);
+
+			if(curr_idx < N && assignments[curr_idx] == my_rank)
+			{
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][0] = received_time / 60.0;
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[j][1] = db_rain_intens[i];
+			}
+		}
+	}
+*/
+
+/*
+	//Setup the data received
+	for(i=0;i<tuple_count;i++)
+	{
+		//Find the location of ID i (ids should be numbered from 2 to whatever)
+		curr_idx = find_link_by_idtoloc(db_link_id[i],id_to_loc,N);
+
+		if(curr_idx < N && assignments[curr_idx] == my_rank)
+		{
+			k = sys[curr_idx]->forcing_buff[forcing_idx]->n_times;
+			received_time = db_unix_time[i] - forcing->raindb_start_time;	//In seconds
+
+			if(received_time > (int) (sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] * 60.0 + 0.01))
+			{
+				if( received_time <= (int) (sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0]*60.0) + (unsigned int) (forcing->file_time*60.0) || sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][1] == 0.0)
+				{
+					sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][0] = received_time / 60.0;
+					sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][1] = db_rain_intens[i];
+					(sys[curr_idx]->forcing_buff[forcing_idx]->n_times)++;
+				}
+				else	//Add a 0 rainfall data before adding this data
+				{
+					sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][0] = sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] + forcing->file_time;
+					sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][1] = 0.0;
+					sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k+1][0] = received_time / 60.0;
+					sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k+1][1] = db_rain_intens[i];
+					sys[curr_idx]->forcing_buff[forcing_idx]->n_times += 2;
+				}
+			}
+			else //if(received_time <= (int) (sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] * 60.0 + 0.01))	//If the initial rate needs to be reset
+			{
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] = received_time / 60.0;
+				sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][1] = db_rain_intens[i];
+			}
+		}
+	}
+*/
+	//Add ceiling terms
+	for(i=0;i<my_N;i++)
+	{
+		curr_idx = sys[my_sys[i]]->location;
+		//k = sys[curr_idx]->forcing_buff[forcing_idx]->n_times;
+		k = num_actual_timestamps;
+		//if(sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][1] == 0.0)	//No rain, add just a ceiling
+		{
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][0] = ceil_time;
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][1] = -1.0;
+		}
+/*
+		else	//Add a 0.0, and a ceiling
+		{
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][0] = sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k-1][0] + forcing->file_time;
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k][1] = 0.0;
+			//sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k+1][0] = maxtime * (1.1) + 1.0;
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k+1][0] = ceil_time;
+			sys[curr_idx]->forcing_buff[forcing_idx]->rainfall[k+1][1] = -1.0;
+		}
+*/
+	}
+
+	//Reset n_times  !!!! Fix (well, this might be ok to do) !!!!
+	//for(i=0;i<my_N;i++)	sys[my_sys[i]]->forcing_buff[forcing_idx]->n_times = total_times[i];
+
+	//Calculate the first rain change time and set rain_value
+	for(i=0;i<my_N;i++)
+	{
+		current = sys[my_sys[i]];
+
+		//Get to the time block that corresponds to the current time, set forcing value
+		for(j=1;j<current->forcing_buff[forcing_idx]->n_times;j++)
+		{
+			if(current->last_t < current->forcing_buff[forcing_idx]->rainfall[j][0] - 1e-12)
+				break;
+		}
+
+		forcing_buffer = current->forcing_buff[forcing_idx]->rainfall[j-1][1];
+		current->forcing_values[forcing_idx] = forcing_buffer;
+		current->forcing_indices[forcing_idx] = j-1;
+
+		for(;j<current->forcing_buff[forcing_idx]->n_times;j++)
+		{
+			if( fabs(forcing_buffer - current->forcing_buff[forcing_idx]->rainfall[j][1]) > 1e-12 )
+			{
+				current->forcing_change_times[forcing_idx] = current->forcing_buff[forcing_idx]->rainfall[j][0];
+				break;
+			}
+		}
+		if(j == current->forcing_buff[forcing_idx]->n_times)
+			current->forcing_change_times[forcing_idx] = current->forcing_buff[forcing_idx]->rainfall[j-1][0];
+	}
+
+	//Clean up
+	//free(total_times);
+	free(actual_timestamps);
+	free(db_unix_time);
+	free(db_link_id);
+	free(db_rain_intens);
+
+	return last;
+}
+
+
 //Sets the rain data of link current to 0 for all times.
 void SetRain0(Link** sys,unsigned int my_N,double maxtime,unsigned int* my_sys,UnivVars* GlobalVars,Forcing* forcing,unsigned int forcing_idx)
 {

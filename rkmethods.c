@@ -488,9 +488,11 @@ int ExplicitRKSolver(Link* link_i,UnivVars* GlobalVars,int* assignments,short in
 			//Find the needed value of t and corresponding node for y_p
 			//Assuming everything needed is already calculated
 			//This assumes c_s is the biggest. If not, one extra step may not get freed.
-			t_needed = t + c->ve[j]*h;
+			t_needed = min(t + c->ve[j]*h,currentp->last_t);
+			//t_needed = t + c->ve[j]*h;
 
 			//Find the corresponding theta value and approximate solution
+			//while(t_needed > curr_node[i]->t && ( fabs(curr_node[i]->t) < 1e-12 || fabs(t_needed - curr_node[i]->t)/curr_node[i]->t > 1e-12) )
 			while(t_needed > curr_node[i]->t)
 				curr_node[i] = curr_node[i]->next;
 			if(curr_node[i] != currentp->list->head)	curr_node[i] = curr_node[i]->prev;
@@ -891,7 +893,8 @@ int ExplicitRKIndex1Solver(Link* link_i,UnivVars* GlobalVars,int* assignments,sh
 			//Find the needed value of t and corresponding node for y_p
 			//Assuming everything needed is already calculated
 			//This assumes c_s is the biggest. If not, one extra step may not get freed.
-			t_needed = t + c->ve[j]*h;
+			t_needed = min(t + c->ve[j]*h,currentp->last_t);
+			//t_needed = t + c->ve[j]*h;
 
 			//Find the corresponding theta value and approximate solution
 			while(t_needed > curr_node[i]->t)
@@ -1206,7 +1209,8 @@ int ExplicitRKIndex1SolverDam(Link* link_i,UnivVars* GlobalVars,int* assignments
 			//Find the needed value of t and corresponding node for y_p
 			//Assuming everything needed is already calculated
 			//This assumes c_s is the biggest. If not, one extra step may not get freed.
-			t_needed = t + c->ve[j]*h;
+			t_needed = min(t + c->ve[j]*h,currentp->last_t);
+			//t_needed = t + c->ve[j]*h;
 
 			//Find the corresponding theta value and approximate solution
 			while(t_needed > curr_node[i]->t)
@@ -1360,7 +1364,8 @@ int ExplicitRKIndex1SolverDam(Link* link_i,UnivVars* GlobalVars,int* assignments
 
 					//Find the needed value of t and corresponding node for y_p
 					//Assuming everything needed is already calculated
-					t_needed = t + h;
+					t_needed = min(t + h,currentp->last_t);
+					//t_needed = t + h;
 
 					//Find the corresponding theta value and approximate solution
 					while(t_needed > curr_node[i]->t)
@@ -1669,7 +1674,8 @@ int ExplicitRKSolverDiscont(Link* link_i,UnivVars* GlobalVars,int* assignments,s
 			//Find the needed value of t and corresponding node for y_p
 			//Assuming everything needed is already calculated
 			//This assumes c_s is the biggest. If not, one extra step may not get freed.
-			t_needed = t + c->ve[j]*h;
+			t_needed = min(t + c->ve[j]*h,currentp->last_t);
+			//t_needed = t + c->ve[j]*h;
 
 			//Find the corresponding theta value and approximate solution
 			while(t_needed > curr_node[i]->t)
@@ -1819,7 +1825,8 @@ int ExplicitRKSolverDiscont(Link* link_i,UnivVars* GlobalVars,int* assignments,s
 
 					//Find the needed value of t and corresponding node for y_p
 					//Assuming everything needed is already calculated
-					t_needed = t + h;
+					t_needed = min(t + h,currentp->last_t);
+					//t_needed = t + h;
 
 					//Find the corresponding theta value and approximate solution
 					while(t_needed > curr_node[i]->t)
@@ -2142,7 +2149,8 @@ int RadauRKSolver(Link* link_i,UnivVars* GlobalVars,int* assignments,short int p
 			//Find the needed value of t and corresponding node for y_p
 			//Assuming everything needed is already calculated
 			//This assumes c_s is the biggest. If not, one extra step may not get freed.
-			t_needed = t + c->ve[j]*h;
+			t_needed = min(t + c->ve[j]*h,currentp->last_t);
+			//t_needed = t + c->ve[j]*h;
 
 			//Find the corresponding theta value and approximate solution
 			while(t_needed > curr_node[i]->t)
@@ -2857,7 +2865,8 @@ int ExplicitRKSolver_DataAssim(Link* link_i,UnivVars* GlobalVars,int* assignment
 			//Find the needed value of t and corresponding node for y_p
 			//Assuming everything needed is already calculated
 			//This assumes c_s is the biggest. If not, one extra step may not get freed.
-			t_needed = t + c->ve[j]*h;
+			t_needed = min(t + c->ve[j]*h,currentp->last_t);
+			//t_needed = t + c->ve[j]*h;
 
 			//Find the corresponding theta value and approximate solution
 			while(t_needed > curr_node[i]->t)
