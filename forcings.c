@@ -200,13 +200,13 @@ double NextForcingDatabase_Irregular(Link** sys,unsigned int N,unsigned int* my_
 {
 	unsigned int passes = forcing->passes, iteration = forcing->iteration,first_timestamp = 0;
 	double maxtime;
-
+/*
 printf("**************\n");
 printf("!!!! In here: %u %u\n",(int)(sys[my_sys[0]]->last_t*60 + .001) + forcing->raindb_start_time,(int)(forcing->next_timestamp));
 printf("First is %f %u\n",sys[my_sys[0]]->last_t*60 + .001,forcing->raindb_start_time);
 printf("Second is %u %u\n",forcing->first_file,forcing->next_timestamp);
 printf("**************\n");
-
+*/
 
 	//if( (int)(sys[my_sys[0]]->last_t*60 + .001) + forcing->raindb_start_time == (int)(forcing->first_file+iteration*forcing->file_time*60.0*forcing->increment+0.01) )
 	if( (int)(sys[my_sys[0]]->last_t*60 + .001) + forcing->raindb_start_time == (int)(forcing->next_timestamp) || forcing->iteration == 0)
@@ -231,7 +231,7 @@ printf("**************\n");
 	}
 
 	maxtime = min(GlobalVars->maxtime,(double)(forcing->next_timestamp - forcing->raindb_start_time)/60.0);
-
+/*
 printf("Out **************\n");
 printf("next_timestamp = %u\n",forcing->next_timestamp);
 printf("maxtime = %f (%f %f)\n",maxtime,GlobalVars->maxtime,(double)(forcing->next_timestamp - forcing->raindb_start_time)/60.0);
@@ -251,7 +251,7 @@ for(i=0;i<N;i++)
 
 
 printf("******************\n");
-
+*/
 	return maxtime;
 }
 

@@ -817,7 +817,7 @@ int Create_Rain_Database_Irregular(Link** sys,unsigned int N,unsigned int my_N,U
 //printf("First = %u Last = %u t = %e increment = %u\n",first,last,sys[my_sys[0]]->last_t,forcing->increment);
 //printf("*************************\n");
 //printf("Gmax = %e maxtime = %e\n",GlobalVars->maxtime,maxtime);
-printf("query: %s\n",query);
+//printf("query: %s\n",query);
 //printf("*************************\n");
 		res = PQexec(conninfo->conn,query);
 		CheckResError(res,"downloading rainfall data");
