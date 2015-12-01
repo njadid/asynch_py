@@ -1279,7 +1279,7 @@ printf("[%i]: Warning: I think you need a file to create a peakflow table...\n",
 			if(CheckResError(res,"dropping temporary peakflow table"))
 				return_val = 1;
 			PQclear(res);
-			
+
 			DisconnectPGDB(conninfo);
 		}
 		else
