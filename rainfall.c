@@ -1119,8 +1119,8 @@ double CreateForcing_Monthly(Link** sys,unsigned int my_N,unsigned int* my_sys,U
 	int curr_day = current_time->tm_mday;
 	t += (days_this_month - curr_day) * (24.0*60.0);	//Convert to mins
 
-	//Add in hours and mins
-	t += (double) ((23-current_time->tm_hour)*60 + (60-current_time->tm_min));
+	//Add in hours and mins and seconds
+	t += (double) ((23-current_time->tm_hour)*60 + (59-current_time->tm_min)) + (60.0-current_time->tm_sec)/60.0;
 
 	//Save t
 	GlobalForcing->rainfall[month_0+1][0] = t;
@@ -1136,20 +1136,19 @@ double CreateForcing_Monthly(Link** sys,unsigned int my_N,unsigned int* my_sys,U
 	GlobalForcing->rainfall[num_months][1] = 0.0;
 
 	//Check if this data goes past the last time
-	double final_time = last_time - first_time;
+	double final_time = (last_time - first_time)/60.0;
 	if(t > final_time)	//Need to set 0s past final_time
 	{
-		for(i=num_months-1;i>-1;i--)
+		i = num_months-1;
+		GlobalForcing->rainfall[i][0] = t+1.0;
+		GlobalForcing->rainfall[i][1] = 0.0;
+
+		for(i-=1;GlobalForcing->rainfall[i][0] > final_time;i--)
 		{
-			if(GlobalForcing->rainfall[i][0] < final_time)
-			{
-				j = i+1;
-				GlobalForcing->rainfall[j][0] = final_time;
-				GlobalForcing->rainfall[j][1] = 0.0;
-				j = i+2;
-				GlobalForcing->rainfall[j][0] = t+1.0;
-				GlobalForcing->rainfall[j][1] = 0.0;
-			}
+			GlobalForcing->rainfall[i][0] = final_time;
+			GlobalForcing->rainfall[i][1] = 0.0;
+			GlobalForcing->rainfall[i+1][0] = t+1.0;
+			GlobalForcing->rainfall[i+1][1] = 0.0;
 		}
 	}
 

@@ -211,14 +211,12 @@ int Output_Time_Int(double t,VEC* y_i,VEC* global_params,VEC* params,int state,v
 
 void OutputPeakflow_Classic_Format(unsigned int ID,double peak_time,VEC* peak_value,VEC* params,VEC* global_params,double conversion,unsigned int area_idx,void* user,char* buffer)
 {
-	//sprintf(buffer,"%u, %.4f, %.8f, %.8f\n",ID,conversion*params->ve[area_idx],peak_time,peak_value->ve[0]);
 	sprintf(buffer,"%u %.4f %.8f %.8f\n",ID,conversion*params->ve[area_idx],peak_time,peak_value->ve[0]);
 }
 
 void OutputPeakflow_Forecast_Format(unsigned int ID,double peak_time,VEC* peak_value,VEC* params,VEC* global_params,double conversion,unsigned int area_idx,void* user,char* buffer)
 {
 	unsigned int offset = *(unsigned int*)user;
-	//sprintf(buffer,"%u,%u,%.12e,%u,NULL\n",ID,offset + (unsigned int)(peak_time*60 + .1),peak_value->ve[0],offset);
 	sprintf(buffer,"%u %u %.12e %u NULL\n",ID,offset + (unsigned int)(peak_time*60 + .1),peak_value->ve[0],offset);
 }
 
