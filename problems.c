@@ -1806,7 +1806,7 @@ void dam_q_qvs(VEC* y,VEC* global_params,VEC* params,QVSData* qvs,int state,void
 
 	if(state == -1)
 		ans->ve[0] = invtau/60.0*pow(S,1.0/(1.0-lambda_1));
-	else if(state == (int) qvs->n_values - 1)
+	else if(state == ((int) (qvs->n_values) - 1))
 	{
 		S_max = qvs->points[qvs->n_values - 1][0];
 		q_max = qvs->points[qvs->n_values - 1][1];

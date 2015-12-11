@@ -2020,6 +2020,16 @@ int Load_Dams(Link** system,unsigned int N,unsigned int* my_sys,unsigned int my_
 	}
 	else if(GlobalVars->uses_dam && GlobalVars->dam_flag == 2)	//.qvs file
 	{
+		//Setup needs array. This is the procs that have getting set to 1.
+		int* needs;
+		if(my_rank == 0) needs = (int*) malloc(N*sizeof(int));
+		int not_needed = -1;
+		for(i=0;i<N;i++)
+		{
+			if(getting[i])	MPI_Reduce(&my_rank,&(needs[i]),1,MPI_INT,MPI_MAX,0,MPI_COMM_WORLD);
+			else		MPI_Reduce(&not_needed,&(needs[i]),1,MPI_INT,MPI_MAX,0,MPI_COMM_WORLD);
+		}
+
 		if(my_rank == 0)
 		{
 			damfile = fopen(GlobalVars->dam_filename,"r");
@@ -2058,7 +2068,7 @@ int Load_Dams(Link** system,unsigned int N,unsigned int* my_sys,unsigned int my_
 				MPI_Bcast(&m,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
 				
 				//Either store the parameters or send them
-				if(my_rank == assignments[m])
+				if(my_rank == assignments[m] || getting[m])
 				{
 					system[m]->dam = 1;
 					system[m]->qvs = (QVSData*) malloc(sizeof(QVSData));
@@ -2073,14 +2083,22 @@ int Load_Dams(Link** system,unsigned int N,unsigned int* my_sys,unsigned int my_
 						system[m]->qvs->points[j][1] = buffer[2*j+1];
 					}
 				}
-				else
+
+				if(my_rank != assignments[m])
 				{
 					MPI_Send(&num_values,1,MPI_UNSIGNED,assignments[m],1,MPI_COMM_WORLD);
 					MPI_Send(buffer,2*num_values,MPI_DOUBLE,assignments[m],1,MPI_COMM_WORLD);
 				}
+
+				if(needs[m] > 0)
+				{
+					MPI_Send(&num_values,1,MPI_UNSIGNED,needs[m],1,MPI_COMM_WORLD);
+					MPI_Send(buffer,2*num_values,MPI_DOUBLE,needs[m],1,MPI_COMM_WORLD);
+				}
 			}
 
 			fclose(damfile);
+			free(needs);
 		}
 		else
 		{
@@ -2089,7 +2107,7 @@ int Load_Dams(Link** system,unsigned int N,unsigned int* my_sys,unsigned int my_
 			for(i=0;i<num_dams;i++)
 			{
 				MPI_Bcast(&m,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
-				if(my_rank == assignments[m])
+				if(my_rank == assignments[m] || getting[m])
 				{
 					MPI_Recv(&num_values,1,MPI_UNSIGNED,0,1,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
 					buffer = (double*) realloc(buffer,2*num_values*sizeof(double));
