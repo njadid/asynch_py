@@ -71,7 +71,7 @@ ConnData* ReadDBC(char* filename,unsigned int string_size)
 
 		//Read connection information
 		//Currently, this expects 4 things like:
-		//dbname=rm_model host=s-iihr58.iihr.uiowa.edu user=automated_solver password=my_pass
+		//dbname=rm_model host=s-iihr58.iihr.uiowa.edu user=***REMOVED*** password=my_pass
 		fgets(connectstring,string_size,input);
 		conninfo = CreateConnData(connectstring);
 		if(!conninfo)
