@@ -1,5 +1,7 @@
 /* jshint node: true, esnext: true */
 
+"use strict";
+
 var fs = require('fs-extra');
 var path = require('path');
 var cp = require('child_process');
@@ -21,8 +23,7 @@ var argv = parseArgs(process.argv.slice(2), {
     o: 'output'
   },
   default: {
-    output: 'out',
-    model: '254'
+    output: 'out'
   }
 });
 
@@ -46,8 +47,12 @@ try {
 }
 
 if (cfg && cfg.jobId) {
-  var stat = cp.execSync('qstat -j JobID');
-  debug('Job status ' + stat);
+  try {
+    var stat = cp.execSync('qstat -j ' + cfg.jobId).toString();
+    debug(stat);
+  } catch(ex) {
+    debug(ex);
+  }
 }
 
 // Set the ouput directory
@@ -56,7 +61,7 @@ var outputDir = argv.output;
 // Create output dir if not exists
 fs.mkdirsSync(outputDir);
 
-function render(prefix, context) {
+function renderAll(context) {
   // Render all templates
   Object.keys(templates).forEach(function (key, index) {
 
@@ -66,6 +71,14 @@ function render(prefix, context) {
     var content = templates[key](context);
     fs.writeFileSync(file, content);
   });
+}
+
+function render(template, out, context) {
+  var file = path.join(outputDir, out);
+  debug('Rendering ' + file);
+
+  var content = template(context);
+  fs.writeFileSync(file, content);
 }
 
 function generateStormfile(filePath, rows) {  
@@ -128,22 +141,28 @@ Promise.all([
           end: obsTime,
           duration: obsTime - cfg.obsTime,
           user: cfg.username,
-          forcingRain: path.join(outputDir, 'forcing_rain51_obs.str')
+          rainFile: 'forcing_rain_obs.str',
+          stateFile: 'obs.rec'
         },
         qpfContext = {
           begin: obsTime,
           end: qpfTime,
           duration: qpfTime - obsTime,
           user: cfg.username,
-          forcingRain: path.join(outputDir, 'forcing_rain51_qpf.str')
+          rainFile: 'forcing_rain_qpf.str',
+          stateFile: 'qpf.rec'
         };
       
+      // Render a new set of config files
+      render(templates['gbl'], 'obs.gbl', obsContext);
+      render(templates['gbl'], 'qpf.gbl', qpfContext);
+      render(templates['job'],  'run.job', {
+          globalFiles: ['obs.gbl', 'qpf.gbl'],
+          workingDir: path.resolve(outputDir)	
+        });
+
       debug('select OBS from ' + obsContext.begin + ' to ' + obsContext.end);
       debug('select QPF from ' + qpfContext.begin + ' to ' + qpfContext.end);
-
-      // Render a new set of config files
-      render('obs', obsContext);
-      render('fcast', qpfContext);
       
       // Generate forcing files
       Promise.all([
@@ -153,7 +172,8 @@ Promise.all([
                   [obsContext.begin, obsContext.end])
           .then(function(rows) {
             debug('got ' + rows.length + ' OBS rainfall rows');
-            generateStormfile(obsContext.forcingRain, rows);
+            generateStormfile(path.join(outputDir, obsContext.rainFile), rows);
+            //dbObs.done();
           }),
         dbQpf.any('SELECT unix_time, rain_intens, link_id FROM link_rain ' +
                    'WHERE unix_time >= $1 AND unix_time < $2 ' +                        
@@ -161,20 +181,27 @@ Promise.all([
                    [qpfContext.begin, qpfContext.end])
           .then(function(rows) {
             debug('got ' + rows.length + ' QPF rainfall rows');
-            generateStormfile(qpfContext.forcingRain, rows);
+            generateStormfile(path.join(outputDir, qpfContext.rainFile), rows);
+            //dbQpf.done();
           })
         ]).then(function() {
         
-          dbQpf.disconnect();
-
           // Run the simulations
           debug('Run the simulations');
           try {
-            // Queue the job
-            var sub = cp.execSync('qsub ' + argv.model + '.job');
+            var re = /Your job (\d*)/;
 
+            function getJobId(sub) {
+              var m = re.exec(sub);
+              if (m !== null) return parseInt(m[1]);
+            }
+
+            // Queue the job
+            var sub = cp.execSync('qsub ' + path.join(outputDir, 'run.job')).toString();
+            debug(sub);
+ 
             // Update config file for next run
-            cfg.jobId = 1;
+            cfg.jobId = getJobId(sub);
             cfg.obsTime = obsTime;
             cfg.qpfTime = qpfTime;
 

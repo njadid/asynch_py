@@ -1,0 +1,13 @@
+#!/bin/bash
+
+/bin/echo Running on host: `hostname`.
+/bin/echo In directory: `pwd`
+/bin/echo Starting on: `date`
+/bin/echo "Got $NSLOTS processors."
+/bin/echo
+/bin/echo
+/bin/echo
+
+{{#globalFiles}}
+mpirun -np 8 -wdir {{workingDir}} /Groups/IFC/.local/bin/asynch {{.}}
+{{/globalFiles}}
