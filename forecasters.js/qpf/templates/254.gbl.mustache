@@ -1,0 +1,93 @@
+%Type / Maxtime
+254 {{duration}}
+
+% 0 = .dat or 1 = .csv / print time / parameters to filenames
+0 %Parameters to filenames
+
+%Components to print
+3
+LinkID
+TimeI
+State0
+
+%Peakflow function
+Classic
+
+%Global parameters
+%12 v_0 lambda_1 lambda_2 v_h  k_3       rho  h_b S_L  A   B    exponent v_b
+12  0.33  0.20     -0.1   0.02 2.0425e-6 0.02 0.5 0.10 0.0 99.0 3.0 0.75
+
+%No. steps stored at each link and
+%Max no. steps transfered between procs
+%Discontinuity buffer size
+30 10 30
+
+%Topology (0 = .rvr, 1 = database)
+1 0 topo51.dbc
+
+%DEM Parameters (0 = .prm, 1 = database)
+1 params51_252_constant.dbc
+
+%Initial state (0 = .ini, 1 = .uini, 3=.dbc)
+1 state .uini
+
+%Forcings (0 = none, 1 = .str, 2 = binary, 3 = database, 4 = .ustr, 5 = forecasting, 6 = .gz binary, 7 = recurring)
+3
+
+%Rain
+1 {{forcingRain}}
+%2 {{forcingRain}}
+%%Chunk size  Time res               Beginning file index    Ending file index
+%1            {{forcingRainTimeRes}} {{forcingRainBeginIdx}} {{forcingRainEndIdx}}
+
+%Evaporation
+7 evap.mon
+{{begin}} {{end}}
+
+%Reservoirs feed
+3 forcing_reservoir51.dbc
+20 60.0 {{begin}} {{end}}
+
+%Dam (0 = no dam, 1 = .dam, 2 = .qvs)
+3 qvs_51.dbc
+
+%Reservoir ids (0 = no reservoirs, 1 = .rsv, 2 = .dbc file)
+1 reservoirs.rsv 2
+
+%Where to put write hydrographs
+%(0 = no output, 1 = .dat file, 2 = .csv file, 3 = database)
+3 60.0 save_hydrograph.dbc hydrographs_hydro01
+
+%Where to put peakflow data
+%(0 = no output, 1 = .pea file, 2 = database)
+2 save_peaks.dbc peaks_hydro01
+
+%.sav files for hydrographs and peak file
+%(0 = save no data, 1 = save link data for .dam file, 2 = .dbc file, 3 = all hillslopes)
+2 hydrosav.dbc
+3
+
+%Snapshot information (0 = none, 1 = to file, 2 = to database)
+1 state .uini
+
+%Filename for scratch work
+/nfsscratch/Users/{{user}}/
+
+%Numerical solver settings follow
+
+%facmin, facmax, fac
+.1 10.0 .9
+
+%Solver flag (0 = data below, 1 = .rkd)
+0
+
+%Numerical solver index (0-3 explicit, 4 implicit)
+2
+%Error tolerances (abs, rel, abs dense, rel dense)
+1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
+1e-6 1e-6 1e-6 1e-6 1e-6 1e-6 1e-6
+1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
+1e-6 1e-6 1e-6 1e-6 1e-6 1e-6 1e-6
+
+# %End of file
+-------------------------------
