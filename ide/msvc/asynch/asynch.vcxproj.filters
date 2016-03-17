@@ -15,25 +15,23 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\asynch_interface.h">
+    <ClInclude Include="$(RootDir)\src\asynch_interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\asynch_interface_py.h">
+    <ClInclude Include="$(RootDir)\src\asynch_interface_py.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\asynchdist.c">
+    <ClCompile Include="$(RootDir)\src\asynchdist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\asynchdist_custom.c">
+    <ClCompile Include="$(RootDir)\src\asynchdist_custom.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\asynchdist.py" />
-    <None Include="..\..\..\asynchdist_custom.py" />
-    <None Include="..\..\..\LICENSE" />
-    <None Include="..\..\..\makefile" />
+    <None Include="$(RootDir)\src\LICENSE" />
+    <None Include="$(RootDir)\src\makefile" />
   </ItemGroup>
 </Project>

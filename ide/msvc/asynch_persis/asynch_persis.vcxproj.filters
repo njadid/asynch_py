@@ -15,18 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\forecasters\asynchpersis.c">
+    <ClCompile Include="$(RootDir)\forecasters\asynchpersis.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\forecasters\forecaster_methods.c">
+    <ClCompile Include="$(RootDir)\forecasters\forecaster_methods.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\asynch_interface.h">
+    <ClInclude Include="$(RootDir)\asynch_interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\forecasters\forecaster_methods.h">
+    <ClInclude Include="$(RootDir)\forecasters\forecaster_methods.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

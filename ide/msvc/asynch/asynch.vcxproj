@@ -58,15 +58,19 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\asynch.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\asynch.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\asynch.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\asynch.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -89,17 +93,17 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x86;c:\python27\include;..\..\..\third_party\zlib-1.2.8;..\..\..\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x86;c:\python27\include;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(MSMPI_LIB32);..\..\..\third_party\zlib-1.2.8\lib;..\..\..\third_party\postgresql-8.4.22-1\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MSMPI_LIB32);$(RootDir)\third_party\zlib-1.2.8\lib;$(RootDir)\third_party\postgresql-8.4.22-1\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>msmpi.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(SolutionDir)..\..\dist\x86"</Command>
+      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(RootDir)\dist\x86"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -110,17 +114,17 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;c:\python27\include;..\..\..\third_party\zlib-1.2.8;..\..\..\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;c:\python27\include;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories> $(MSMPI_LIB64);;..\..\..\third_party\zlib-1.2.8;..\..\..\third_party\postgresql-9.1.20-1-x64\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories> $(MSMPI_LIB64);$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-9.1.20-1-x64\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>msmpi.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(SolutionDir)..\..\dist\x64"</Command>
+      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(RootDir)\dist\x64"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,19 +137,19 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x86;c:\python27\include;..\..\..\third_party\zlib-1.2.8;..\..\..\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x86;c:\python27\include;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories> $(MSMPI_LIB32);;..\..\..\third_party\zlib-1.2.8\lib;..\..\..\third_party\postgresql-8.4.22-1\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories> $(MSMPI_LIB32);$(RootDir)\third_party\zlib-1.2.8\lib;$(RootDir)\third_party\postgresql-8.4.22-1\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>msmpi.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(SolutionDir)..\..\dist\x86"</Command>
+      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(RootDir)\dist\x86"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,28 +162,28 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;c:\python27\include;..\..\..\third_party\zlib-1.2.8;..\..\..\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;c:\python27\include;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories> $(MSMPI_LIB64);;..\..\..\third_party\zlib-1.2.8;..\..\..\third_party\postgresql-9.1.20-1-x64\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories> $(MSMPI_LIB64);$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-9.1.20-1-x64\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>msmpi.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(SolutionDir)..\..\dist\x64"</Command>
+      <Command>copy /Y "$(TargetDir)$(ProjectName).exe" "$(RootDir)\dist\x64"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\asynch_interface.h" />
-    <ClInclude Include="..\..\..\asynch_interface_py.h" />
+    <ClInclude Include="$(RootDir)\src\asynch_interface.h" />
+    <ClInclude Include="$(RootDir)\src\asynch_interface_py.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\asynchdist.c" />
-    <ClCompile Include="..\..\..\asynchdist_custom.c">
+    <ClCompile Include="$(RootDir)\src\asynchdist.c" />
+    <ClCompile Include="$(RootDir)\src\asynchdist_custom.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -187,10 +191,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\asynchdist.py" />
-    <None Include="..\..\..\asynchdist_custom.py" />
-    <None Include="..\..\..\LICENSE" />
-    <None Include="..\..\..\makefile" />
+    <None Include="$(RootDir)\src\LICENSE" />
+    <None Include="$(RootDir)\src\makefile" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\asynchlib\asynchlib.vcxproj">

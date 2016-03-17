@@ -15,135 +15,135 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\comm.c">
+    <ClCompile Include="..\..\..\src\asynch_interface.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\compression.c">
+    <ClCompile Include="..\..\..\src\asynch_interface_py.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\data_types.c">
+    <ClCompile Include="..\..\..\src\comm.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\date_manip.c">
+    <ClCompile Include="..\..\..\src\compression.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\definetype.c">
+    <ClCompile Include="..\..\..\src\data_types.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\forcings.c">
+    <ClCompile Include="..\..\..\src\date_manip.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\io.c">
+    <ClCompile Include="..\..\..\src\definetype.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mathmethods.c">
+    <ClCompile Include="..\..\..\src\forcings.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\misc.c">
+    <ClCompile Include="..\..\..\src\io.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\modeloutputs.c">
+    <ClCompile Include="..\..\..\src\mathmethods.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\partition.c">
+    <ClCompile Include="..\..\..\src\misc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\problems.c">
+    <ClCompile Include="..\..\..\src\modeloutputs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\processdata.c">
+    <ClCompile Include="..\..\..\src\partition.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\rainfall.c">
+    <ClCompile Include="..\..\..\src\problems.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\riversys.c">
+    <ClCompile Include="..\..\..\src\processdata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\rkmethods.c">
+    <ClCompile Include="..\..\..\src\rainfall.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\solvers.c">
+    <ClCompile Include="..\..\..\src\riversys.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\sort.c">
+    <ClCompile Include="..\..\..\src\rkmethods.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\system.c">
+    <ClCompile Include="..\..\..\src\solvers.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\asynch_interface_py.c">
+    <ClCompile Include="..\..\..\src\sort.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\asynch_interface.c">
+    <ClCompile Include="..\..\..\src\system.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\asynch_interface.h">
+    <ClInclude Include="..\..\..\src\asynch_interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\asynch_interface_py.h">
+    <ClInclude Include="..\..\..\src\asynch_interface_py.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\comm.h">
+    <ClInclude Include="..\..\..\src\comm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\compression.h">
+    <ClInclude Include="..\..\..\src\compression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\data_types.h">
+    <ClInclude Include="..\..\..\src\data_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\date_manip.h">
+    <ClInclude Include="..\..\..\src\date_manip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\definetype.h">
+    <ClInclude Include="..\..\..\src\definetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\forcings.h">
+    <ClInclude Include="..\..\..\src\forcings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\io.h">
+    <ClInclude Include="..\..\..\src\io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mathmethods.h">
+    <ClInclude Include="..\..\..\src\mathmethods.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\misc.h">
+    <ClInclude Include="..\..\..\src\misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\modeloutputs.h">
+    <ClInclude Include="..\..\..\src\modeloutputs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\partition.h">
+    <ClInclude Include="..\..\..\src\partition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\problems.h">
+    <ClInclude Include="..\..\..\src\problems.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\processdata.h">
+    <ClInclude Include="..\..\..\src\processdata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\rainfall.h">
+    <ClInclude Include="..\..\..\src\rainfall.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\riversys.h">
+    <ClInclude Include="..\..\..\src\riversys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\rkmethods.h">
+    <ClInclude Include="..\..\..\src\rkmethods.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\solvers.h">
+    <ClInclude Include="..\..\..\src\solvers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\sort.h">
+    <ClInclude Include="..\..\..\src\sort.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\structs.h">
+    <ClInclude Include="..\..\..\src\structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\system.h">
+    <ClInclude Include="..\..\..\src\system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
