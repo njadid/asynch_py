@@ -29,13 +29,13 @@ Classic
 0 params.prm
 
 %Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc)
-2 {{stateFile}}
+2 {{iniStateFile}}
 
 %Forcings (0 = none, 1 = .str, 2 = binary, 3 = database, 4 = .ustr, 5 = forecasting, 6 = .gz binary, 7 = recurring)
 3
 
 %Rain
-1 {{rainFile}}
+{{rainFileType}} {{rainFile}}
 %2 {{rainFile}}
 %%Chunk size  Time res               Beginning file index    Ending file index
 %1            {{rainFileTimeRes}} {{rainFileBeginIdx}} {{rainFileEndIdx}}
@@ -70,7 +70,7 @@ Classic
 3
 
 %Snapshot information (0 = none, 1 = to file, 2 = to database)
-1 {{stateFile}}
+1 {{endStateFile}}
 
 %Filename for scratch work
 /nfsscratch/Users/{{user}}/
