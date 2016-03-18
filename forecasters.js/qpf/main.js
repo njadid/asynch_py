@@ -10,11 +10,9 @@ var os = require('os');
 var username = require('username');
 var parseArgs = require('minimist');
 var debug = require('debug')('forecaster');
-var pgp = require('pg-promise')({
-  // Initialization Options
-});
+var pgp = require('pg-promise-strict');
 
-var templates = require('./config.js');
+var config = require('./config.js');
 var templates = require('./templates.js');
 
 // Parse the command line arguments
@@ -56,7 +54,6 @@ try {
   var cfg = JSON.parse(fs.readFileSync('.forecaster', 'utf8'));
 } catch (ex) {
   debug('Missing or invalid config file found, generating one');
-  debug(ex.message);
 
   // Get current time rounded to the nearest 5 minutes
   var now = Math.floor(Date.now() / 1000);
@@ -93,23 +90,23 @@ function render(template, out, context) {
   fs.writeFileSync(file, content);
 }
 
+// For each row add intensity to the map of rain data
+function mapRainLink(begin, links) {
+  
+  return function(row) {
+    if (typeof links[row.link_id] === 'undefined') {
+      links[row.link_id] = {};
+      links[row.link_id][begin] = 0.0;
+    }
+
+    if (row.unix_time !== null) {
+      links[row.link_id][row.unix_time] = row.rain_intens;
+    }
+  };
+}
+
 // Generate the storm files
-function generateStormfile(filePath, begin, rows) {
-  //Maps the link
-  var links = {};
-
-  var length = rows.length;
-  for (var i = 0; i < length; i++) {
-    if (typeof links[rows[i].link_id] === 'undefined') {
-      links[rows[i].link_id] = {};
-      links[rows[i].link_id][begin] = 0.0;
-    }
-
-    if (rows[i].unix_time !== null) {
-      links[rows[i].link_id][rows[i].unix_time] = rows[i].rain_intens;
-    }
-  }
-
+function generateStormfile(filePath, begin, links) {
   // Generate the storm files
   var outFile = fs.createWriteStream(filePath);
   outFile.write(Object.keys(links).length + os.EOL);
@@ -128,27 +125,27 @@ function generateStormfile(filePath, begin, rows) {
 // Creating a new database instance from the connection details
 Promise
   .all([
-    pgp.connect(obsConnString),
-    pgp.connect(qpfConnString)
+    pgp.connect(config.obsConn),
+    pgp.connect(config.qpfConn)
   ])
   .then(function (clients) {
-    var dbObs = clients[0];
-    var dbQpf = clients[1];
+    var obsClient = clients[0];
+    var qpfClient = clients[1];
 
     // Query the DB to get the latest OBS and QPF timestamp
     Promise
       .all([
-        dbObs.one('SELECT unix_time FROM rain_maps5_index ORDER BY unix_time DESC LIMIT 1'),
-        dbQpf.one('SELECT time_utc FROM hrrr_index_ldm ORDER BY time_utc DESC LIMIT 1')
+        obsClient.query('SELECT unix_time FROM rain_maps5_index ORDER BY unix_time DESC LIMIT 1').fetchUniqueValue(),
+        qpfClient.query('SELECT time_utc FROM hrrr_index_ldm ORDER BY time_utc DESC LIMIT 1').fetchUniqueValue()
       ])
-      .then(function (rows) {
-        var obsTime = rows[0].unix_time;
-        var qpfTime = rows[1].time_utc;
+      .then(function (results) {
+        var obsTime = results[0].value;
+        var qpfTime = results[1].value;
 
         debug('lastest rainfall OBS timestamp ' + obsTime);
         debug('lastest rainfall QPF timestamp ' + qpfTime);
 
-        // If we have new obs or qpf
+        // If we have new obs of qpf
         if ((cfg.obsTime < obsTime) || (cfg.qpfTime < qpfTime)) {
           var contexts = {
             obs: {
@@ -169,14 +166,14 @@ Promise
               iniStateFile: 'state_' + obsTime + '.rec',
               endStateFile: 'forecast_qpf_' + qpfTime + '.rec'
             },
-            s2mm: {
+            s2in: {
               begin: obsTime,
               end: obsTime + 14400 * 60,
               user: cfg.username,
               rainFileType: 4,
               rainFile: 'forcing_rain_2inches24hour.ustr',
               iniStateFile: 'state_' + obsTime + '.rec',
-              endStateFile: 'forecast_2mm_' + qpfTime + '.rec'
+              endStateFile: 'forecast_2in_' + qpfTime + '.rec'
             }
           };
 
@@ -188,81 +185,85 @@ Promise
           // Render a new set of config files
           render(templates.gbl, 'obs.gbl', contexts.obs);
           render(templates.gbl, 'qpf.gbl', contexts.qpf);
-          render(templates.gbl, 's2mm.gbl', contexts.s2mm);
+          render(templates.gbl, 's2in.gbl', contexts.s2in);
           render(templates.job, 'run.job', {
-            globalFiles: ['obs.gbl', 'qpf.gbl', 's2mm.gbl'],
+            globalFiles: ['obs.gbl', 'qpf.gbl', 's2in.gbl'],
             workingDir: path.resolve(outputDir)
           });
 
           debug('select OBS from ' + contexts.obs.begin + ' to ' + contexts.obs.end);
           var obsQuery = `
-        SELECT unix_time, rain_intens, link_id
-        FROM
-          (SELECT link_id FROM materialized_env_master_km) links LEFT JOIN
-          (SELECT * FROM link_rain5 WHERE unix_time >= $1 AND unix_time < $2 AND rain_intens > 0.0) rain USING (link_id)
-        ORDER BY link_id, unix_time`;
-          debug(obsQuery);
+SELECT unix_time, rain_intens, link_id
+FROM
+  (SELECT link_id FROM materialized_env_master_km) links LEFT JOIN
+  (SELECT * FROM link_rain5 WHERE unix_time >= $1 AND unix_time < $2 AND rain_intens > 0.0) rain USING (link_id)
+ORDER BY link_id, unix_time`;
+          //debug(obsQuery);
 
           debug('select QPF from ' + contexts.qpf.begin + ' to ' + contexts.qpf.end);
           var qpfQuery = `
-        SELECT unix_time, rain_intens, link_id
-        FROM
-          (SELECT link_id FROM materialized_env_master_km) links LEFT JOIN
-          (SELECT * FROM link_rain WHERE unix_time >= $1 AND unix_time < $2 AND rain_intens > 0.0) rain USING (link_id)
-        ORDER BY link_id, unix_time`;
-          debug(qpfQuery);
+SELECT unix_time, rain_intens, link_id
+FROM
+  (SELECT link_id FROM materialized_env_master_km) links LEFT JOIN
+  (SELECT * FROM link_rain WHERE unix_time >= $1 AND unix_time < $2 AND rain_intens > 0.0) rain USING (link_id)
+ORDER BY link_id, unix_time`;
+          //debug(qpfQuery);
 
-          // Generate forcing files
-          Promise.all([
-        dbObs.any(obsQuery, [contexts.obs.begin, contexts.obs.end])
-          .then(function (rows) {
-              debug('got ' + rows.length + ' OBS rainfall rows');
-              generateStormfile(path.join(outputDir, contexts.obs.rainFile), contexts.obs.begin, rows);
-              //dbObs.done();
-            }),
-        dbQpf.any(qpfQuery, [contexts.qpf.begin, contexts.qpf.end])
-          .then(function (rows) {
-              debug('got ' + rows.length + ' QPF rainfall rows');
-              generateStormfile(path.join(outputDir, contexts.qpf.rainFile), contexts.qpf.begin, rows);
-              //dbQpf.done();
-            })
-        ]).then(function () {
+          var obsLinks = {}, qpfLinks = {};
+          Promise
+            .all([
+              obsClient.query(obsQuery, [contexts.obs.begin, contexts.obs.end])
+                .onRow(mapRainLink(contexts.obs.begin, obsLinks)),
+              qpfClient.query(qpfQuery, [contexts.qpf.begin, contexts.qpf.end])
+                .onRow(mapRainLink(contexts.qpf.begin, qpfLinks))
+            ])
+            .then(function (results) {
+            
+              debug('got ' + results[0].rowCount + ' OBS rainfall rows');
+              debug('got ' + results[1].rowCount + ' QPF rainfall rows');
+            
+              generateStormfile(path.join(outputDir, 'forcing_rain_obs.str'), contexts.obs.begin, obsLinks);
+              generateStormfile(path.join(outputDir, 'forcing_rain_qpf.str'), contexts.qpf.begin, qpfLinks);
+            
+              obsClient.done();
+              qpfClient.done();
+            
+              if (!argv.qsub) return;
 
-            if (!argv.qsub) return;
-
-            // Check whether a job is already running
-            if (cfg && cfg.jobId) {
-              try {
-                var stat = cp.execSync('qstat -j ' + cfg.jobId).toString();
-                debug(stat);
-              } catch (ex) {
-                debug(ex);
+              // Check whether a job is already running
+              if (cfg && cfg.jobId) {
+                try {
+                  var stat = cp.execSync('qstat -j ' + cfg.jobId).toString();
+                  debug(stat);
+                } catch (ex) {
+                  debug(ex);
+                }
               }
-            }
 
-            // Run the simulations
-            debug('Run the simulations');
-            try {
-              var re = /Your job (\d*)/;
+              // Run the simulations
+              debug('Run the simulations');
+              try {
+                var re = /Your job (\d*)/;
 
-              // Queue the job
-              var sub = cp.execSync('qsub ' + path.join(outputDir, 'run.job')).toString();
-              var m = re.exec(sub);
-              if (m !== null) cfg.jobId = parseInt(m[1]);
-              debug(sub);
+                // Queue the job
+                var sub = cp.execSync('qsub ' + path.join(outputDir, 'run.job')).toString();
+                var m = re.exec(sub);
+                if (m !== null) cfg.jobId = parseInt(m[1]);
+                debug(sub);
 
-              // Update config file for next run
-              cfg.obsTime = obsTime;
-              cfg.qpfTime = qpfTime;
+                // Update config file for next run
+                cfg.obsTime = obsTime;
+                cfg.qpfTime = qpfTime;
 
-              fs.writeFileSync('.forecaster', JSON.stringify(cfg), 'utf8');
-            } catch (ex) {
-              console.error(ex.message);
-            }
+                fs.writeFileSync('.forecaster', JSON.stringify(cfg), 'utf8');
+              } catch (ex) {
+                console.error(ex.message);
+              }
 
-          }).catch(function (err) {
-            return console.error('error running query', err);
-          });
+            })
+            .catch(function (err) {
+              return console.error('error running query', err);
+            });
         }
 
       })
