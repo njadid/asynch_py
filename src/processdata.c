@@ -700,8 +700,20 @@ void PrepareDatabaseTable(UnivVars* GlobalVars,ConnData* conninfo)
 		CheckResError(res,"creating hydrograph table");
 		PQclear(res);
 
+        //Check if the table name contains a schema
+        char* sep = strchr(GlobalVars->hydro_table,'.');
+        if (sep != NULL)
+        {
+            *sep = '\0';
+            const char* schema = GlobalVars->hydro_table;
+            const char* table = sep + 1;
+            sprintf(query, "SELECT data_type FROM information_schema.columns WHERE table_schema='%s' AND table_name='%s' ORDER BY ordinal_position;", schema, table);
+            *sep = '.';
+        }
+        else
+            sprintf(query, "SELECT data_type FROM information_schema.columns WHERE table_name='%s' ORDER BY ordinal_position;", GlobalVars->hydro_table);
+
 		//Make sure table is consistent with outputs
-		sprintf(query,"SELECT data_type FROM information_schema.columns WHERE table_name='%s' ORDER BY ordinal_position;",GlobalVars->hydro_table);
 		res = PQexec(conninfo->conn,query);
 		CheckResError(res,"obtaining data types from hydrograph table");
 
