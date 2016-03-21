@@ -1,0 +1,5 @@
+language: c
+deploy:
+  provider: biicode
+  user: "sdebionne"
+  password: "YOUR_PASSWORD" # should be encrypted

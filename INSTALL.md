@@ -11,7 +11,7 @@ For an out of source build (prefered method):
 
 ```
 mkdir build && cd build
-../configure
+../configure CFLAGS=-DNDEBUG
 make
 make check
 make install
@@ -23,7 +23,7 @@ First, `git clone` the repository or `tar xzf` a released packages. To install t
 
 ```
 mkdir build && cd build
-../configure --prefix=/Groups/IFC/.local
+../configure --prefix=/Groups/IFC/.local CFLAGS=-DNDEBUG
 make
 make check
 make install
@@ -46,4 +46,3 @@ created.
 `make installcheck` Check the installed programs or libraries, if
 supported.
 `make dist` Create PACKAGE-VERSION.tar.gz.
-
