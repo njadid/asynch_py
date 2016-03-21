@@ -5,7 +5,8 @@ compiler:
 addons:
   apt:
     packages:
-     - openmpi
+     - libopenmpi-dev
+     - openmpi-bin
      - postgresql-9.2
 script:
  - mkdir -v build
