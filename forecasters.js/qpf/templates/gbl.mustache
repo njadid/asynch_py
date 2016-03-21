@@ -56,13 +56,21 @@ Classic
 
 %Where to put write hydrographs
 %(0 = no output, 1 = .dat file, 2 = .csv file, 3 = database)
-%3 60.0 save_hydrograph.dbc hydrographs_hydro01
-1 60.0 hydrographs.dat
+{{#outHydrographsDb}}
+3 60.0 save_hydrograph.dbc {{table}}
+{{/outHydrographsDb}}
+{{#outHydrographsFile}}
+1 60.0 {{file}}
+{{/outHydrographsFile}}
 
 %Where to put peakflow data
 %(0 = no output, 1 = .pea file, 2 = database)
-%2 save_peaks.dbc peaks_hydro01
-1 peaks.pea
+{{#outPeaksDb}}
+2 save_peaks.dbc {{table}}
+{{/outPeaksDb}}
+{{#outPeaksFile}}
+1 {{file}}
+{{/outPeaksFile}}
 
 %.sav files for hydrographs and peak file
 %(0 = save no data, 1 = .sav file, 2 = .dbc file, 3 = all hillslopes)

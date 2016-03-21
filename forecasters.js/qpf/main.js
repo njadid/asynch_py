@@ -92,7 +92,7 @@ function render(template, out, context) {
 
 // For each row add intensity to the map of rain data
 function mapRainLink(begin, links) {
-  
+
   return function(row) {
     if (typeof links[row.link_id] === 'undefined') {
       links[row.link_id] = {};
@@ -156,6 +156,12 @@ Promise
               rainFile: 'forcing_rain_obs.str',
               iniStateFile: 'state_' + cfg.obsTime + '.rec',
               endStateFile: 'state_' + obsTime + '.rec',
+              outHydrographsFile: {
+                file: 'hydrographs.dat'
+              },
+              outPeaksFile: {
+                file: 'peaks.pea'
+              }
             },
             qpf: {
               begin: obsTime,
@@ -164,7 +170,15 @@ Promise
               rainFileType: 1,
               rainFile: 'forcing_rain_qpf.str',
               iniStateFile: 'state_' + obsTime + '.rec',
-              endStateFile: 'forecast_qpf_' + qpfTime + '.rec'
+              endStateFile: 'forecast_qpf_' + qpfTime + '.rec',
+              outHydrographsDb: {
+                file: 'save_hydrograph.dbc',
+                table: 'qpf.hydrographs'
+              },
+              outPeaksDb: {
+                file: 'save_peaks.dbc',
+                table: 'qpf.peaks'
+              }
             },
             s2in: {
               begin: obsTime,
@@ -173,7 +187,15 @@ Promise
               rainFileType: 4,
               rainFile: 'forcing_rain_2inches24hour.ustr',
               iniStateFile: 'state_' + obsTime + '.rec',
-              endStateFile: 'forecast_2in_' + qpfTime + '.rec'
+              endStateFile: 'forecast_2in_' + qpfTime + '.rec',
+              outHydrographsDb: {
+                file: 'save_hydrograph.dbc',
+                table: 'whatif_2in24h.hydrographs'
+              },
+              outPeaksDb: {
+                file: 'save_peaks.dbc',
+                table: 'whatif_2in24h.peaks'                
+              }
             }
           };
 
@@ -218,16 +240,16 @@ ORDER BY link_id, unix_time`;
                 .onRow(mapRainLink(contexts.qpf.begin, qpfLinks))
             ])
             .then(function (results) {
-            
+
               debug('got ' + results[0].rowCount + ' OBS rainfall rows');
               debug('got ' + results[1].rowCount + ' QPF rainfall rows');
-            
+
               generateStormfile(path.join(outputDir, 'forcing_rain_obs.str'), contexts.obs.begin, obsLinks);
               generateStormfile(path.join(outputDir, 'forcing_rain_qpf.str'), contexts.qpf.begin, qpfLinks);
-            
+
               obsClient.done();
               qpfClient.done();
-            
+
               if (!argv.qsub) return;
 
               // Check whether a job is already running
