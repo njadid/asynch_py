@@ -13,4 +13,8 @@ AX_LIB_POSTGRESQL
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile forecasters/Makefile])
+
+# Checks for packages
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.10])
+
 AC_OUTPUT

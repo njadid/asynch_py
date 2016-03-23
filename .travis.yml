@@ -5,6 +5,7 @@ compiler:
 addons:
   apt:
     packages:
+     - check
      - libopenmpi-dev
      - openmpi-bin
      - postgresql-9.2
