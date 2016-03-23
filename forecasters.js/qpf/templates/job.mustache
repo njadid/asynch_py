@@ -1,13 +1,13 @@
 #!/bin/bash
 ##$ -pe 16cpn 16
 #$ -pe smp 4
+#$ -N {{name}}
+#$ -l h_rt=00:15:00
 
-/bin/echo Running on host: `hostname`.
-/bin/echo In directory: `pwd`
-/bin/echo Starting on: `date`
-/bin/echo "Got $NSLOTS slots."
-/bin/echo
+echo Running on host: `hostname`.
+echo In directory: `pwd`
+echo Starting on: `date`
+echo Got $NSLOTS slots.
+echo
 
-{{#globalFiles}}
-mpirun -np $NSLOTS -wdir {{workingDir}} /Groups/IFC/.local/bin/asynch {{.}}
-{{/globalFiles}}
+mpirun -np $NSLOTS -wdir {{workingDir}} /Groups/IFC/.local/bin/asynch {{globalFile}}

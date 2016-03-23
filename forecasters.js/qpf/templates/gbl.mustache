@@ -45,14 +45,17 @@ Classic
 {{begin}} {{end}}
 
 %Reservoirs feed
-3 forcing_reservoir.dbc
-20 60.0 {{begin}} {{end}}
+%3 forcing_reservoir.dbc
+%20 60.0 {{begin}} {{end}}
+0
 
 %Dam (0 = no dam, 1 = .dam, 2 = .qvs)
-3 qvs.dbc
+%3 qvs.dbc
+0
 
 %Reservoir ids (0 = no reservoirs, 1 = .rsv, 2 = .dbc file)
-1 reservoirs.rsv 2
+%1 reservoirs.rsv 2
+0
 
 %Where to put write hydrographs
 %(0 = no output, 1 = .dat file, 2 = .csv file, 3 = database)
@@ -74,11 +77,13 @@ Classic
 
 %.sav files for hydrographs and peak file
 %(0 = save no data, 1 = .sav file, 2 = .dbc file, 3 = all hillslopes)
-1 hydrographs.sav 
+1 hydrographs.sav
 3
 
 %Snapshot information (0 = none, 1 = to file, 2 = to database)
+{{#endStateFile}}
 1 {{endStateFile}}
+{{/endStateFile}}
 
 %Filename for scratch work
 /nfsscratch/Users/{{user}}/
