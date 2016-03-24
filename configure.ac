@@ -12,7 +12,7 @@ AX_CHECK_ZLIB
 AX_LIB_POSTGRESQL
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile forecasters/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile forecasters/Makefile tests/Makefile])
 
 # Checks for packages
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.10])

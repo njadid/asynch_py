@@ -1,4 +1,6 @@
-TESTS = check_date_manip
-check_PROGRAMS = check_date_manip
-check_foo_SOURCES = check_date_manip.c $(top_builddir)/src/date_manip.h
-check_foo_CFLAGS = @CHECK_CFLAGS@
+TESTS = check_asynch
+check_PROGRAMS = check_asynch
+check_asynch_SOURCES = check_asynch.c
+check_asynch_LDADD = $(top_builddir)/src/libasynch.a $(CHECK_LIBS)
+
+AM_CFLAGS = -I$(srcdir)/../src $(CHECK_CFLAGS)

@@ -3076,7 +3076,7 @@ UnivVars* Read_Global_Data(char globalfilename[],ErrorData** GlobalErrors,Forcin
 
 	//Read in the flag for the error tolerances
 	ReadLineFromTextFile(globalfile,linebuffer,buff_size,string_size);
-	valsread = sscanf(linebuffer,"%i",&(GlobalVars->rkd_flag));
+	valsread = sscanf(linebuffer,"%hi",&(GlobalVars->rkd_flag));
 	if(ReadLineError(valsread,1,"error tolerance flag"))	return NULL;
 
 	//Set some parameters

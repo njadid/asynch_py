@@ -32,10 +32,10 @@ int main(int argc,char* argv[])
 		return 1;
 	}
 
-#if !defined(NDEBUG)
     //Disable stdout buffering
     setvbuf(stdout, NULL, _IONBF, 0);
 
+#if !defined(NDEBUG)
     //When the program first starts to execute, at the very beginning of our program, we 
     //ask the user to type some sort of inpu to simply stall the application until start your
     //"Attach to Process" and you can attach to all the different threads in your program.
