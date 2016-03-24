@@ -65,10 +65,18 @@ function render(template, out, context) {
 
 //Check whether a simulation is already running
 sge.qstat('IFC_QPE')
-.then(function (stat) {
-  debug(stat);
+.then(function (status) {
+  debug(status);
+  if (status && status.state.indexOf('r') !== -1) {
+    throw 'Simulation already running';
+  } else if (status && status.state.indexOf('h') !== -1) {
+    debug('Simulation is on hold, delete before preparing the new one');
+    return sge.qdel('IFC_QPE');
+  } else {
+    return status;
+  }
 })
-.then(function (stat) {
+.then(function () {
   // Creating a new database instance from the connection details
   return pgp.connect(config.obsConn).then(function (client) {
     // Query the DB to get the latest obs timestamp
@@ -97,7 +105,7 @@ sge.qstat('IFC_QPE')
     iniStateFile: 'state_' + currentTime + '.rec',
     endStateFile: 'state_' + obsTime + '.rec',
     rainFileType: 1,
-    rainFile: 'forcing_rain_obs.str',
+    rainFile: 'forcing_rain_qpe.str',
     outHydrographsFile: {
       file: 'hydrographs.dat'
     },
@@ -117,12 +125,12 @@ sge.qstat('IFC_QPE')
   // Get the QPE data and generate the stormfile
   var links = {};
   return result.client.query(config.obsQuery, [context.begin])
-    .onRow(stormfile.mapLink(context.begin, links))
+    .onRow(stormfile.mapLink(context.begin, 300, links))
   .then(function (result) {
     debug('got ' + result.rowCount + ' QPE rainfall rows');
     result.client.done();
 
-    stormfile.generate(path.join(outputDir, context.rainFile), context.begin, links);
+    stormfile.generate(path.join(outputDir, context.rainFile), links);
 
     // Run the simulations
     debug('Queue the simulations');
@@ -136,7 +144,7 @@ sge.qstat('IFC_QPE')
     return pgp.connect(config.qpfConn).then(function (client) {
       // Query the DB to get the latest obs timestamp
       return client.query(config.qpfQuery, [context.begin])
-        .onRow(stormfile.mapLink(context.begin, links));
+        .onRow(stormfile.mapLink(context.begin, 3600, links));
     }).then(function (result) {
       debug('got ' + result.rowCount + ' QPF rainfall rows');
       result.client.done();
@@ -168,7 +176,7 @@ sge.qstat('IFC_QPE')
         workingDir: path.resolve(outputDir)
       });
 
-      stormfile.generate(path.join(outputDir, context.rainFile), context.begin, links);
+      stormfile.generate(path.join(outputDir, context.rainFile), links);
 
       // Run the simulations
       debug('Queue the simulations');

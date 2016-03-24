@@ -8,22 +8,24 @@ var os = require('os');
 module.exports = {
 
   // For each rows, add value to the link rain data
-  mapLink: function(begin, links) {
+  mapLink: function (begin, dt, links) {
 
-    return function(row) {
+    return function (row) {
       if (typeof links[row.link_id] === 'undefined') {
         links[row.link_id] = {};
         links[row.link_id][begin] = 0.0;
       }
 
       if (row.unix_time !== null) {
-        links[row.link_id][row.unix_time] = row.rain_intens;
+        // Timestamps are at the end of the timstep
+        var t = Math.max(row.unix_time - dt, begin);
+        links[row.link_id][t] = row.rain_intens;
       }
     };
   },
 
   // Generate the storm files
-  generate: function (filePath, begin, links) {
+  generate: function (filePath, links) {
     // Generate the storm files
     var outFile = fs.createWriteStream(filePath);
     outFile.write(Object.keys(links).length + os.EOL);

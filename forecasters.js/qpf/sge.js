@@ -40,20 +40,44 @@ module.exports = {
   },
 
   // Check job status
-  qstat: function() {
+  qstat: function(jobName) {
     return new Promise(function (fulfill, reject) {
-      var cmd = 'qstat -xml -s r -u $USER';
+      var cmd = 'qstat -xml -u $USER';
 
       debug(cmd);
       var stat = cp.exec(cmd, /*{encoding: 'utf16'},*/ function (err, stdout, stderr) {
-        debug(stdout);
-        debug(stderr);
-        parseString(stdout, {trim: true, emptyTag: null}, function (err, result) {
-          if (err)  {
-            reject(err);
-          }
-          fulfill(result);
-        });
+        if (err)  {
+          reject(err);
+        } else {
+          debug(stdout);
+          debug(stderr);
+          parseString(stdout, {trim: true, emptyTag: null, explicitArray: false}, function (err, result) {
+            if (err)  {
+              reject(err);
+            }
+            if (result.job_info && result.job_info.queue_info && result.job_info.queue_info.job_list) {
+              fulfill(result.job_info.queue_info.job_list.find(function (job) { return job.JB_name === jobName; }));
+            } else {
+              fulfill(undefined);
+            }
+          });
+        }
+      });
+    });
+  },
+  
+  // Delete a job
+  qdel: function(jobName) {
+    return new Promise(function (fulfill, reject) {
+      var cmd = 'qdel ' + jobName;
+
+      debug(cmd);
+      var stat = cp.exec(cmd, /*{encoding: 'utf16'},*/ function (err, stdout, stderr) {
+        if (err)  {
+          reject(err);
+        } else {
+          fulfill();
+        }
       });
     });
   }
