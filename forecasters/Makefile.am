@@ -16,4 +16,4 @@ asynchpersis_end_SOURCES = asynchpersis_end.c
 asynchpersis_end_LDADD = libforecaster.a $(top_builddir)/src/libasynch.a -lm $(POSTGRESQL_LIBS) $(SSH2_LIBS)
 
 AM_LDFLAGS = $(POSTGRESQL_LDFLAGS) $(SSH2_LDFLAGS)
-AM_CFLAGS = -I$(top_builddir)/src $(POSTGRESQL_CPPFLAGS) $(SSH2_CPPFLAGS)
+AM_CFLAGS = -I$(srcdir)/../src $(POSTGRESQL_CPPFLAGS) $(SSH2_CPPFLAGS)
