@@ -31,7 +31,7 @@ cd /Users/sdebionne/asynch/forecasters.js
 
 In plain english:
  - QPE check if new QPE are available every minutes
- - QPF and WHATIF scenarii are run at minute 40 every hours
+ - QPF and WHATIF scenario are run at minute 40 every hours
  
 Since crontabs are run in a nacked environment, the `main.sh` set the PATH and load the [Environment Modules](https://wiki.uiowa.edu/display/hpcdocs/Environment+Modules) required for the simulation.
  
