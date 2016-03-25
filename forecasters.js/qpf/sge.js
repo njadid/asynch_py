@@ -15,7 +15,7 @@ module.exports = {
       var re = /Your job (\d*)/;
 
       //Format the dependency options
-      var cmd = 'qsub ';
+      var cmd = 'qsub -h ';
       if (depJobNames) {
         cmd += '-hold_jid ' + depJobNames.join(',') + ' ';
       }
@@ -40,25 +40,31 @@ module.exports = {
   },
 
   // Check job status
-  qstat: function(jobName) {
+  qstat: function (jobName) {
     return new Promise(function (fulfill, reject) {
       var cmd = 'qstat -xml -u $USER';
 
       debug(cmd);
       var stat = cp.exec(cmd, /*{encoding: 'utf16'},*/ function (err, stdout, stderr) {
-        if (err)  {
+        if (err) {
           reject(err);
         } else {
-          debug(stdout);
-          debug(stderr);
-          parseString(stdout, {trim: true, emptyTag: null, explicitArray: false}, function (err, result) {
-            if (err)  {
+          parseString(stdout, {
+            trim: true,
+            emptyTag: null,
+            explicitArray: false
+          }, function (err, result) {
+            if (err) {
               reject(err);
             }
-            if (result.job_info && result.job_info.queue_info && result.job_info.queue_info.job_list) {
-              fulfill(result.job_info.queue_info.job_list.find(function (job) { return job.JB_name === jobName; }));
-            } else {
-              fulfill(undefined);
+            try {
+              var jobList = result.job_info.job_info.job_list;
+              if (!Array.isArray(jobList)) jobList = [jobList];
+              fulfill(jobList.find(function (job) {
+                return job.JB_name === jobName;
+              }));
+            } catch (e) {
+              fulfill();
             }
           });
         }
@@ -66,6 +72,38 @@ module.exports = {
     });
   },
   
+  // Put a job on hold
+  qhold: function(jobName) {
+    return new Promise(function (fulfill, reject) {
+      var cmd = 'qhold -h u ' + jobName;
+
+      debug(cmd);
+      var stat = cp.exec(cmd, /*{encoding: 'utf16'},*/ function (err, stdout, stderr) {
+        if (err)  {
+          reject(err);
+        } else {
+          fulfill();
+        }
+      });
+    });
+  },
+
+  // Release job from previous hold state
+  qrls: function(jobName) {
+    return new Promise(function (fulfill, reject) {
+      var cmd = 'qrls -h u ' + jobName;
+
+      debug(cmd);
+      var stat = cp.exec(cmd, /*{encoding: 'utf16'},*/ function (err, stdout, stderr) {
+        if (err)  {
+          reject(err);
+        } else {
+          fulfill();
+        }
+      });
+    });
+  },
+
   // Delete a job
   qdel: function(jobName) {
     return new Promise(function (fulfill, reject) {

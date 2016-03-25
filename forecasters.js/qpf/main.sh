@@ -10,4 +10,4 @@ module load openmpi/intel-composer_xe_2015.3.187-1.8.8
 cd "$(dirname "$0")"
 
 # Run the generator
-node main.js
+node $1
