@@ -1,10 +1,10 @@
-# Non persistant Forecasters
+# Non persistent Forecasters
 
-A forecast is a special type of ASYNCH style simulation. The simulation begins with a rainfall forcing for a period of time (e.g. 15 hours for QPF). This forcing is typically some type of rainfall forecast or scenario.
+A forecast is a not so special type of ASYNCH style simulation. The simulation begins with a rainfall forcing for a period of time (e.g. 15 hours for QPF). This forcing is typically some type of rainfall forecast or scenario.
 
-Forecasters ASYNCHPERSIS and FORECASTER_MAPS are continuously (persistently) running. That can be a problem on shared infrastructure like HPC clusters where nodes/cores are allocated for a given time to perform a job (that is not supposed to run forever).
+Forecasters ASYNCHPERSIS and FORECASTER_MAPS are programs that runs continuously (persistently) that is it waits actively for new data to consume between solver runs. That can be a problem on shared infrastructure like HPC clusters where nodes/cores are allocated for a given time to perform a job (that is not supposed to run forever).
 
-Forecasters.js are scripts that run a regular ASYNCH simulation at a given time interval using cronjobs. Basically the scripts performs the following tasks:
+Forecasters.js are scripts that prepare and submit a regular ASYNCH simulation. Since it is not computationally intensive (sequential work) it typically runs on login nodes. It can also be ran at a given time interval using cronjobs. Basically the scripts performs the following tasks:
 
  - Check if new data are available
  - Check the current status of a similar job if there is one in the queue
@@ -15,7 +15,7 @@ Forecasters.js are scripts that run a regular ASYNCH simulation at a given time 
  - Submit a simuation to the grid
  
 This approach has advantages:
- - adapted to real time systems where latency is considered (a large amount of processing is required for a short period of time)
+ - adapted to real time systems where latency matters (a large amount of processing is required for a short period of time)
  - less sensitive to the power loss or reboot: the cronjobs restart with the system, the state of the system is saved to files at regular interval
  
 ## Cronjobs
