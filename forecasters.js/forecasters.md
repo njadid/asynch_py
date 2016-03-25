@@ -35,15 +35,17 @@ In plain english:
  
 Since crontabs are run in a nacked environment, the `main.sh` set the PATH and load the [Environment Modules](https://wiki.uiowa.edu/display/hpcdocs/Environment+Modules) required for the simulation.
  
-## QPE
+## Scripts
 
-QPE is a script that runs at the time step of the observation and compute the most state of the domain according to the observation. This current state is used as initial conditions for the forecasts.
+### QPE.js
+
+`qpe.js` is a script that runs at the time step of the observation and compute the most state of the domain according to the observation. This current state is used as initial conditions for the forecasts.
 
 Each run of ASYNCH load intial conditions from the previous QPE run and save the final conditions to a .rec file. The files are timestamped so that the systems knows what is the current time of the simulation.
 
 ## QPF and WHATIF
 
-These forecasters generate forecast or outlooks respectively. They used the latest state available and run a simulation up to 10 days in the future with the current configuration.
+`qpf.js` and `whatif.js` are forecasters generate forecast or outlooks respectively. They used the latest state available and run a simulation up to 10 days in the future with the current configuration.
 
 ## Interaction with SGE
 
@@ -54,18 +56,19 @@ Submitting a job to the grid adds to the queue of waiting jobs for some time. Si
  - A job requires an other job to be finished before running
  
 The stategy used is:
- - already running
+ - Job already running
   - Wait until it is finished (postpone the job preparation)
- - already waiting 
+ - Job already waiting 
   - put the job on hold
   - prepare the new job configuration (that will be run by the job waiting)
   - release the job
- - depedencies
+ - Job depedencies
   - QPF and WHATIF are dependent on QPE (if a QPE sim is running, the jobs will wait until it is finished)
  
 ## Debugging the forecasters
 
 To print debugging trace in the console:
-`
+
+```
 export DEBUG=forecaster,sge
-`
+```
