@@ -10,8 +10,8 @@ addons:
      - openmpi-bin
      - libpq-dev
 script:
+ - autoreconf -ivf
  - mkdir -v build
  - cd build
- - autoreconf -ivf ..
  - ../configure --prefix=${HOME}
  - make check
