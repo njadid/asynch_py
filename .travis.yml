@@ -6,6 +6,8 @@ addons:
      - libopenmpi-dev
      - openmpi-bin
      - libpq-dev
+before_script:
+  - test -n $CC && unset CC
 script:
  - mkdir -v build
  - cd build
