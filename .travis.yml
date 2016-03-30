@@ -8,7 +8,7 @@ addons:
      - check
      - libopenmpi-dev
      - openmpi-bin
-     - postgresql-9.2
+     - libpq-dev
 script:
  - mkdir -v build
  - cd build
