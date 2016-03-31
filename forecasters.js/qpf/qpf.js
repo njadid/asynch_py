@@ -83,6 +83,12 @@ sge.qstat('IFC_QPF')
     return sge.qhold('IFC_QPF');
   } else {
     debug('No job found, submit a new one');
+    render(templates.job, 'qpf.job', {
+      name: 'IFC_QPF',
+      globalFile: 'qpf.gbl',
+      workingDir: path.resolve(outputDir)
+    });
+
     return sge.qsub(path.join(outputDir, 'qpf.job'), ['IFC_QPE']);
   }
 })
@@ -132,11 +138,6 @@ sge.qstat('IFC_QPF')
 
   // Render a new set of config files
   render(templates.gbl, 'qpf.gbl', context);
-  render(templates.job, 'qpf.job', {
-    name: 'IFC_QPF',
-    globalFile: 'qpf.gbl',
-    workingDir: path.resolve(outputDir)
-  });
 
   // Get the QPF data and generate the stormfile
   var links = {};

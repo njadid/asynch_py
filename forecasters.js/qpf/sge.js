@@ -58,9 +58,18 @@ module.exports = {
               reject(err);
             }
             try {
-              var jobList = result.job_info.job_info.job_list;
-              if (!Array.isArray(jobList)) jobList = [jobList];
-              fulfill(jobList.find(function (job) {
+              var info = [];
+              if (result.job_info.job_info) {
+                var jobInfo = result.job_info.job_info.job_list;
+                if (!Array.isArray(jobInfo)) jobInfo = [jobInfo];
+                info = info.concat(jobInfo);
+              }
+              if (result.job_info.queue_info) {
+                var queueInfo = result.job_info.queue_info.job_list;
+                if (!Array.isArray(queueInfo)) queueInfo = [queueInfo];
+                info = info.concat(queueInfo);
+              }
+              fulfill(info.find(function (job) {
                 return job.JB_name === jobName;
               }));
             } catch (e) {

@@ -1,6 +1,6 @@
 var debug = require('debug')('sge');
 
-var sge = require('./sge.js');
+var sge = require('../sge.js');
 
 sge.qstat('IFC_QPE')
 .then(function (status) {
@@ -15,9 +15,4 @@ sge.qstat('IFC_QPE')
 })
 .catch(function (err) {
   return console.error(err);
-})
-
-sge.qhold('IFC_QPE')
-.catch(function (err) {
-  return console.error(err);
-})
+});

@@ -83,6 +83,12 @@ sge.qstat('IFC_QPE')
     return sge.qhold('IFC_QPE');
   } else {
     debug('No job found, submit a new one');
+    render(templates.job, 'qpe.job', {
+      name: 'IFC_QPE',
+      globalFile: 'qpe.gbl',
+      workingDir: path.resolve(outputDir)
+    });
+
     return sge.qsub(path.join(outputDir, 'qpe.job'));
   }
 })
@@ -100,8 +106,6 @@ sge.qstat('IFC_QPE')
     forcingTime = getLatestForcing() || currentTime,
     latestTime = result.value,
     user = username.sync();
-
-  debug('temp ' + getLatestForcing());
 
   debug('current timestamp ' + currentTime);
   debug('last rainfall QPE timestamp ' + forcingTime);
@@ -132,11 +136,6 @@ sge.qstat('IFC_QPE')
 
   // Render a new set of config files
   render(templates.gbl, 'qpe.gbl', context);
-  render(templates.job, 'qpe.job', {
-    name: 'IFC_QPE',
-    globalFile: 'qpe.gbl',
-    workingDir: path.resolve(outputDir)
-  });
 
   // Get the QPE data and generate the stormfile
   var links = {};

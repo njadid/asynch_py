@@ -78,6 +78,12 @@ sge.qstat('IFC_WHATIF_2IN24H')
     return sge.qhold('IFC_WHATIF_2IN24H');
   } else {
     debug('No job found, submit a new one');
+    render(templates.job, 'whatif_2in24h.job', {
+      name: 'IFC_WHATIF_2IN24H',
+      globalFile: 'whatif_2in24h.gbl',
+      workingDir: path.resolve(outputDir)
+    });
+
     return sge.qsub(path.join(outputDir, 'whatif_2in24h.job'), ['IFC_QPE']);
   }
 })
@@ -108,11 +114,6 @@ sge.qstat('IFC_WHATIF_2IN24H')
 
   // Render a new set of config files
   render(templates.gbl, 'whatif_2in24h.gbl', context);
-  render(templates.job, 'whatif_2in24h.job', {
-    name: 'IFC_WHATIF_2IN24H',
-    globalFile: 'whatif_2in24h.gbl',
-    workingDir: path.resolve(outputDir)
-  });
 
   // Run the simulations
   debug('Release the simulation');
