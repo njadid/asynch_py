@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Iowa-Flood-Center/asynch.svg?branch=master)](https://travis-ci.org/Iowa-Flood-Center/asynch)
+
 # ASYNCH
 
 A numerical library for solving differential equations with a tree structure. Emphasis is given to hillslope-link river basin models.
