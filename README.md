@@ -20,3 +20,27 @@ no reason why ASYNCH cannot be applied to other problems with ordinary different
 The novelty of this solver is that it uses an asynchronous integrator to solve the differential equations. Further, the communication between processes occurs asynchronously. Details about how this works can be found
 in *Small, et. al. An Asynchronous Solver for Systems of ODEs Linked by a Directed Tree Structure, Advances in Water Resources, 53, March 2013,
 23-32*.
+
+
+## The ASYNCH folder structure
+
+```
++---docs
++---examples
++---forecasters
++---forecasters_js
++---ide
++---m4
++---src
+\---tests
+```
+
+## Table of contents
+
+ - [Installation](INSTALL.md)
+ - [Async]()
+   - [libasync]()
+   - [asynch CLI]()
+ - [Forecasters]()
+ - [Forecasters JS]()
+ - [Examples]()
