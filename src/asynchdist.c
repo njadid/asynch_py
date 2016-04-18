@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdbool.h>
+#include <stdarg.h>
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -6,84 +8,181 @@
 
 #include "mpi.h"
 #include "asynch_interface.h"
+#include "optparse.h"
 
-int my_rank;
-int np;
+#if !defined(_MSC_VER)
+#include <config.h>
+#else 
+#include <config_msvc.h>
+#endif
+
+// Global variables
+int my_rank = 0;
+int np = 0;
 
 int Output_Linkid(double t,VEC* y_i,VEC* global_params,VEC* params,int state,void* user);
 void Set_Output_User_LinkID(asynchsolver* asynch);
 
-int main(int argc,char* argv[])
+//Print to stdout only for process of rank 0
+int print_out(const char* format, ...)
 {
-	//Initialize MPI stuff
-	MPI_Init(&argc,&argv);
-	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
-	MPI_Comm_size(MPI_COMM_WORLD,&np);
-
-	//Parse input
-	if(argc < 2)
-	{
-		if(my_rank == 0)
-		{
-			printf("Command line parameter required:  A universal variable file (.gbl).\n");
-			printf("\n");
-		}
-		MPI_Finalize();
-		return 1;
-	}
-
-    //Disable stdout buffering
-    setvbuf(stdout, NULL, _IONBF, 0);
-
-#if !defined(NDEBUG)
-    //When the program first starts to execute, at the very beginning of our program, we 
-    //ask the user to type some sort of inpu to simply stall the application until start your
-    //"Attach to Process" and you can attach to all the different threads in your program.
+    int res = 0;
     if (my_rank == 0)
     {
-        printf("You may now attach the debugger then press enter.\n");
-        //fflush(stdout);
-        getchar();
+        va_list args;
+        va_start(args, format);
+        res = vprintf(format, args);
+        va_end(args);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD); // All threads will wait here until you give thread 0 an input
-#endif
+    return res;
+}
+
+//Print to stderr only for process of rank 0
+int print_err(const char* format, ...)
+{
+    int res = 0;
+    if (my_rank == 0)
+    {
+        va_list args;
+        va_start(args, format);
+        res = vfprintf(stderr, format, args);
+        va_end(args);
+    }
+
+    return res;
+}
+
+//Make sure we finalize MPI
+void asynch_onexit(void)
+{
+    int flag;
+    MPI_Finalized(&flag);
+    if (!flag)
+        MPI_Finalize();
+}
+
+int main(int argc,char* argv[])
+{
+    int res;
+
+    //Initialize MPI stuff
+    res = MPI_Init(&argc, &argv);
+    if (res == MPI_SUCCESS)
+        atexit(asynch_onexit);
+    else
+    {
+        print_err("Failed to initialize MPI");
+        exit(EXIT_FAILURE);
+    }
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &np);
+
+    //Command line options
+    bool debug = false;
+    bool help = false;
+    bool version = false;    
+
+    //Parse command line
+    struct optparse options;
+    optparse_init(&options, argv);
+    struct optparse_long longopts[] = {
+        { "debug", 'd', OPTPARSE_NONE },
+        { "help", 'h', OPTPARSE_NONE },
+        { "version", 'v', OPTPARSE_NONE },
+        { 0 }
+    };
+    int option;
+    while ((option = optparse_long(&options, longopts, NULL)) != -1) {
+        switch (option) {
+        case 'd':
+            debug = true;
+            break;
+        case 'h':
+            help = true;
+            break;
+        case 'v':
+            version = true;
+            break;
+        case '?':
+            print_err("%s: %s\n", argv[0], options.errmsg);
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (version) print_out("This is %s\n", PACKAGE_STRING);
+    if (help)
+    {
+        print_out("Usage: asynch <global file>\n", PACKAGE_STRING);
+        print_out(
+"  -d [--debug]   : Wait for the user input at the begining of the program (useful" \
+"                   for attaching a debugger)\n" \
+"  -v [--version] : Print the current version of ASYNCH\n");
+        exit(EXIT_SUCCESS);
+    }
+    if (version || help) exit(EXIT_SUCCESS);
+
+	//Parse remaining arguments
+    char *global_filename = optparse_arg(&options);
+    if (global_filename == NULL && my_rank == 0)
+    {
+        print_err("Command line parameter required:  A universal variable file (.gbl).\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (debug)
+    {
+        //Disable stdout buffering
+        setvbuf(stdout, NULL, _IONBF, 0);
+
+        //When the program first starts to execute, at the very beginning of our program, we 
+        //ask the user to type some sort of input to simply stall the application until start your
+        //"Attach to Process" and you can attach to all the different threads in your program.
+        if (my_rank == 0)
+        {
+            printf("You may now attach the debugger then press enter.\n");
+            //fflush(stdout);
+            getchar();
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD); // All threads will wait here until you give thread 0 an input
+    }
 
 	//Declare variables
 	time_t start,stop;
 	double total_time;
 	asynchsolver* asynch;
 
-	if(my_rank == 0)
-		printf("\nBeginning initialization...\n*****************************\n");
+    print_out("\nBeginning initialization...\n*****************************\n");
 	MPI_Barrier(MPI_COMM_WORLD);
 	start = time(NULL);
 
 	//Init asynch object and the river network
 	asynch = Asynch_Init(MPI_COMM_WORLD,&argc,&argv);
-	if(my_rank == 0)	printf("Reading global file...\n");
+	print_out("Reading global file...\n");
 	Asynch_Parse_GBL(asynch,argv[1]);
-	if(my_rank == 0)	printf("Loading network...\n");
+	print_out("Loading network...\n");
 	Asynch_Load_Network(asynch);
-	if(my_rank == 0)	printf("Partitioning network...\n");
+	print_out("Partitioning network...\n");
 	Asynch_Partition_Network(asynch);
-	if(my_rank == 0)	printf("Loading parameters...\n");
+	print_out("Loading parameters...\n");
 	Asynch_Load_Network_Parameters(asynch,0);
-	if(my_rank == 0)	printf("Reading dam and reservoir data...\n");
+	print_out("Reading dam and reservoir data...\n");
 	Asynch_Load_Dams(asynch);
-	if(my_rank == 0)	printf("Setting up numerical error data...\n");
+	print_out("Setting up numerical error data...\n");
 	Asynch_Load_Numerical_Error_Data(asynch);
-	if(my_rank == 0)	printf("Initializing model...\n");
+	print_out("Initializing model...\n");
 	Asynch_Initialize_Model(asynch);
-	if(my_rank == 0)	printf("Loading initial conditions...\n");
+	print_out("Loading initial conditions...\n");
 	Asynch_Load_Initial_Conditions(asynch);
-	if(my_rank == 0)	printf("Loading forcings...\n");
+	print_out("Loading forcings...\n");
 	Asynch_Load_Forcings(asynch);
-	if(my_rank == 0)	printf("Loading output data information...\n");
+	print_out("Loading output data information...\n");
 	Asynch_Load_Save_Lists(asynch);
-	if(my_rank == 0)	printf("Finalizing network...\n");
+	print_out("Finalizing network...\n");
 	Asynch_Finalize_Network(asynch);
-	if(my_rank == 0)	printf("Calculating initial step sizes...\n");
+	print_out("Calculating initial step sizes...\n");
 	Asynch_Calculate_Step_Sizes(asynch);
 
 	if(my_rank == 0)
@@ -129,7 +228,7 @@ int main(int argc,char* argv[])
 
 	//Out information
 	total_time += difftime(stop,start);
-	if(my_rank == 0)	printf("\nComputations complete. Total time for calculations: %f\n",difftime(stop,start));
+	print_out("\nComputations complete. Total time for calculations: %f\n",difftime(stop,start));
 	if(asynch->sys[asynch->my_sys[0]]->c == NULL)
 	{
 		printf("[%i]: The solution at ID %i at time %.12f is\n",my_rank,asynch->sys[asynch->my_sys[0]]->ID,asynch->sys[asynch->my_sys[0]]->last_t);
@@ -146,7 +245,7 @@ int main(int argc,char* argv[])
 	//Clean up
 	Asynch_Delete_Temporary_Files(asynch);
 	Asynch_Free(asynch);
-	MPI_Finalize();
+
 	return 0;
 }
 
