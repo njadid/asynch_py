@@ -5,26 +5,17 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <string.h>
 #if !defined(_MSC_VER)
-#include <unistd.h>
+#include <config.h>
+#else 
+#include <config_msvc.h>
 #endif
-#include <mpi.h>
+
 #include "structs.h"
 #include "sort.h"
 #include "comm.h"
 #include "rkmethods.h"
 #include "data_types.h"
-
-#if !defined(_MSC_VER)
-#define ASYNCH_SLEEP sleep
-#else
-#include <windows.h>
-#define ASYNCH_SLEEP Sleep
-#endif
 
 #define DB_CONNS_AT_ONCE 10
 
@@ -35,6 +26,7 @@ int Process_Data(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* sa
 int UploadHydrosDB(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* save_list,unsigned int save_size,unsigned int my_save_size,unsigned int** id_to_loc,int* assignments,char* additional_temp,char* additional_out,ConnData* conninfo,FILE** my_tempfile);
 //void DataDump(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,unsigned int last_file);
 int DataDump2(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,char* preface,ConnData* conninfo);
+int DataDumpH5(Link** sys, unsigned int N, int* assignments, UnivVars* GlobalVars, char* preface, ConnData* conninfo);
 int UploadDBDataDump(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,char* preface,ConnData* conninfo);
 void PrepareDatabaseTable(UnivVars* GlobalVars,ConnData* conninfo);
 int PreparePeakFlowFiles(UnivVars* GlobalVars,unsigned int peaksave_size);

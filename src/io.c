@@ -1,3 +1,12 @@
+#if !defined(_MSC_VER)
+#include <config.h>
+#else 
+#include <config_msvc.h>
+#endif
+
+#include <stdio.h>
+#include <string.h>
+
 #include "io.h"
 
 //Creates an io object
@@ -33,10 +42,12 @@ io* BuildIO(UnivVars* GlobalVars)
 		output_data->CreatePeakflowOutput = NULL;
 
 	//Set data dump routines
-	if(GlobalVars->dump_loc_flag == 1)
-		output_data->CreateSnapShot = &DataDump2;
-	else if(GlobalVars->dump_loc_flag == 2)
-		output_data->CreateSnapShot = &UploadDBDataDump;
+    if (GlobalVars->dump_loc_flag == 1)
+        output_data->CreateSnapShot = &DataDump2;
+    else if (GlobalVars->dump_loc_flag == 2)
+        output_data->CreateSnapShot = &UploadDBDataDump;
+    else if (GlobalVars->dump_loc_flag == 3)
+        output_data->CreateSnapShot = &DataDumpH5;
 	else
 		output_data->CreateSnapShot = NULL;
 

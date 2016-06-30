@@ -5,11 +5,6 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <libpq-fe.h>
 #include "structs.h"
 #include "rkmethods.h"
 #include "partition.h"
@@ -46,7 +41,7 @@ void ReadLineFromTextFile(FILE* globalfile,char* linebuffer,unsigned int size,un
 
 int ReadLineError(int valsread,int valswant,char message[]);
 
-int RemoveSuffix(char* filename,char suffix[]);
+int RemoveSuffix(char* filename,const char* suffix);
 
 int AttachParameters(char* filename,unsigned int max_size,VEC v,unsigned int string_size);
 

@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(RootDir)\forecasters\asynchpersis.c">
+    <ClCompile Include="$(RootDir)\forecasters\forecaster_methods.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(RootDir)\forecasters\forecaster_methods.c">
+    <ClCompile Include="$(RootDir)\forecasters\forecaster_maps_end.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

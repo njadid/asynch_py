@@ -1,4 +1,37 @@
+#if !defined(_MSC_VER)
+#include <config.h>
+#else 
+#include <config_msvc.h>
+#endif
+
+#include <assert.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+
+#if !defined(_MSC_VER)
+#define ASYNCH_SLEEP sleep
+#else
+#include <windows.h>
+#define ASYNCH_SLEEP Sleep
+#endif
+
+#include <mpi.h>
+
+#if defined(HAVE_POSTGRESQL)
+#include <libpq-fe.h>
+#endif
+
+#if defined(HAVE_HDF5)
+#include <hdf5.h>
+#include <hdf5_hl.h>
+#endif
+
 #include "processdata.h"
 
 //Reads the results stored in temporary files and outputs them conveniently to a new file.
@@ -1432,6 +1465,75 @@ int DataDump2(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,ch
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	return 0;
+}
+
+int DataDumpH5(Link** sys, unsigned int N, int* assignments, UnivVars* GlobalVars, char* preface, ConnData* conninfo)
+{
+    unsigned int i;
+    unsigned int res = 0;
+
+    if (my_rank == 0)	//Creating the file
+    {
+        hid_t file_id = H5Fcreate(GlobalVars->dump_loc_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        if (file_id < 0)
+        {
+            printf("Error: could not open h5 file %s.\n", GlobalVars->dump_loc_filename);
+            res = 1;
+            MPI_Bcast(&res, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+            return res;
+        } else
+            MPI_Bcast(&res, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+
+        //Set attributes
+        unsigned short type = GlobalVars->type;
+        unsigned int unix_time = GlobalVars->end_time;
+        H5LTset_attribute_ushort(file_id, "/", "model", &type, 1);
+        H5LTset_attribute_uint(file_id, "/", "unix_time", &unix_time, 1);
+
+        //Assume that every links have the same dimension
+        unsigned int dim = sys[0]->dim;
+
+        int *index = malloc(N * sizeof(unsigned int));
+        double *data = malloc(N * dim * sizeof(double));
+
+        for (i = 0; i<N; i++)
+        {
+            assert(sys[i]->dim == dim);
+            if (assignments[i] != 0)
+                MPI_Recv(&data[i * dim], sys[i]->dim, MPI_DOUBLE, assignments[i], i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            else
+                memcpy(&data[i * dim], sys[i]->list->tail->y_approx.ve, sys[i]->dim * sizeof(double));
+
+            index[i] = sys[i]->ID;
+        }
+        hsize_t index_dims[1];
+        index_dims[0] = N;
+        H5LTmake_dataset_int(file_id, "/index", 1, index_dims, index);
+        
+        hsize_t data_dims[2];
+        data_dims[0] = N;
+        data_dims[1] = dim;
+        H5LTmake_dataset_double(file_id, "/state", 2, data_dims, data);
+
+        //Clean up
+        H5Fclose(file_id);
+    }
+    else			//Sending data to proc 0
+    {
+        //Check for error while opening the file
+        MPI_Bcast(&res, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
+        if (res)
+            return 1;
+
+        for (i = 0; i<N; i++)
+        {
+            if (assignments[i] == my_rank)
+                MPI_Send(sys[i]->list->tail->y_approx.ve, sys[i]->dim, MPI_DOUBLE, 0, i, MPI_COMM_WORLD);
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    return 0;
 }
 
 int UploadDBDataDump(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,char* preface,ConnData* conninfo)

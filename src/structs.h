@@ -5,10 +5,20 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#if !defined(_MSC_VER)
+#include <config.h>
+#else 
+#include <config_msvc.h>
+#endif
+
+#include <stdio.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
+#include "libpq-fwd.h"
 #include "mathmethods.h"
-#include "mpi.h"
-#include <libpq-fe.h>
-//#include "muParserDLL.h"
 
 //Note: For parser, uncomment out formula and equation data here.
 //Also go through riversys.c for equation (3 instances).
@@ -161,13 +171,18 @@ typedef struct io
 typedef struct UnivVars
 {
     unsigned short int type;        //!< Index for the model used
+
+    double maxtime;                 //!< Integrate up to this time (duration)
+    double t_0;                     //!< Initial time to start integration
+
+    unsigned int start_time;        //!< Unix start time
+    unsigned int end_time;          //!< Unix end time
+
     unsigned short int method;      //!< RK method to use (if it is the same for all links)
     unsigned short int max_s;       //!< The largest number of internal stages of any RK method used    !!!! Is this needed? !!!!
     unsigned short int max_parents; //!< The largest number of parents any link has
     int iter_limit;                 //!< If a link has >= iter_limit of steps stored, no new computations occur
     int max_transfer_steps;         //!< Maximum number of steps to communicate at once between processes
-    double maxtime;                 //!< Integrate up to this time
-    double t_0;                     //!< Initial time to start integration
     //unsigned int dim;             //!< The dimension of the ODE to solve at each link
     //unsigned int problem_dim;     //!< Same as dim when not using data assimilation. Otherwise, it's the model dimension
     //unsigned int increment;       //!< Number of rainfall files to store in memory at a time
@@ -399,6 +414,7 @@ typedef struct Forcing
     unsigned int lastused_last_file;    //!< The value of last_file when the GetPasses routine was last called. 0 if never set.
     unsigned int number_timesteps;      //!< The number of times which feature a forcing at some link.
 } Forcing;
+
 
 //Structure to hold information about how data is to be transfered between processes.
 typedef struct TransData
