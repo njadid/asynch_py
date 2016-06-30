@@ -1,9 +1,19 @@
 //Creates tables and functions in the rm_model database.
-//gcc createtables.c -o CREATETABLES -O3 -lpq
+
+#if !defined(_MSC_VER)
+#include <config.h>
+#else 
+#include <config_msvc.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <libpq-fe.h>
 #include <string.h>
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+
+#include <libpq-fe.h>
 
 int CheckSQLError(PGresult* res);
 void CheckConnConnection(PGconn* conn);
@@ -50,8 +60,8 @@ int main(int argc,char* argv[])
 
 	for(i=0;i<numtables;i++)
 	{
-		if(new_version)	sprintf(query,"CREATE TABLE IF NOT EXISTS archive_hydroforecast_%s_%i() INHERITS (master_archive_hydroforecast_%s);",M,i,M,M,i);
-		else		sprintf(query,"CREATE TABLE archive_hydroforecast_%s_%i() INHERITS (master_archive_hydroforecast_%s);",M,i,M,M,i);
+		if(new_version)	sprintf(query,"CREATE TABLE IF NOT EXISTS archive_hydroforecast_%s_%i() INHERITS (master_archive_hydroforecast_%s);",M,i,M);
+		else		sprintf(query,"CREATE TABLE archive_hydroforecast_%s_%i() INHERITS (master_archive_hydroforecast_%s);",M,i,M);
 		res = PQexec(conn,query);
 		CheckSQLError(res);
 		PQclear(res);
@@ -72,8 +82,8 @@ int main(int argc,char* argv[])
 
 		for(i=0;i<numtables;i++)
 		{
-			if(new_version)	sprintf(query,"CREATE TABLE IF NOT EXISTS archive_peakflows_%s_%i() INHERITS (master_archive_peakflows_%s);",M,i,M,M,i);
-			else		sprintf(query,"CREATE TABLE archive_peakflows_%s_%i() INHERITS (master_archive_peakflows_%s);",M,i,M,M,i);
+			if(new_version)	sprintf(query,"CREATE TABLE IF NOT EXISTS archive_peakflows_%s_%i() INHERITS (master_archive_peakflows_%s);",M,i,M);
+			else		sprintf(query,"CREATE TABLE archive_peakflows_%s_%i() INHERITS (master_archive_peakflows_%s);",M,i,M);
 			res = PQexec(conn,query);
 			CheckSQLError(res);
 			PQclear(res);
@@ -92,8 +102,8 @@ int main(int argc,char* argv[])
 
 		for(i=0;i<numtables;i++)
 		{
-			if(new_version)	sprintf(query,"CREATE TABLE IF NOT EXISTS archive_maps_%s_%i() INHERITS (master_archive_maps_%s);",M,i,M,M,i);
-			else		sprintf(query,"CREATE TABLE archive_maps_%s_%i() INHERITS (master_archive_maps_%s);",M,i,M,M,i);
+			if(new_version)	sprintf(query,"CREATE TABLE IF NOT EXISTS archive_maps_%s_%i() INHERITS (master_archive_maps_%s);",M,i,M);
+			else		sprintf(query,"CREATE TABLE archive_maps_%s_%i() INHERITS (master_archive_maps_%s);",M,i,M);
 			res = PQexec(conn,query);
 			CheckSQLError(res);
 			PQclear(res);
