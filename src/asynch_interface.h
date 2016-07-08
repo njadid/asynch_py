@@ -153,7 +153,7 @@ int Asynch_Set_Global_Parameters(asynchsolver* asynch,VEC gparams,unsigned int n
 int Asynch_Set_Output(asynchsolver* asynch,char* name,short int data_type,void* func,unsigned int* used_states,unsigned int num_states);
 int Asynch_Check_Output(asynchsolver* asynch,char* name);
 int Asynch_Check_Peakflow_Output(asynchsolver* asynch,char* name);
-int Asynch_Set_Peakflow_Output(asynchsolver* asynch,char* name,void (*func)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*));
+int Asynch_Set_Peakflow_Output(asynchsolver* asynch,char* name,void (*func)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*,int));
 int Asynch_Create_OutputUser_Data(asynchsolver* asynch,unsigned int data_size);
 int Asynch_Free_OutputUser_Data(asynchsolver* asynch);
 void Asynch_Copy_Local_OutputUser_Data(asynchsolver* asynch,unsigned int location,void* source,unsigned int size);

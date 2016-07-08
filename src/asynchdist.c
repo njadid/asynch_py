@@ -83,6 +83,8 @@ int main(int argc,char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    //MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 

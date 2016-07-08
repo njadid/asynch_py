@@ -1129,13 +1129,15 @@ int PreparePeakFlowFiles(UnivVars* GlobalVars,unsigned int peaksave_size)
 }
 
 
+#define ASYNCH_OUTPUT_BUFFER_SIZE 256
+
 //Writes to disk the current peakflow information.
 int DumpPeakFlowData(Link** sys,UnivVars* GlobalVars,unsigned int N,int* assignments,unsigned int* peaksave_list,unsigned int peaksave_size,unsigned int** id_to_loc,ConnData* conninfo)
 {
 	unsigned int i,length,error = 0,loc;
 	Link* current;
 	FILE* peakfile = NULL;
-	char buffer[256];
+	char buffer[ASYNCH_OUTPUT_BUFFER_SIZE];
 	double conversion = (GlobalVars->convertarea_flag) ? 1e-6 : 1.0;
 
 	if(peaksave_size)
@@ -1171,12 +1173,13 @@ int DumpPeakFlowData(Link** sys,UnivVars* GlobalVars,unsigned int N,int* assignm
 
 				if(assignments[loc] == my_rank)
 				{
-					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer);
+					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer,ASYNCH_OUTPUT_BUFFER_SIZE);
 				}
 				else
 				{
-					MPI_Recv(&length,1,MPI_UNSIGNED,assignments[loc],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-					MPI_Recv(buffer,length+1,MPI_CHAR,assignments[loc],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+                    MPI_Status status;
+					int ret = MPI_Recv(buffer,ASYNCH_OUTPUT_BUFFER_SIZE, MPI_CHAR,assignments[loc],0,MPI_COMM_WORLD,&status);
+                    ret = MPI_Get_count(&status, MPI_CHAR, &length);
 				}
 
 				fprintf(peakfile,"%s",buffer);
@@ -1194,11 +1197,10 @@ int DumpPeakFlowData(Link** sys,UnivVars* GlobalVars,unsigned int N,int* assignm
 
 				if(assignments[loc] == my_rank)
 				{
-					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer);
-					length = strlen(buffer);
-					MPI_Send(&length,1,MPI_UNSIGNED,0,0,MPI_COMM_WORLD);
-					MPI_Send(buffer,length+1,MPI_CHAR,0,0,MPI_COMM_WORLD);
-				}
+					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer,ASYNCH_OUTPUT_BUFFER_SIZE);
+					length = strlen(buffer) + 1;
+                    int ret = MPI_Ssend(buffer,length,MPI_CHAR,0,0,MPI_COMM_WORLD);
+ 				}
 			}
 		}
 	}
@@ -1212,7 +1214,8 @@ int DumpPeakFlowData(Link** sys,UnivVars* GlobalVars,unsigned int N,int* assignm
 int UploadPeakFlowData(Link** sys,UnivVars* GlobalVars,unsigned int N,int* assignments,unsigned int* peaksave_list,unsigned int peaksave_size,unsigned int** id_to_loc,ConnData* conninfo)
 {
 	unsigned int i,loc,length,result,return_val = 0,error = 0;
-	char temptablename[ASYNCH_MAX_QUERY_LENGTH],buffer[256];
+    char temptablename[ASYNCH_MAX_QUERY_LENGTH];
+    char buffer[ASYNCH_OUTPUT_BUFFER_SIZE];
 	Link* current;
 	PGresult *res;
 	double conversion = (GlobalVars->convertarea_flag) ? 1e-6 : 1.0;
@@ -1284,13 +1287,14 @@ printf("[%i]: Warning: I think you need a file to create a peakflow table...\n",
 
 				if(assignments[loc] == my_rank)
 				{
-					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer);
+					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer,ASYNCH_OUTPUT_BUFFER_SIZE);
 					length = strlen(buffer);
 				}
 				else
 				{
-					MPI_Recv(&length,1,MPI_UNSIGNED,assignments[loc],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-					MPI_Recv(buffer,length+1,MPI_CHAR,assignments[loc],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+                    MPI_Status status;
+                    int ret = MPI_Recv(buffer, ASYNCH_OUTPUT_BUFFER_SIZE, MPI_CHAR, assignments[loc], 0, MPI_COMM_WORLD, &status);
+                    ret = MPI_Get_count(&status, MPI_CHAR, &length);
 				}
 
 				result = PQputCopyData(conninfo->conn,buffer,length);
@@ -1338,10 +1342,9 @@ printf("[%i]: Warning: I think you need a file to create a peakflow table...\n",
 
 				if(assignments[loc] == my_rank)
 				{
-					GlobalVars->peakflow_output(current->ID,current->peak_time,current->peak_value,current->params,GlobalVars->global_params,conversion,GlobalVars->area_idx,current->peakoutput_user,buffer);
-					length = strlen(buffer);
-					MPI_Send(&length,1,MPI_UNSIGNED,0,0,MPI_COMM_WORLD);
-					MPI_Send(buffer,length+1,MPI_CHAR,0,0,MPI_COMM_WORLD);
+                    GlobalVars->peakflow_output(current->ID, current->peak_time, current->peak_value, current->params, GlobalVars->global_params, conversion, GlobalVars->area_idx, current->peakoutput_user, buffer, ASYNCH_OUTPUT_BUFFER_SIZE);
+                    length = strlen(buffer) + 1;
+                    int ret = MPI_Ssend(buffer, length, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 				}
 			}
 		}

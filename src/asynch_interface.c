@@ -830,7 +830,7 @@ int Asynch_Set_Output(asynchsolver* asynch,char* name,short int data_type,void* 
 }
 
 //Returns 1 if output function set successfully, 0 if there was a problem
-int Asynch_Set_Peakflow_Output(asynchsolver* asynch,char* name,void (*func)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*))
+int Asynch_Set_Peakflow_Output(asynchsolver* asynch,char* name,void (*func)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*,int))
 {
 	if(!asynch->GlobalVars->peakflow_function_name)
         asynch->GlobalVars->peakflow_function_name = (char*) malloc(asynch->GlobalVars->string_size*sizeof(char));

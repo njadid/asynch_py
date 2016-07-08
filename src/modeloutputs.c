@@ -92,7 +92,7 @@ void SetOutputFunctions(char* outputname,char* specifier,unsigned int* states_us
 	GetSpecifier(specifier,*output_type);
 }
 
-void SetPeakflowOutputFunctions(char* outputname,void (**peak_output)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*))
+void SetPeakflowOutputFunctions(char* outputname,void (**peak_output)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*,int))
 {
 	if(strcmp(outputname,"Classic") == 0)
 		*peak_output = &OutputPeakflow_Classic_Format;
@@ -222,15 +222,15 @@ int Output_Time_Int(double t,VEC y_i,VEC global_params,VEC params,int state,void
 
 //Peakflow output functions***********************************************************************************
 
-void OutputPeakflow_Classic_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer)
+void OutputPeakflow_Classic_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer,int size)
 {
-	sprintf(buffer,"%u %.4f %.8f %.8f\n",ID,conversion*params.ve[area_idx],peak_time,peak_value.ve[0]);
+	snprintf(buffer, size,"%u %.4f %.8f %.8f\n",ID,conversion*params.ve[area_idx],peak_time,peak_value.ve[0]);
 }
 
-void OutputPeakflow_Forecast_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer)
+void OutputPeakflow_Forecast_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer,int size)
 {
 	unsigned int offset = *(unsigned int*)user;
 	//sprintf(buffer,"%u %u %.12e %u NULL\n",ID,offset + (unsigned int)(peak_time*60 + .1),peak_value.ve[0],offset);
-	sprintf(buffer,"%u %u %.12e %u\n",ID,offset + (unsigned int)(peak_time*60 + .1),peak_value.ve[0],offset);
+	snprintf(buffer, size,"%u %u %.12e %u\n",ID,offset + (unsigned int)(peak_time*60 + .1),peak_value.ve[0],offset);
 }
 

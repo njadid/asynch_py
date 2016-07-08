@@ -266,7 +266,7 @@ typedef struct UnivVars
 
     //Peakflow stuff
     char* peakflow_function_name;
-    void (*peakflow_output)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*);
+    void (*peakflow_output)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*,int);
 
     //unsigned int num_rainsteps;
     char* hydro_table;
