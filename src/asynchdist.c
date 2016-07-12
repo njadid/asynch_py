@@ -83,6 +83,8 @@ int main(int argc,char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    //MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
@@ -168,7 +170,7 @@ int main(int argc,char* argv[])
 	//Init asynch object and the river network
 	asynch = Asynch_Init(MPI_COMM_WORLD,&argc,&argv);
 	print_out("Reading global file...\n");
-	Asynch_Parse_GBL(asynch,argv[1]);
+	Asynch_Parse_GBL(asynch,global_filename);
 	print_out("Loading network...\n");
 	Asynch_Load_Network(asynch);
 	print_out("Partitioning network...\n");

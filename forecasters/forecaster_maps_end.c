@@ -47,7 +47,7 @@ void UploadPeakflows(asynchsolver* asynch,unsigned int wait_time);
 
 int Output_Linkid(double t,VEC y_i,VEC global_params,VEC params,int state,void* user);
 int Output_Timestamp(double t,VEC y_i,VEC global_params,VEC params,int state,void* user);
-void OutputPeakflow_Forecast_Maps(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer);
+void OutputPeakflow_Forecast_Maps(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer,int);
 void Init_Output_User_forecastparams(asynchsolver* asynch);
 void Free_Output_User_forecastparams(asynchsolver* asynch);
 void Set_Output_User_forecastparams(asynchsolver* asynch,unsigned int offset);
@@ -781,10 +781,10 @@ int Output_Timestamp(double t,VEC y_i,VEC global_params,VEC params,int state,voi
 	return (int)(round(t * 60.0 + forecastparams->offset) + 0.1);
 }
 
-void OutputPeakflow_Forecast_Maps(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer)
+void OutputPeakflow_Forecast_Maps(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer,int length)
 {
 	CustomParamsMaps* forecastparams = (CustomParamsMaps*) user;
-	sprintf(buffer,"%u %u %.6e %u %u\n",ID,forecastparams->forecast_time + (unsigned int)(peak_time*60 + .1),peak_value.ve[0],forecastparams->forecast_time,forecastparams->period);
+	snprintf(buffer,length,"%u %u %.6e %u %u\n",ID,forecastparams->forecast_time + (unsigned int)(peak_time*60 + .1),peak_value.ve[0],forecastparams->forecast_time,forecastparams->period);
 }
 
 

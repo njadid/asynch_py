@@ -12,7 +12,7 @@ extern int np;
 extern int my_rank;
 
 void SetOutputFunctions(char* outputname,char* specifier,unsigned int* states_used,unsigned int* num_states_used,short int* output_size,short int* output_type,int (**output_i)(double,VEC,VEC,VEC,int,void*),double (**output_d)(double,VEC,VEC,VEC,int,void*));
-void SetPeakflowOutputFunctions(char* outputname,void (**peak_output)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*));
+void SetPeakflowOutputFunctions(char* outputname,void (**peak_output)(unsigned int,double,VEC,VEC,VEC,double,unsigned int,void*,char*,int));
 short int GetByteSize(short int type);
 void GetSpecifier(char* specifier,short int type);
 unsigned int CalcTotalOutputSize(UnivVars* GlobalVars);
@@ -33,8 +33,8 @@ int Output_Time_Int(double t,VEC y_i,VEC global_params,VEC params,int state,void
 //int Output_Linkid(double t,VEC y_i,VEC global_params,VEC params,int state,void* user);
 
 //Peakflow output functions***********************************************************************************
-void OutputPeakflow_Classic_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer);
-void OutputPeakflow_Forecast_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer);
+void OutputPeakflow_Classic_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer,int);
+void OutputPeakflow_Forecast_Format(unsigned int ID,double peak_time,VEC peak_value,VEC params,VEC global_params,double conversion,unsigned int area_idx,void* user,char* buffer,int);
 
 #endif
 
