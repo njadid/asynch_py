@@ -45,7 +45,13 @@ If installing libpq on a machine for ASYNCH, be sure to install the development 
 
 ### HDF5 Library
 
+`HDF5` is a format and library widely used for storing binary scientific data in an efficient and portable way.
 
+From `HDF5` webpage:
+
+>HDF5 is a data model, library, and file format for storing and managing data. It supports an unlimited variety of datatypes, and is designed for flexible and efficient I/O and for high volume and complex data. HDF5 is portable and is extensible, allowing applications to evolve in their use of HDF5. The HDF5 Technology suite includes tools and applications for managing, manipulating, viewing, and analyzing data in the HDF5 format.
+
+For ASYNCH build, the 1.8.x branch is used.
 
 ## Optional Software
 
