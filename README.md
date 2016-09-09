@@ -39,6 +39,7 @@ in *Small, et. al. An Asynchronous Solver for Systems of ODEs Linked by a Direct
 
  - [Installation](INSTALL.md)
  - [Getting Started](docs/getting_started.md)
+ - [Input/Output Formats](docs/input_output.md)
  - [Async]()
    - [libasync]()
    - [asynch CLI]()
