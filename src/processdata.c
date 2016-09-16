@@ -1004,7 +1004,7 @@ int UploadHydrosDB(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* 
 				}
 
 				//Send disk_iterations
-				MPI_Send(&(current->disk_iterations),1,MPI_UNSIGNED,0,loc,MPI_COMM_WORLD);
+				MPI_Ssend(&(current->disk_iterations),1,MPI_UNSIGNED,0,loc,MPI_COMM_WORLD);
 
 				//Now read in the data in the temp file, and submit them to the database
 				for(k=0;k<current->disk_iterations;k++)
@@ -1018,8 +1018,8 @@ int UploadHydrosDB(Link** sys,UnivVars* GlobalVars,unsigned int N,unsigned int* 
 					fread(data_storage,GlobalVars->output_sizes[j],1,inputfile);
 					nbytes += CatBinaryToString(&(submission[nbytes]),GlobalVars->output_specifiers[j],data_storage,GlobalVars->output_types[j],"\n");
 
-					MPI_Send(&nbytes,1,MPI_UNSIGNED,0,loc,MPI_COMM_WORLD);
-					MPI_Send(submission,nbytes,MPI_CHAR,0,loc,MPI_COMM_WORLD);
+                    MPI_Ssend(&nbytes,1,MPI_UNSIGNED,0,loc,MPI_COMM_WORLD);
+                    MPI_Ssend(submission,nbytes,MPI_CHAR,0,loc,MPI_COMM_WORLD);
 				}
 
 				//Skip over the last unused space. This is done so that the file does not need to be rewound.
