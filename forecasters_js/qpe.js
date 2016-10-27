@@ -51,7 +51,7 @@ function getLatest(re) {
     })
     .reduce(function(max, x) {
       return x.time > max.time ? x : max;
-    });
+    }, {time: null});
 }
 
 // Get the latest available state
@@ -154,6 +154,22 @@ sge.qstat('IFC_QPE')
       file: 'peaks.pea'
     }
   };
+
+  //Update the run start time
+  pgp.connect(config.outConn).then(function (client) {
+    debug('updating run start time ' + context.begin);
+    return client.query('UPDATE runs SET start_time = to_timestamp($1) WHERE run LIKE $2', [context.begin, 'qpe']);
+  })
+  .then(function (query){
+    return query.fetchOneRowIfExists();
+  })
+  .then(function (result) {
+    result.client.done();
+    debug('done.');
+  })
+  .catch(function (err) {
+    debug(err);
+  });
 
   // Render a new set of config files
   render(templates.gbl, 'qpe.gbl', context);
