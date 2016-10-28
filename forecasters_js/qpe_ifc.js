@@ -59,6 +59,11 @@ function getLatestState() {
   return getLatest(/^state_ifc_(\d+).(rec|h5)$/);
 }
 
+// Get the latest forcing
+function getLatestForcing() {
+  return getLatest(/^forcing_rain_ifc_(\d+).str$/);
+}
+
 // Create output dir if not exists
 fs.mkdirsSync(outputDir);
 
@@ -72,30 +77,42 @@ function render(template, out, context) {
 }
 
 //Check whether a simulation is already running
-sge.qstat('WHATIF_NORAIN')
+sge.qstat('QPE_IFC')
 .then(function (status) {
   debug(status);
   if (status && status.state.indexOf('r') !== -1) {
     throw 'Simulation already running';
   } else if (status && status.state.indexOf('w') !== -1) {
     debug('Simulation is waiting, put on hold while job is updated');
-    return sge.qhold('WHATIF_NORAIN');
+    return sge.qhold('QPE_IFC');
   } else {
     debug('No job found, submit a new one');
-    render(templates.job, 'whatif_norain.job', {
-      name: 'WHATIF_NORAIN',
-      globalFile: 'whatif_norain.gbl',
-      workingDir: path.resolve(outputDir)
+    render(templates.job, 'qpe_ifc.job', {
+      name: 'QPE_IFC',
+      globalFile: 'qpe_ifc.gbl',
+      workingDir: path.resolve(outputDir),
+      rainfallProduct: 'ifc'
     });
 
-    return sge.qsub(path.join(outputDir, 'whatif_norain.job'), ['QPE_IFC']);
+    return sge.qsub(path.join(outputDir, 'qpe_ifc.job'));
   }
 })
 .then(function () {
-  var latestState = getLatestState();
+  // Creating a new database instance from the connection details
+  return pgp.connect(config.ifcConn).then(function (client) {
+    // Query the DB to get the latest obs timestamp
+    return client.query('SELECT unix_time FROM rain_maps5_index ORDER BY unix_time DESC LIMIT 1');
+  });
+})
+.then(function (query){
+  return query.fetchUniqueValue();
+}).then(function (result) {
+  var latestState = getLatestState(),
+      latestForcing = getLatestForcing();
   
   var currentTime = latestState.time,
-    endTime = currentTime + 14400 * 60,
+    forcingTime = latestForcing.time,
+    latestTime = result.value,
     user = username.sync();
   
   var iniStateMode;
@@ -111,38 +128,38 @@ sge.qstat('WHATIF_NORAIN')
       process.exit(1);
   }
 
-  debug('current timestamp ' + currentTime);
+  debug('current state timestamp ' + currentTime);
+  debug('last rainfall IFC timestamp ' + forcingTime);
+  debug('lastest rainfall IFC timestamp ' + latestTime);
+
+  // If we already have the newest obs ready
+  if (forcingTime && forcingTime >= latestTime) {
+    debug ('Simulation is already up to date');
+    return sge.qrls('QPE_IFC');
+  }
 
   var context = {
     user: user,
     begin: currentTime,
-    end: endTime,
-    duration: 14400,
-    rainFileType: 0,
+    end: latestTime ,
+    duration: (latestTime - currentTime) / 60,
     iniStateMode: iniStateMode,
     iniStateFile: latestState.filename,
-    endStateFile: 'forecast_norain_' + endTime + '.h5',
-    outHydrographsDb: {
-      file: 'save_hydrograph.dbc',
-      table: 'whatif_norain.hydrographs'
+    endStateFile: 'state_ifc_' + latestTime + '.h5',
+    rainFileType: 1,
+    rainFile: 'forcing_rain_ifc_' + latestTime + '.str',
+    outHydrographsFile: {
+      file: 'hydrographs.dat'
     },
-    outPeaksDb: {
-      file: 'save_peaks.dbc',
-      table: 'whatif_norain.peaks'
+    outPeaksFile: {
+      file: 'peaks.pea'
     }
   };
 
-  // Render a new set of config files
-  render(templates.gbl, 'whatif_norain.gbl', context);
-
-  // Run the simulations
-  debug('Release the simulation');
-  sge.qrls('IFC_NORAIN');
-
   //Update the run start time
-  return pgp.connect(config.outConn).then(function (client) {
+  pgp.connect(config.outConn).then(function (client) {
     debug('updating run start time ' + context.begin);
-    return client.query('UPDATE runs SET start_time = to_timestamp($1) WHERE run LIKE $2', [context.begin, 'whatif_norain']);
+    return client.query('UPDATE runs SET start_time = to_timestamp($1) WHERE run LIKE $2', [context.begin, 'qpe_ifc']);
   })
   .then(function (query){
     return query.fetchOneRowIfExists();
@@ -153,6 +170,24 @@ sge.qstat('WHATIF_NORAIN')
   })
   .catch(function (err) {
     debug(err);
+  });
+
+  // Render a new set of config files
+  render(templates.gbl, 'qpe_ifc.gbl', context);
+
+  // Get the QPE IFC data and generate the stormfile
+  var links = {};
+  return result.client.query(config.ifcQuery, [context.begin])
+    .onRow(stormfile.mapLink(context.begin, 300, links))
+  .then(function (result) {
+    debug('got ' + result.rowCount + ' IFC rainfall rows');
+    result.client.done();
+
+    stormfile.generate(path.join(outputDir, context.rainFile), links);
+
+    // Run the simulations
+    debug('Release the simulation');
+    return sge.qrls('QPE_IFC');
   });
 })
 .catch(function (err) {

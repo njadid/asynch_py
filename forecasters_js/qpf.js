@@ -56,7 +56,7 @@ function getLatest(re) {
 
 // Get the latest available state
 function getLatestState() {
-  return getLatest(/^state_(\d+).(rec|h5)$/);
+  return getLatest(/^state_ifc_(\d+).(rec|h5)$/);
 }
 
 // Get the latest forcing
@@ -77,23 +77,23 @@ function render(template, out, context) {
 }
 
 //Check whether a simulation is already running
-sge.qstat('IFC_QPF')
+sge.qstat('QPF')
 .then(function (status) {
   debug(status);
   if (status && status.state.indexOf('r') !== -1) {
     throw 'Simulation already running';
   } else if (status && status.state.indexOf('w') !== -1) {
     debug('Simulation is waiting, put on hold while job is updated');
-    return sge.qhold('IFC_QPF');
+    return sge.qhold('QPF');
   } else {
     debug('No job found, submit a new one');
     render(templates.job, 'qpf.job', {
-      name: 'IFC_QPF',
+      name: 'QPF',
       globalFile: 'qpf.gbl',
       workingDir: path.resolve(outputDir)
     });
 
-    return sge.qsub(path.join(outputDir, 'qpf.job'), ['IFC_QPE']);
+    return sge.qsub(path.join(outputDir, 'qpf.job'), ['QPE_IFC']);
   }
 })
 .then(function () {
@@ -135,7 +135,7 @@ sge.qstat('IFC_QPF')
   // If we have new obs ready
   if (forcingTime >= latestTime) {
     debug ('Simulation is already up to date');
-    return sge.qrls('IFC_QPF');
+    return sge.qrls('QPF');
   }
 
   var context = {
@@ -189,7 +189,7 @@ sge.qstat('IFC_QPF')
 
     // Run the simulations
     debug('Release the simulation');
-    return sge.qrls('IFC_QPF');
+    return sge.qrls('QPF');
   });
 })
 .catch(function (err) {
