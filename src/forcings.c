@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 
 #if defined(HAVE_POSTGRESQL)
 #include <libpq-fe.h>
@@ -16,16 +17,9 @@
 
 Forcing* InitializeForcings()
 {
-	Forcing* forcing = (Forcing*) malloc(sizeof(Forcing));
-	forcing->filename = NULL;
-	forcing->GlobalForcing = NULL;
-	forcing->lookup_filename = NULL;
-	forcing->grid_to_linkid = NULL;
-	forcing->num_links_in_grid = NULL;
-	forcing->received = NULL;
-	forcing->intensities = NULL;
-	forcing->fileident = NULL;
-	return forcing;
+    Forcing* forcing = (Forcing*) malloc(sizeof(Forcing));
+    memset(forcing, 0, sizeof(Forcing));
+    return forcing;
 }
 
 

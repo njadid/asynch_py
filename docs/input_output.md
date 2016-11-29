@@ -292,7 +292,21 @@ Format:
 {snapshot flag} [.rec / .dbc / .h5 filename]
 ```
 
-This section specifies where snapshot information is produced A snapshot is a record of every state at every link in the network Snapshots are produced at the end of simulations. This is useful for beginning a new simulation where an old one ended. A snapshot flag of 0 indicates no snapshot is produced. A snapshot flag of 1 indicates the snapshot will be produced as a recovery (.rec) file with path and filename specified. A snapshot flag of 2 indicates the snapshot will be uploaded to the database specified by the database connectivity (.dbc) file. A snapshot flag of 3 indicates the snapshot will be produced as a HDF5 (.h5) file with path and filename specified.
+This section specifies where snapshot information is produced. A snapshot is a record of every state at every link in the network. Snapshots are produced at the end of simulations. This is useful for beginning a new simulation where an old one ended. A snapshot flag of 0 indicates no snapshot is produced. A snapshot flag of 1 indicates the snapshot will be produced as a recovery (.rec) file with path and filename specified. A snapshot flag of 2 indicates the snapshot will be uploaded to the database specified by the database connectivity (.dbc) file. A snapshot flag of 3 indicates the snapshot will be produced as a HDF5 (.h5) file with path and filename specified. A snapshot flag of 3 indicates generates periodical snapshots. The first parameter is the interval between two snapshots. The second parameter is the output filename pattern. The timestamp given in the filename (10 digits) is used as the start timestamp and is incremented with the interval duration for every snapshots so that
+
+```
+%Snapshot information (0 = none, 1 = .rec, 2 = .dbc, 3 = .h5, 4 = periodical .h5)
+4 60 filename_1480000000.h5
+```
+
+generates
+
+```
+filename_1480000000.h5
+filename_1480000060.h5
+filename_1480000120.h5
+...
+```
 
 ### Scratch Work Location
 
