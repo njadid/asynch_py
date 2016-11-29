@@ -20,9 +20,6 @@ import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -39,11 +36,10 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    from recommonmark.parser import CommonMarkParser
-    source_parsers = {
-        '.md': CommonMarkParser,
-    }
+from recommonmark.parser import CommonMarkParser
+source_parsers = {
+    '.md': CommonMarkParser,
+}
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -126,6 +122,9 @@ todo_include_todos = False
 
 
 # -- Options for HTML output ----------------------------------------------
+
+# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
