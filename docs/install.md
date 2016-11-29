@@ -15,16 +15,16 @@ A brief description of each is provided below.
 
 ### C Compiler
 
-ASYNCH has been successfully used and tested with the GNU C compiler gcc (version 4 1 2 and later) ASYNCH is compiled using the gnu99 standard Using another compiler (such as Intel's compilers) is an option, but some minor tweaks to the compile standard and/or included libraries may be required Information about gcc can be found at https://gcc.gnu.org/
+ASYNCH has been successfully used and tested with the [GNU C compiler](https://gcc.gnu.org/) gcc (version 4.1.2 and later). ASYNCH is compiled using the gnu99 standard. Using another compiler (such as Intel's compilers) is an option, but some minor tweaks to the compile standard and/or included libraries may be required.
 
 ### GNU Make
 
-GNU Make is a utility for directing the generation of binaries from source code Make is available in most Linux repositories Details can be found at the project's website http://www.gnu.org/software/make/
+[GNU Make](http://www.gnu.org/software/make/) is a utility for directing the generation of binaries from source code Make is available in most Linux repositories.
 
 
 ### MPI Implementation
 
-The Message Passing Interface (MPI) is a standard for transferring data on parallel computers ASYNCH uses MPI for communication between processes to perform calculations in parallel ASYNCH has been successfully used and tested with OpenMPI Details about OpenMPI can be found at http://www.open-mpi.org/
+The Message Passing Interface (MPI) is a standard for transferring data on parallel computers ASYNCH uses MPI for communication between processes to perform calculations in parallel ASYNCH has been successfully used and tested with [OpenMPI](http://www.open-mpi.org/).
 
 From the OpenMPI webpage:
 

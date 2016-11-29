@@ -16,9 +16,12 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+
+# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # -- General configuration ------------------------------------------------
 
@@ -35,6 +38,12 @@ extensions = [
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    from recommonmark.parser import CommonMarkParser
+    source_parsers = {
+        '.md': CommonMarkParser,
+    }
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -118,10 +127,17 @@ todo_include_todos = False
 
 # -- Options for HTML output ----------------------------------------------
 
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+# otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+#html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

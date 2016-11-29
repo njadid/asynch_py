@@ -7,13 +7,13 @@ First, be sure to follow the steps in Section 2 3 for installing the ASYNCH solv
 The ASYNCH directory contains a folder called examples, which contains several data files for starting sample simulations, as well as sample outputs for comparision For Iowa HPC users, the ASYNCH directory is
 
 ```
-/Groups/IFC/Asynch/
+/Dedicated/IFC/Asynch/
 ```
 
 The `examples` directory should be copied to a location where the user has write access (for example, the home directory). On Helium or Neon, this can be done with
 
 ```
-cp -r /Groups/IFC/Asynch/examples/ ~/
+cp -r /Dedicated/IFC/Asynch/examples/ ~/
 ```
 
 For the first example, we will produce output for a small basin with 11 links using a hydrological model with constant runoff. The global file to setup this simulation is `Global190.gbl`. This uses the model given in Section 8 3 1. If using your own machine, the simulation can be run with the command
@@ -25,11 +25,11 @@ mpirun -np 1 <bin path>/ASYNCH Global190 gbl
 If using Iowa HPC resources, use the appropriate binary path:
 
 ```
-/Groups/IFC/Asynch/bin helium/
-/Groups/IFC/Asynch/bin neon/
+/Dedicated/IFC/Asynch/bin helium/
+/Dedicated/IFC/Asynch/bin neon/
 ```
 
-As calculations are performed, you will see output produced to the terminal window If using Helium or Neon (or any system using the Sun Grid Engine), the submit script test.sh can be used to run the simulation Use the command
+As calculations are performed, you will see output produced to the terminal window. If using Neon or Argon (or any system using the Sun Grid Engine), the submit script test.sh can be used to run the simulation. Use the command
 
 ```
 qsub test sh
