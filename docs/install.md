@@ -80,9 +80,9 @@ Note: Users of Iowa's HPC resources should NOT need to download and compile sour
 
 The ASYNCH source code is available in a repository hosted by GitHub Downloading the code from the repository requires the use of Git See Section 2 2 1 The source code can also be downloaded directly from GitHub as a zip file.
 
-Once the source code is downloaded (and extracted from the zip fle, if needed), go to the directory where you downloaded the ASYNCH source code The ASYNCH library can be compiled with make ASYNCHLIB will create the library libs/libasynch.so in the ASYNCH directory, which contains the C interface routines. Using the command make ASYNCHLIB PY will compile the source code and create the library libs/libasynch py.so in the ASYNCH directory, which contains the Python interface routines See Section 9 2 for a list and description of these routines. Typing "make ASYNCH" will compile the basic simulation program If using your own computer, modifcations to the makefle may be necessary depending upon the location and names of the programs and libraries installed from Section 2 1
+Once the source code is downloaded (and extracted from the zip fle, if needed), go to the directory where you downloaded the ASYNCH source code The ASYNCH library can be compiled with make ASYNCHLIB will create the library libs/libasynch.so in the ASYNCH directory, which contains the C interface routines. Using the command make ASYNCHLIB PY will compile the source code and create the library libs/libasynch py.so in the ASYNCH directory, which contains the Python interface routines See Section 9 2 for a list and description of these routines. Typing "make ASYNCH" will compile the basic simulation program If using your own computer, modifcations to the makefile may be necessary depending upon the location and names of the programs and libraries installed from Section 2 1.
 
-If the source code is ever updated, you may want to run `make clean` before recompiling. This removes all binaries and object fles of the old version. Once compiled, ASYNCH can be run with the command:
+If the source code is ever updated, you may want to run `make clean` before recompiling. This removes all binaries and object files of the old version. Once compiled, ASYNCH can be run with the command:
 
 ```
 mpirun -np <number of processes> <path>/asynch < gbl flename>
@@ -90,16 +90,29 @@ mpirun -np <number of processes> <path>/asynch < gbl flename>
 
 ## Iowa HPC Clusters
 
-Currently, the University of Iowa has two HPC clusters available: Helium and Neon ASYNCH is already compiled on these clusters and is available to anyone with access to IFC shared resources All required software should be available The makefle included with the source code should work without modifcation on these clusters
+Currently, the University of Iowa has two HPC clusters available: Neon and Argon. ASYNCH is already compiled on these clusters and is available to anyone with access to IFC shared resources. All required software should be available The makefile included with the source code should work without modification on these clusters.
 
-However, these clusters do use OpenMPI through modules The module for OpenMPI must be loaded once per login session to run ASYNCH On Helium, this can be done with the command
-module load openmpi gnu 1 4 3
+However, these clusters do use OpenMPI through modules. The module for OpenMPI must be loaded once per login session to run ASYNCH. On Helium, this can be done with the command
+
+```
+module load openmpi\_gnu\_1.4.3
+```
+
 On Neon, use the command
-module load openmpi/gcc44-1 6 5
-This loads OpenMPI version 1 4 3 or version 1 6 5 for use with the GNU compiler gcc (which was used to compile the existing version of ASYNCH) Instead of loading these modules manually, the commands can be added to the end of the fle .bashrc in the user's home directory Note that Helium and Neon each have a separate .bashrc fle In addition, if using the Python interface functions on Helium, the appropriate Python module must be loaded This can be done with a call to
+
+```
+module load openmpi/gcc44-1.6.5
+```
+
+This loads OpenMPI version 1.4.3 or version 1.6.5 for use with the GNU compiler gcc (which was used to compile the existing version of ASYNCH). Instead of loading these modules manually, the commands can be added to the end of the file `.bash_profile` in the user's home directory. Note that Helium and Neon each have a separate `.bash_profile` file. In addition, if using the Python interface functions on Helium, the appropriate Python module must be loaded. This can be done with a call to
+
+```
 module load python27
-This can also be added to the .bashrc fle to automate the loading process
-Binaries for ASYNCH are located in /Groups/IFC/Asynch/bin/ on Helium and Neon Libraries for using ASYNCH with custom designed software are located in the directory /Groups/IFC/Asynch/libs/
+```
+
+This can also be added to the `.bash_profile` file to automate the loading process.
+
+Binaries for ASYNCH are located in `/Dedicated/IFC/.neon/bin` on Neon and in `/Dedicated/IFC/.argon/bin` on Argon. Libraries for using ASYNCH with custom designed software are located in the directory `/Dedicated/IFC/.<cluster>/lib`.
 
 ## Updating the package
 
