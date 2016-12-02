@@ -20,6 +20,14 @@ import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+# Read The Docs.
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+# -- RunDoxygen first thing ------------------------------------------------
+
+if read_the_docs_build:
+    subprocess.call('doxygen api.dox; doxygen devel.dox', shell=True)
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -30,7 +38,7 @@ import os
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.mathjax',
+    'sphinx.ext.mathjax', 'breathe'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -87,7 +95,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['.build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['.build', '.doxygen', 'Thumbs.db', '.DS_Store']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -120,11 +128,11 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# Tell breathe about the projects
+breathe_projects = { "api": ".doxygen/api/", "devel": ".doxygen/devel/" }
+breathe_default_project = "api"
 
 # -- Options for HTML output ----------------------------------------------
-
-# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme

@@ -90,121 +90,28 @@ Of course, outputting more information might be useful (timing results, command 
 User Interface Routines
 -----------------------
 
-In this section, routines for operating the solver are described. These routines can be used to create an instance of an ASYNCH solver, and manipulate properties such as total simulation time, when data output occurs, etc. Creation of custom outputs is discussed in Section [sec: custom outputs] and creation of custom models is discussed in Section [sec: custom models].
+In this section, routines for operating the solver are described. These routines can be used to create an instance of an ASYNCH solver, and manipulate properties such as total simulation time, when data output occurs, etc... Creation of custom outputs is discussed in Section [sec: custom outputs] and creation of custom models is discussed in Section [sec: custom-models].
+
+Solver Constructor / Destructor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. doxygenfunction:: Asynch_Init
+
+.. doxygenfunction:: Asynch_Free
+
 
 Solver Initialization
 ~~~~~~~~~~~~~~~~~~~~~
 
-C Interface:
+.. doxygenfunction:: Asynch_Parse_GBL
 
-.. code-block:: c
+.. doxygenfunction:: Asynch_Load_Network
 
-  void Asynch_Init(AsynchSolver* asynch, MPI_Comm comm)
+.. doxygenfunction:: Asynch_Partition_Network
 
--  Inputs
+.. doxygenfunction:: Asynch_Load_Network_Parameters
 
--  MPI_Comm comm: The MPI communicator to use with this solver object.
 
--  int\* argc: Pointer to the integer holding the number of command line arguments.
-
--  char\*\* argv[]: Pointer to the command line arguments.
-
--  Return Value
-
--  A pointer to a newly created asynchsolver object. If an error occurred in creating the object, the return value is *NULL*.
-
-This routine creates an instance of an ASYNCH solver. Multiple solvers could be created if multiple problems are to be solved. An instance of an *asynchsolver* contains all the relevant data structures and information to solve the equations for an underlying model. An *asynchsolver* object should be destroyed with a call to *Asynch_Free*. The inputs *argc* and *argv* are only passed on to *MPI_Init*, and can be *NULL*.
-
-::
-
-Python Interface:
-asynchsolver()
-
--  Return Value
-
--  A reference to a newly created *asynchsolver* object.
-
-This routine creates and initializes an ASYNCH solver, and is similar to the corresponding C initializer. The interface functions described below are the only members of the asynchsolver object accessible. An asynchobject is automatically destroyed when leaving scope.
-
-Asynch_Free
-~~~~~~~~~~~~
-
-::
-
-C Interface:
-void Asynch_Free(asynchsolver* asynch)
-
--  Inputs
-
--  asynchsolver\* asynch: A pointer to the *asynchsolver* object to free.
-
-This routine deallocates the memory occupied by an *asynchsolver* object created with a call to *Asynch_Init*. The routine is exclusive to the C interface.
-
-Asynch_Parse_GBL
-~~~~~~~~~~~~~~~~~~
-
-::
-
-C Interface:
-void Asynch_Parse_GBL(asynchsolver* asynch,
-char* gbl_filename)
-
--  Inputs
-
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
-
--  char\* gbl_filename: Filename of a global file.
-
-::
-
-Python Interface:
-Parse_GBL(gbl_filename)
-
--  Inputs
-
--  gbl_filename: String with the filename of a global file.
-
-This routine opens and processes a global file. It reads all specified database connection files, but does not process any other input file. An error in this routine is considered fatal, and results in a call to the routine *MPI_Abort* on the communicator used to create asynch.
-
-Asynch_Load_Network
-~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-C Interface:
-void Asynch_Load_Network(asynchsolver* asynch)
-
--  Inputs
-
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
-
-::
-
-Python Interface:
-Load_Network()
-
-This routine processes topology inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This initializes each Link object and sets their parent and child information. Generally, this is the first initialization routine to call after parsing a global.
-
-Asynch_Partition_Network
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-C Interface:
-void Asynch_Partition_Network(asynchsolver* asynch)
-
--  Inputs
-
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
-
-::
-
-Python Interface:
-Partition_Network()
-
-This routine assigns the Links of the *asynchsolver* object to the MPI processes. This routine must be called after *Asynch_Load_Network*.
-
-Asynch_Load_Network_Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
@@ -215,7 +122,7 @@ asynchsolver* asynch,short int load_all)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  short int load_all: Flag to load parameters at every Link.
 
@@ -224,7 +131,7 @@ asynchsolver* asynch,short int load_all)
 Python Interface:
 Load_Network_Parameters(load_all)
 
-This routine processes parameter inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. Setting *load_all* to true causes every MPI process to store the parameters at every Link. Setting *load_all* to false causes the MPI processes to only store parameters for Links assigned to them. This routine can be called before *Asynch_Partition_Network* only if *load_all* is set to true.
+This routine processes parameter inputs for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. Setting *load_all* to true causes every MPI process to store the parameters at every Link. Setting *load_all* to false causes the MPI processes to only store parameters for Links assigned to them. This routine can be called before *Asynch_Partition_Network* only if *load_all* is set to true.
 
 Asynch_Load_Dams
 ~~~~~~~~~~~~~~~~~~
@@ -236,14 +143,14 @@ void Asynch_Load_Dams(asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Load_Dams()
 
-This routine processes the dam inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* and *Asynch_Load_Network_Parameters* have been called.
+This routine processes the dam inputs for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* and *Asynch_Load_Network_Parameters* have been called.
 
 Asynch_Load_Numerical_Error_Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,14 +163,14 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Load_Numerical_Error_Data()
 
-This routine processes numerical solver inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* has been called.
+This routine processes numerical solver inputs for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* has been called.
 
 Asynch_Initialize_Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -275,14 +182,14 @@ void Asynch_Initialize_Model(asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Initialize_Model()
 
-This routine sets the model specific routines for each link for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* and *Asynch_Load_Network_Parameters* have been called.
+This routine sets the model specific routines for each link for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* and *Asynch_Load_Network_Parameters* have been called.
 
 Asynch_Load_Initial_Conditions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -295,14 +202,14 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Load_Initial_Conditions()
 
-This routine processes the initial condition inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* and *Asynch_Initialize_Model* have been called.
+This routine processes the initial condition inputs for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* and *Asynch_Initialize_Model* have been called.
 
 Asynch_Load_Forcings
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -314,14 +221,14 @@ void Asynch_Load_Forcings(asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Load_Forcings()
 
-This routine processes the forcing inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Parameters* has been called.
+This routine processes the forcing inputs for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Parameters* has been called.
 
 Asynch_Load_Save_Lists
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -333,14 +240,14 @@ void Asynch_Load_Save_Lists(asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Load_Save_Lists()
 
-This routine processes save list inputs for the *asynchsolver* object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* has been called.
+This routine processes save list inputs for the AsynchSolver object as set in the global file read by *Asynch_Parse_GBL*. This routine should be called after *Asynch_Partition_Network* has been called.
 
 Asynch_Finalize_Newtork
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -352,14 +259,14 @@ void Asynch_Finalize_Network(asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Finalize_Network()
 
-This routine checks that all inputs are loaded for the *asynchsolver* object. Some small final initializations are also performed. This routine should be called as the last initialization routine.
+This routine checks that all inputs are loaded for the AsynchSolver object. Some small final initializations are also performed. This routine should be called as the last initialization routine.
 
 Asynch_Calculate_Step_Sizes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -371,14 +278,14 @@ void Asynch_Calculate_Step_Sizes(asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
 Python Interface:
 Calculate_Step_Sizes()
 
-This routine processes calculates appropriate step sizes for the integrators at each link in the *asynchsolver* object. This routine must be called before a call to *Asynch_Advance*, and after all initializations are performed.
+This routine processes calculates appropriate step sizes for the integrators at each link in the AsynchSolver object. This routine must be called before a call to *Asynch_Advance*, and after all initializations are performed.
 
 Asynch_Advance
 ~~~~~~~~~~~~~~~
@@ -391,7 +298,7 @@ short int print_flag)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  short int print_flag: If 0, no time series information is produced. Otherwise, time series information is produced.
 
@@ -417,7 +324,7 @@ asynchsolver* asynch,char* name)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* name: String to append to the snapshot output filename.
 
@@ -456,7 +363,7 @@ unsigned int conn_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* database_info: Information to connect to a database.
 
@@ -473,7 +380,7 @@ Set_Database_Connection(database_info,conn_idx)
 
 -  conn_idx: The database connection to set.
 
-This routine sets a new database for an input or output. If information for a database has already been set, it is released, and the new connection information is set. Database information includes hostname, username, password, etc. This is the same information that is available in the header of database connection files (see Section [sec: database connection files]). Several database connections exist for every *asynchsolver* object. *conn_idx* can take the values:
+This routine sets a new database for an input or output. If information for a database has already been set, it is released, and the new connection information is set. Database information includes hostname, username, password, etc. This is the same information that is available in the header of database connection files (see Section [sec: database connection files]). Several database connections exist for every AsynchSolver object. *conn_idx* can take the values:
 
 -  ASYNCH_DB_LOC_TOPO
 
@@ -510,7 +417,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Return value
 
@@ -523,7 +430,7 @@ Get_Total_Simulation_Time()
 
 -  Return value
 
--  The current end value of the simulation time of the *asynchsolver* object.
+-  The current end value of the simulation time of the AsynchSolver object.
 
 This routine returns the value of *maxtime*, as defined in Section [sec: model type and maxtime].
 
@@ -538,7 +445,7 @@ asynchsolver* asynch,double new_time)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  double new_time: The value to set the maximum simulation time.
 
@@ -564,7 +471,7 @@ asynchsolver* asynch,unsigned int forcing_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int forcing_idx: An index of a forcing.
 
@@ -600,7 +507,7 @@ unsigned int forcing_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int epoch_timestamp: The value to set the last rainfall timestamp.
 
@@ -631,7 +538,7 @@ asynchsolver* asynch,unsigned int forcing_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int forcing_idx: An index of a forcing.
 
@@ -667,7 +574,7 @@ unsigned int forcing_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int epoch_timestamp: The value to set first rainfall timestamp.
 
@@ -700,7 +607,7 @@ unsigned int forcing_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int epoch_timestamp: The value to set the start time for a forcing.
 
@@ -731,7 +638,7 @@ char* filename)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* filename: Filename to use for initial value data.
 
@@ -757,7 +664,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
@@ -777,7 +684,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
@@ -797,7 +704,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
@@ -817,7 +724,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Return value
 
@@ -832,7 +739,7 @@ Write_Current_Step()
 
 -  Returns 0 if the step is written, 1 if no temporary file is available.
 
-This routine writes the current state of each link to temporary files for every link where a time series output has been specified. Normally, calling *Asynch_Advance* with the *print_flag* set is enough to write output time series. However, advancing an *asynchsolver* object without the *print_flag* set or calls that modify how data is outputted to the temporary files will cause data to not be written for some times. This routine can be called to commit missing data.
+This routine writes the current state of each link to temporary files for every link where a time series output has been specified. Normally, calling *Asynch_Advance* with the *print_flag* set is enough to write output time series. However, advancing an AsynchSolver object without the *print_flag* set or calls that modify how data is outputted to the temporary files will cause data to not be written for some times. This routine can be called to commit missing data.
 
 Asynch_Create_Output
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -846,7 +753,7 @@ char* additional_out)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* additional_out: String appended to the end of any output filename.
 
@@ -882,7 +789,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Return value
 
@@ -910,7 +817,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Return value
 
@@ -938,7 +845,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Return value
 
@@ -969,7 +876,7 @@ unsigned int output_idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  double set_time: The local time corresponding the step where the temp files will be set.
 
@@ -1014,7 +921,7 @@ double set_time)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  double set_time: The local time corresponding the step where the temp files will be set.
 
@@ -1051,7 +958,7 @@ char* name)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* name: The name of the time series output to check.
 
@@ -1086,7 +993,7 @@ char* name)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* name: The name of the peakflow output to check.
 
@@ -1120,7 +1027,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Return value
 
@@ -1149,7 +1056,7 @@ unsigned int idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int idx: The index of the forcing to activate.
 
@@ -1184,7 +1091,7 @@ unsigned int idx)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int idx: The index of the forcing to deactivate.
 
@@ -1222,7 +1129,7 @@ unsigned int last_file)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  unsigned int idx: The index of the forcing to modify.
 
@@ -1268,7 +1175,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 ::
 
@@ -1290,7 +1197,7 @@ VEC** values)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  double t_0: The local time to set at each link.
 
@@ -1321,7 +1228,7 @@ char* peakflowname)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* peakflowname: Name to set the peakflow output filename.
 
@@ -1356,7 +1263,7 @@ char* peakflowname)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* peakflowname: Name of the peakflow output filename returned.
 
@@ -1387,7 +1294,7 @@ char* snapshotname)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* snapshotname: Name to set the snapshot output filename.
 
@@ -1422,7 +1329,7 @@ char* snapshotname)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* snapshotname: Name of the snapshot output filename returned.
 
@@ -1452,7 +1359,7 @@ asynchsolver* asynch)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  Outputs
 
@@ -1480,7 +1387,7 @@ asynchsolver* asynch,double* gparams)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  double\* gparams: Array to store the global parameters.
 
@@ -1512,7 +1419,7 @@ unsigned int n)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  double\* gparams: Array of global parameter values to set.
 
@@ -1567,7 +1474,7 @@ int num_states)
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* name: Name of the custom time series.
 
@@ -1672,7 +1579,7 @@ VEC*,double,unsigned int,void*,char*))
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  char\* name: Name of the custom peakflow function.
 
@@ -1796,7 +1703,7 @@ unsigned int,void*))
 
 -  Inputs
 
--  asynchsolver\* asynch: Pointer to the *asynchsolver* object to use.
+-  asynchsolver\* asynch: Pointer to the AsynchSolver object to use.
 
 -  void (\*SetParamSizes): Routine to set value needed to describe the model.
 
