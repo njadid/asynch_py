@@ -30,7 +30,11 @@ This system can be clustered into the pairs:
 
 The dependency of these clusters is one way in the sense that the equations for the variables in cluster 3 depend only upon the variables in clusters 4 and 5, the equations for the variables in cluster 1 depend only upon clusters 2 and 3, and the equations for the variables in clusters 2, 4, and 5 do not depend upon any other cluster. Graphically, this system of equations could be viewed to have the tree structure given in Figure [fig: ExplicitExample].
 
-|The clusters for the example equations ([eq: explicit example]) viewed graphically.| [fig: ExplicitExample]
+.. figure:: figures/explicit_example.png
+  :alt: The clusters for the example equations viewed graphically.
+  :align: center
+
+  [fig: ExplicitExample]
 
 -  In the ASYNCH source code and in this document, the clusters of variables are referred to as *links*. Every link has a positive integer attached to it that identifies the link uniquely. This number is referred to as the *link ID*. The unknowns in the clusters are referred to as the *states of the link*.
 
@@ -73,5 +77,3 @@ with some forcing function :math:`f`, has a discontinuity in the derivative of :
 -  A *thread* is a sequence of instructions (code) to a processor. *Multithreading* is when many threads are created by a program and potentially executed simultaneously on a single node. ASYNCH does not currently support multithreading explicitly (it may occur “behind the scenes” in MPI, however).
 
 Generally with ASYNCH, a one-to-one correspondence between the number of cores and processes is desired. More processes than cores means some cores must run more than one process, creating computational bottlenecks. More cores than processes means some cores will have no work to complete.
-
-.. |The clusters for the example equations ([eq: explicit example]) viewed graphically.| image:: explicit_example.pdf

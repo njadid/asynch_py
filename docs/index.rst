@@ -22,8 +22,8 @@ The main documentation for Asynch is organized into a couple of sections:
   :caption: About Asynch
 
   about
-  features
-  team
+.. features
+.. team
 
 .. _user-docs:
 
@@ -44,9 +44,10 @@ The main documentation for Asynch is organized into a couple of sections:
   :caption: Developer Documentation
 
   install
-  changelog
-  tests
   custom_models
   c_api
   python_api
   contribute
+
+..  changelog
+..  tests
