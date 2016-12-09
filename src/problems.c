@@ -18,7 +18,7 @@ extern VEC dump;
 //double t: The current time
 //VEC y_i: The approximate value of the solution to the ODEs at the current link at time t
 //VEC* y_p: y_p[j] has the approximate values for the immediately upstream link j to the current link at time t
-//unsigned short int numparents: The number of upstream links (parents) to link i
+//unsigned short int num_parents: The number of upstream links (parents) to link i
 //VEC global_params: The global parameters
 //RainData* rain: The rain fall values for link i
 //VEC params: The parameters for link i
@@ -35,7 +35,7 @@ extern VEC dump;
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void parser_test(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void parser_test(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned int i;
 	unsigned int dim = y_i.dim;
@@ -51,7 +51,7 @@ void parser_test(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC glo
 	//Set variables
 	for(i=0;i<dim;i++)	variable_values.ve[i] = y_i.ve[i];	//States
 	variable_values.ve[dim] = t;					//Time
-	for(i=0;i<numparents;i++)	inflow += y_p[i].ve[0];
+	for(i=0;i<num_parents;i++)	inflow += y_p[i].ve[0];
 	variable_values.ve[dim+1] = inflow;				//Inflow
 	variable_values.ve[dim+2] = forcing_values[0];			//Rainfall
 
@@ -68,7 +68,7 @@ void parser_test(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC glo
 //The numbering is:	0   1   2   3    4     5   6   7   8
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,gamma,h_b,e_pot
 //The numbering is:        0      1        2     3   4     5         6    7	8
-void NonLinearHillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void NonLinearHillslope(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -119,7 +119,7 @@ void NonLinearHillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_sl) * c_2;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -135,7 +135,7 @@ void NonLinearHillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,
 //The numbering is:	0   1   2     3    4   5   6   7
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent
 //The numbering is:        0      1        2     3   4     5        6   7  8 9  10
-void TopLayerHillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerHillslope(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -192,7 +192,7 @@ void TopLayerHillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,V
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_sl) * c_2;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -209,7 +209,7 @@ void TopLayerHillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,V
 //The numbering is:	0   1   2     3    4   5   6   7
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent
 //The numbering is:        0      1        2     3   4     5        6   7  8 9  10
-void TopLayerHillslope_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerHillslope_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	ans.ve[0] = forcing_values[2];
 	ans.ve[1] = 0.0;
@@ -224,7 +224,7 @@ void TopLayerHillslope_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int n
 //The numbering is:	0   1   2     3    4   5   6   7
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent,v_B
 //The numbering is:        0      1        2     3   4     5        6   7  8 9  10       11
-void TopLayerHillslope_extras(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerHillslope_extras(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -282,7 +282,7 @@ void TopLayerHillslope_extras(double t,VEC y_i,VEC* y_p,unsigned short int numpa
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_sl) * c_2;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -295,7 +295,7 @@ void TopLayerHillslope_extras(double t,VEC y_i,VEC* y_p,unsigned short int numpa
 	ans.ve[4] = forcing_values[0]*c_1;
 	ans.ve[5] = q_pl;
 	ans.ve[6] = q_sl * A_h - q_b*60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[6] += y_p[i].ve[6] * 60.0;
 		//ans.ve[6] += k_3*y_p[i].ve[3]*A_h;
 	ans.ve[6] *= v_B/L;
@@ -309,7 +309,7 @@ void TopLayerHillslope_extras(double t,VEC y_i,VEC* y_p,unsigned short int numpa
 //The numbering is:	0   1   2   3   4      5       6   7  8 9   10        11    12  13  14  15
 //Order of global_params: v_0,lambda_1,lambda_2
 //The numbering is:        0      1        2
-void TopLayerHillslope_variable(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerHillslope_variable(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -366,7 +366,7 @@ void TopLayerHillslope_variable(double t,VEC y_i,VEC* y_p,unsigned short int num
 
 	//Storage
 	ans.ve[1] = (q_pl + q_sl) * A_h - qm;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[1] += y_p[i].ve[0] * 60.0;
 
 	//Hillslope
@@ -421,7 +421,7 @@ void dam_TopLayerHillslope_variable(VEC y,VEC global_params,VEC params,QVSData* 
 //The numbering is:	0   1   2  |    3    4   5 
 //Order of global_params: v_0,lambda_1,lambda_2,h_b,k_D,k_2,k_dry,k_i,T_L,N,phi
 //The numbering is:        0      1        2     3   4   5   6     7   8  9  10
-void TopLayerNonlinearExp(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerNonlinearExp(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double pers_to_permin = 60.0;
@@ -475,7 +475,7 @@ void TopLayerNonlinearExp(double t,VEC y_i,VEC* y_p,unsigned short int numparent
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_sl) * c_2;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -494,7 +494,7 @@ void TopLayerNonlinearExp(double t,VEC y_i,VEC* y_p,unsigned short int numparent
 //The numbering is:	0   1   2   3   4   5   6   7     8  |   9     10  11  12
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5 
-void TopLayerNonlinearExpSoilvel(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerNonlinearExpSoilvel(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double pers_to_permin = 60.0;
@@ -522,7 +522,7 @@ void TopLayerNonlinearExpSoilvel(double t,VEC y_i,VEC* y_p,unsigned short int nu
 	double c_3 = params.ve[12];
 
 	//Forcings
-	double rainfall = forcing_values[0] * c_1;			//[mm/hr] -> [m/min]
+	double data = forcing_values[0] * c_1;			//[mm/hr] -> [m/min]
 	double e_pot = forcing_values[1] * (1e-3/(30.0*24.0*60.0));	//[mm/month] -> [m/min]
 	double eta = forcing_values[2];					//[]
 
@@ -565,19 +565,19 @@ void TopLayerNonlinearExpSoilvel(double t,VEC y_i,VEC* y_p,unsigned short int nu
 
 	//Storage
 	ans.ve[1] = (q_pl + q_sl) * A_h - qm;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[1] += y_p[i].ve[0] * 60.0;
 
 	//Hillslope
-	ans.ve[2] = rainfall - q_pl - q_pt - e_p;
+	ans.ve[2] = data - q_pl - q_pt - e_p;
 	ans.ve[3] = q_pt - q_ts - e_t;
 	ans.ve[4] = q_ts - q_sl - e_s;
 
 	//Additional states
-	ans.ve[5] = rainfall;
+	ans.ve[5] = data;
 	ans.ve[6] = q_pl;
 	ans.ve[7] = q_sl * A_h - q_b*60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[7] += y_p[i].ve[7] * 60.0;
 	ans.ve[7] *= v_B/L_i;
 }
@@ -628,7 +628,7 @@ void dam_TopLayerNonlinearExpSoilvel(VEC y,VEC global_params,VEC params,QVSData*
 //The numbering is:	0   1   2   3   4   5   6   7     8  |   9     10  11  12
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5 
-void TopLayerNonlinearExpSoilvel_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerNonlinearExpSoilvel_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	ans.ve[0] = forcing_values[3];
 	ans.ve[1] = 0.0;
@@ -647,7 +647,7 @@ void TopLayerNonlinearExpSoilvel_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned s
 //The numbering is:	0   1   2   3   4   5   6   7   8     9  |   10    11  12  13
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5
-void TopLayerNonlinearExpSoilvel_ConstEta(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerNonlinearExpSoilvel_ConstEta(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double pers_to_permin = 60.0;
@@ -676,7 +676,7 @@ void TopLayerNonlinearExpSoilvel_ConstEta(double t,VEC y_i,VEC* y_p,unsigned sho
 	double k_2 = params.ve[13];
 
 	//Forcings
-	double rainfall = forcing_values[0] * c_1;			//[mm/hr] -> [m/min]
+	double data = forcing_values[0] * c_1;			//[mm/hr] -> [m/min]
 	double e_pot = forcing_values[1] * (1e-3/(30.0*24.0*60.0));	//[mm/month] -> [m/min]
 
 	//System states
@@ -718,19 +718,19 @@ void TopLayerNonlinearExpSoilvel_ConstEta(double t,VEC y_i,VEC* y_p,unsigned sho
 
 	//Storage
 	ans.ve[1] = (q_pl + q_sl) * A_h - qm;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[1] += y_p[i].ve[0] * 60.0;
 
 	//Hillslope
-	ans.ve[2] = rainfall - q_pl - q_pt - e_p;
+	ans.ve[2] = data - q_pl - q_pt - e_p;
 	ans.ve[3] = q_pt - q_ts - e_t;
 	ans.ve[4] = q_ts - q_sl - e_s;
 
 	//Additional states
-	ans.ve[5] = rainfall;
+	ans.ve[5] = data;
 	ans.ve[6] = q_pl;
 	ans.ve[7] = q_sl * A_h - q_b*60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[7] += y_p[i].ve[7] * 60.0;
 	ans.ve[7] *= v_B/L_i;
 }
@@ -781,7 +781,7 @@ void dam_TopLayerNonlinearExpSoilvel_ConstEta(VEC y,VEC global_params,VEC params
 //The numbering is:	0   1   2   3   4   5   6   7   8     9  |   10    11  12  13
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5
-void TopLayerNonlinearExpSoilvel_ConstEta_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void TopLayerNonlinearExpSoilvel_ConstEta_Reservoirs(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	ans.ve[0] = forcing_values[2];
 	ans.ve[1] = 0.0;
@@ -798,7 +798,7 @@ void TopLayerNonlinearExpSoilvel_ConstEta_Reservoirs(double t,VEC y_i,VEC* y_p,u
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,e_pot
 //The numbering is:        0      1        2     3  4   5    6
-void LinearHillslope_Evap(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void LinearHillslope_Evap(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -842,7 +842,7 @@ void LinearHillslope_Evap(double t,VEC y_i,VEC* y_p,unsigned short int numparent
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_al) * A_h/60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -883,7 +883,7 @@ int LinearHillslope_Evap_Check(VEC y,VEC params,VEC global_params,QVSData* qvs,u
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
 //The numbering is:        0      1        2     3  4   5 
-void LinearHillslope_MonthlyEvap(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void LinearHillslope_MonthlyEvap(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -930,7 +930,7 @@ void LinearHillslope_MonthlyEvap(double t,VEC y_i,VEC* y_p,unsigned short int nu
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_al) * A_h/60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -945,7 +945,7 @@ void LinearHillslope_MonthlyEvap(double t,VEC y_i,VEC* y_p,unsigned short int nu
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,v_B
 //The numbering is:        0      1        2     3  4   5   6
-void LinearHillslope_MonthlyEvap_extras(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void LinearHillslope_MonthlyEvap_extras(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -994,7 +994,7 @@ void LinearHillslope_MonthlyEvap_extras(double t,VEC y_i,VEC* y_p,unsigned short
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_al) * A_h/60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -1006,7 +1006,7 @@ void LinearHillslope_MonthlyEvap_extras(double t,VEC y_i,VEC* y_p,unsigned short
 	ans.ve[3] = forcing_values[0]*c_1;
 	ans.ve[4] = q_pl;
 	ans.ve[5] = q_al * A_h - q_b * 60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[5] += y_p[i].ve[5] * 60.0;
 		//ans.ve[5] += k3*y_p[i].ve[2]*A_h;
 	ans.ve[5] *= v_B/L;
@@ -1018,7 +1018,7 @@ void LinearHillslope_MonthlyEvap_extras(double t,VEC y_i,VEC* y_p,unsigned short
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,v_B
 //The numbering is:        0      1        2     3  4   5   6
-void LinearHillslope_Reservoirs_extras(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void LinearHillslope_Reservoirs_extras(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	ans.ve[0] = forcing_values[2];
 	ans.ve[1] = 0.0;
@@ -1040,7 +1040,7 @@ void LinearHillslope_Reservoirs_extras(double t,VEC y_i,VEC* y_p,unsigned short 
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
 //The numbering is:        0      1        2     3  4   5 
-void Hillslope_Toy(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void Hillslope_Toy(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 
 	unsigned short int i;
@@ -1149,7 +1149,7 @@ void Hillslope_Toy(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC g
 */
 	//Discharge
 	ans.ve[0] = -q + (Q_pl + Q_al) * A_h/60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -1166,7 +1166,7 @@ void Hillslope_Toy(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC g
 //The numbering is:	0   1   2   3   4  5    6    7 
 //Order of global_params: v_r,lambda_1,lambda_2,v_h,v_g,e_pot
 //The numbering is:        0      1        2     3   4   5  
-void LinearHillslope_Evap_RC(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void LinearHillslope_Evap_RC(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -1212,7 +1212,7 @@ void LinearHillslope_Evap_RC(double t,VEC y_i,VEC* y_p,unsigned short int numpar
 
 	//Discharge
 	ans.ve[0] = -q + (q_pl + q_al) * A_h/60.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -1229,7 +1229,7 @@ void LinearHillslope_Evap_RC(double t,VEC y_i,VEC* y_p,unsigned short int numpar
 //The numbering is:	0   1   2  3  4    5
 //Order of global_params: v_r,lambda_1,lambda_2,RC,S_0,v_h,v_g
 //The numbering is:        0      1        2     3  4   5   6
-void nodam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void nodam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[1];
@@ -1249,7 +1249,7 @@ void nodam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparent
 	double qm = invtau*pow(S,1.0/(1.0-lambda_1));
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 	//ans.ve[1] = ans.ve[1];
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
@@ -1263,7 +1263,7 @@ void nodam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparent
 //The numbering is:	0   1   2  3  4    5	       6      7       8     9	  10	    11       12  13  14
 //Order of global_params: v_r,lambda_1,lambda_2,RC,S_0,v_h,v_g
 //The numbering is:        0      1        2     3  4   5   6
-void dam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void dam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[1];
@@ -1311,7 +1311,7 @@ void dam_rain_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,
 	else printf("Error in function evaluation. Invalid state %u.\n",state);
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 	//ans.ve[1] = ans.ve[1];
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
@@ -1397,7 +1397,7 @@ int dam_check(VEC y,VEC global_params,VEC params,QVSData* qvs,unsigned int dam)
 //The numbering is:	0   1   2   3  4   5   6  7    8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void nodam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void nodam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[0];
@@ -1415,7 +1415,7 @@ void nodam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int numparen
 	double qm = invtau*pow(S,1.0/(1.0-lambda_1));
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 	//ans.ve[1] = ans.ve[1];
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
@@ -1429,7 +1429,7 @@ void nodam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int numparen
 //The numbering is:	0   1   2  3   4   5   6  7   8          9	  10	  11   12     13      14        15  16   17
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void dam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void dam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[0];
@@ -1476,7 +1476,7 @@ void dam_rain_hillslope2(double t,VEC y_i,VEC* y_p,unsigned short int numparents
 	else printf("Error in function evaluation. Invalid state %u.\n",state);
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 	//ans.ve[1] = ans.ve[1];
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
@@ -1563,7 +1563,7 @@ int dam_check2(VEC y,VEC global_params,VEC params,QVSData* qvs,unsigned int dam)
 //The numbering is:	0   1   2   3  4   5   6  7    8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void nodam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void nodam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[0];
@@ -1581,7 +1581,7 @@ void nodam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int numparen
 	double qm = invtau*pow(S,1.0/(1.0-lambda_1));
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 	//ans.ve[1] = ans.ve[1];
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
@@ -1595,7 +1595,7 @@ void nodam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int numparen
 //The numbering is:	0   1   2  3   4   5   6  7   8          9	  10	  11   12     13      14        15  16   17
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void dam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void dam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[0];
@@ -1642,7 +1642,7 @@ void dam_rain_hillslope3(double t,VEC y_i,VEC* y_p,unsigned short int numparents
 	else printf("Error in function evaluation. Invalid state %u.\n",state);
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 	//ans.ve[1] = ans.ve[1];
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
@@ -1731,7 +1731,7 @@ int dam_check3(VEC y,VEC global_params,VEC params,QVSData* qvs,unsigned int dam)
 //The numbering is:	0   1   2   3  4   5   6  7    8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void nodam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void nodam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[0];
@@ -1748,7 +1748,7 @@ void nodam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int numpa
 	double qm = invtau*pow(S,1.0/(1.0-lambda_1));
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
 	ans.ve[3] = (1.0-RC)*forcing_values[0]*A_h*(.001/60.0) - k3*Sg;
@@ -1760,7 +1760,7 @@ void nodam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int numpa
 //The numbering is:	0   1   2  3   4   5   6  7   8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void dam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void dam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 	double lambda_1 = global_params.ve[0];
@@ -1794,7 +1794,7 @@ void dam_rain_hillslope_qsv(double t,VEC y_i,VEC* y_p,unsigned short int numpare
 	}
 
 	ans.ve[1] = k2*Ss + k3*Sg - qm;
-	for(i=0;i<numparents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
+	for(i=0;i<num_parents;i++)	ans.ve[1] += y_p[i].ve[0] * 60.0;
 
 	ans.ve[2] = RC*forcing_values[0]*A_h*(.001/60.0) - k2*Ss;
 	ans.ve[3] = (1.0-RC)*forcing_values[0]*A_h*(.001/60.0) - k3*Sg;
@@ -1864,8 +1864,8 @@ int dam_check_qvs(VEC y,VEC global_params,VEC params,QVSData* qvs,unsigned int d
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q
-//void simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,VEC params,int state,void* user,VEC ans)
-void simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+//void simple_river(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,VEC params,int state,void* user,VEC ans)
+void simple_river(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -1875,7 +1875,7 @@ void simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC gl
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 }
@@ -1897,7 +1897,7 @@ void Jx_simple_river(VEC y_i,VEC global_params,VEC params,VEC ans)
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
-void Jsimple(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,VEC params,MAT* ans)
+void Jsimple(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,VEC params,MAT* ans)
 {
 	unsigned short int i;
 	double q = y_i.ve[0];
@@ -1905,7 +1905,7 @@ void Jsimple(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_
 	double invtau = params.ve[12];
 
 	ans->me[0][0] = 0.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans->me[0][0] += y_p[i].ve[0];
 	ans->me[0][0] = -(lambda_1 + 1.0) * invtau * pow(q,lambda_1) + lambda_1 * invtau * pow(q,lambda_1-1.0) * ans->me[0][0];
 }
@@ -1919,7 +1919,7 @@ void Jsimple(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -1936,7 +1936,7 @@ void river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC 
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * s53;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -1953,7 +1953,7 @@ void river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC 
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void simple_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void simple_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -1969,7 +1969,7 @@ void simple_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VE
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * s53;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -1986,7 +1986,7 @@ void simple_hillslope(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VE
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document  
-void simple_soil(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void simple_soil(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -2020,7 +2020,7 @@ void simple_soil(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC glo
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * s53;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1)*ans.ve[0];
 
@@ -2045,7 +2045,7 @@ void simple_soil(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC glo
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
-void soil_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void soil_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -2080,7 +2080,7 @@ void soil_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC g
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * s53;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1)*ans.ve[0];
 
@@ -2104,7 +2104,7 @@ void soil_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC g
 //The numbering is:     0   1   2   3   4     5    6   7   8     9      10       11       12    13     14    15   16  17  18  19
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r
 //The numbering is:        0      1        2     3   4
-void qsav_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void qsav_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -2159,7 +2159,7 @@ void qsav_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC g
 
 	//Flux equation
 	ans.ve[0] = -q + gamma * c_1 * s_p * av_adjsum + gamma * c_2 * a_adj * expterm;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -2185,7 +2185,7 @@ void qsav_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC g
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s_p
-void river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -2204,7 +2204,7 @@ void river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int numpar
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * q_pl;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -2223,7 +2223,7 @@ void river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int numpar
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s, followed by N entries for the variational equation
-void assim_river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void assim_river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	printf("Error: assim models do not exist...\n");
 	MPI_Abort(MPI_COMM_WORLD,1);
@@ -2256,7 +2256,7 @@ void assim_river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int 
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * q_pl;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		inflow += y_p[i].ve[0];
 	ans.ve[0] = invtau * q_to_lambda_1 * (inflow + ans.ve[0]);
 
@@ -2288,7 +2288,7 @@ void assim_river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int 
 	offset += 3;
 
 	//Variables from parents
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 	{
 		parent_offset = 1 + problem_dim;
 
@@ -2325,7 +2325,7 @@ void assim_river_rainfall_adjusted(double t,VEC y_i,VEC* y_p,unsigned short int 
 //Order of global_params: v_0,lambda_1,lambda_2,Q_r,A_r,K_T,C_r,e_pot
 //The numbering is:        0      1        2     3   4   5   6   7
 /*
-void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned int i;
 
@@ -2432,7 +2432,7 @@ void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int numparents,V
 
 	//Channel transport
 	ans.ve[0] = -q;
-	for(i=0;i<numparents;i++)	ans.ve[0] += y_p[i].ve[0];
+	for(i=0;i<num_parents;i++)	ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = K_Q * pow(q,lambda_1) * (ans.ve[0] + c_4 * (q_pl + q_sl + snow_M));
 
 	//Land surface storage
@@ -2448,7 +2448,7 @@ void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int numparents,V
 }
 */
 
-void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned int i;
 
@@ -2538,7 +2538,7 @@ void lcuencas_soilrain(double t,VEC y_i,VEC* y_p,unsigned short int numparents,V
 
 	//Channel transport
 	ans.ve[0] = -q;
-	for(i=0;i<numparents;i++)	ans.ve[0] += y_p[i].ve[0];
+	for(i=0;i<num_parents;i++)	ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = K_Q * pow(q,lambda_1) * (ans.ve[0] + c_4 * (q_pl + q_sl + snow_M));
 
 	//Land surface storage
@@ -2566,7 +2566,7 @@ dump.ve[3] = q_sl;
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
-void Jsimple_soil(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,VEC params,MAT* ans)
+void Jsimple_soil(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,VEC params,MAT* ans)
 {
 	unsigned short int i;
 
@@ -2591,7 +2591,7 @@ void Jsimple_soil(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC gl
 
 	//Calculate total inflow
 	result[0][0] = 0.0;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		result[0][0] += y_p[i].ve[0];
 
 	//Calculate the jacobian
@@ -2636,7 +2636,7 @@ void Jsimple_soil(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC gl
 }
 
 //Type 101
-void Robertson(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void Robertson(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	double y1 = y_i.ve[0];
 	double y2 = y_i.ve[1];
@@ -2648,7 +2648,7 @@ void Robertson(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC globa
 }
 
 //Type 101
-void JRobertson(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,VEC params,MAT* ans)
+void JRobertson(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,VEC params,MAT* ans)
 {
 	double y2 = y_i.ve[1];
 	double y3 = y_i.ve[2];
@@ -2676,7 +2676,7 @@ void JRobertson(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC glob
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void river_rainfall_summary(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void river_rainfall_summary(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -2693,7 +2693,7 @@ void river_rainfall_summary(double t,VEC y_i,VEC* y_p,unsigned short int numpare
 
 	//Flux equation (y_i[0])
 	ans.ve[0] = -q + c_1 * s53;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
@@ -2709,7 +2709,7 @@ void river_rainfall_summary(double t,VEC y_i,VEC* y_p,unsigned short int numpare
 //The numbering is:	0   1   2    3     4
 //Order of global_params: v_0,lambda_1,lambda_2
 //The numbering is:        0      1        2
-void Tiling(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void Tiling(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	unsigned short int i;
 
@@ -2724,7 +2724,7 @@ void Tiling(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_p
 
 	//Discharge
 	ans.ve[0] = -q + hillslope_flux;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		ans.ve[0] += y_p[i].ve[0];
 	ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 }
@@ -2739,7 +2739,7 @@ void Tiling(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_p
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, followed by N entries for the variational equation
-void assim_simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void assim_simple_river(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	printf("Error: assim models do not exist...\n");
 	MPI_Abort(MPI_COMM_WORLD,1);
@@ -2757,7 +2757,7 @@ void assim_simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,
 	double q_to_lambda_1 = pow(q,lambda_1);
 
 	//Flux equation (y_i[0])
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		inflow += y_p[i].ve[0];
 	ans.ve[0] = invtau * q_to_lambda_1 * (inflow - q);
 
@@ -2766,7 +2766,7 @@ void assim_simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,
 	for(i=offset;i<dim;i++)	ans.ve[i] = 0.0;
 
 	//Variables from parents
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 	{
 		for(j=0;j<numupstream[i];j++)
 		{
@@ -2797,7 +2797,7 @@ void assim_simple_river(double t,VEC y_i,VEC* y_p,unsigned short int numparents,
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s, followed by N entries for the variational equation
-void assim_river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
+void assim_river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int num_parents,VEC global_params,double* forcing_values,QVSData* qvs,VEC params,int state,void* user,VEC ans)
 {
 	printf("Error: assim models do not exist...\n");
 	MPI_Abort(MPI_COMM_WORLD,1);
@@ -2826,7 +2826,7 @@ void assim_river_rainfall(double t,VEC y_i,VEC* y_p,unsigned short int numparent
 	double s23 = (s53 < 1e-12) ? 0.0 : s53/s;
 
 	//Flux equation (y_i[0])
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		inflow += y_p[i].ve[0];
 	ans.ve[0] = invtau * q_to_lambda_1 * (inflow - q + c_1 * s53);
 
@@ -2866,7 +2866,7 @@ unsigned int stophere = 1;
 	offset += 3;
 
 	//Variables from parents
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 	{
 		parent_offset = 1 + problem_dim;
 

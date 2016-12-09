@@ -11,7 +11,7 @@
 //Sorts a list of links by upstream area. Uses merge sort.
 //Link** array: The list of links to be sorted.
 //int size: The number of links in array.
-void merge_sort(Link** array,unsigned int size,unsigned int idx)
+void merge_sort(Link* array,unsigned int size,unsigned int idx)
 {
 	unsigned int increment,l,l_max,r,r_max,current,i;
 	Link** tmp;
@@ -31,17 +31,17 @@ void merge_sort(Link** array,unsigned int size,unsigned int idx)
 		{
 			while (l <= l_max && r <= r_max)
 			{
-				if (array[r]->params.ve[idx] > array[l]->params.ve[idx])
-					tmp[current] = array[r++];
+				if (array[r].params.ve[idx] > array[l].params.ve[idx])
+					tmp[current] = &array[r++];
 				else
-					tmp[current] = array[l++];
+					tmp[current] = &array[l++];
 				current++;
 			}
 	      
 			while (r <= r_max)
-				tmp[current++] = array[r++];
+				tmp[current++] = &array[r++];
 			while (l <= l_max)
-				tmp[current++] = array[l++];
+				tmp[current++] = &array[l++];
 
 			l = r;
 			r += increment;
@@ -52,7 +52,7 @@ void merge_sort(Link** array,unsigned int size,unsigned int idx)
 	    
 		increment *= 2;
 		for(i=0;i<size;i++)
-			array[i] = tmp[i];
+			array[i] = *tmp[i];
 	}
 	free(tmp);
 }
@@ -60,7 +60,7 @@ void merge_sort(Link** array,unsigned int size,unsigned int idx)
 //Sorts a list of links by distance. Uses merge sort.
 //Link** array: The list of links to be sorted.
 //int size: The number of links in array.
-void merge_sort_distance(Link** sys,unsigned int* array,unsigned int size)
+void merge_sort_distance(Link* sys,unsigned int* array,unsigned int size)
 {
 	unsigned int increment,l,l_max,r,r_max,current,i;
 	unsigned int* tmp;
@@ -80,7 +80,7 @@ void merge_sort_distance(Link** sys,unsigned int* array,unsigned int size)
 		{
 			while (l <= l_max && r <= r_max)
 			{
-				if (sys[array[r]]->distance > sys[array[l]]->distance)
+				if (sys[array[r]].distance > sys[array[l]].distance)
 					tmp[current] = array[r++];
 				else
 					tmp[current] = array[l++];
@@ -244,7 +244,7 @@ void merge_sort_1D(unsigned int* array,unsigned int size)
 }
 
 //Finds the location in sys of the link with id
-unsigned int find_link_by_id(unsigned int id,Link** sys,unsigned int N)
+unsigned int find_link_by_id(unsigned int id,Link* sys,unsigned int N)
 {
 	unsigned int k,max,min;
 
@@ -252,14 +252,14 @@ unsigned int find_link_by_id(unsigned int id,Link** sys,unsigned int N)
 	max = N;
 	min = 0;
 
-	while(sys[k]->ID != id && max != min)
+	while(sys[k].ID != id && max != min)
 	{
-		if(sys[k]->ID < id)	min = k+1;
+		if(sys[k].ID < id)	min = k+1;
 		else			max = k;
 		k = (max+min)/2;
 	}
 
-	if(sys[k]->ID != id)	return N+1;
+	if(sys[k].ID != id)	return N+1;
 	else			return k;
 }
 
@@ -271,7 +271,8 @@ unsigned int find_link_by_idtoloc(unsigned int id,unsigned int** id_to_loc,unsig
 	k = N/2;
 	max = N;
 	min = 0;
-
+    
+    // TODO Replace by bsearch
 	while(max != min && id_to_loc[k][0] != id)
 	{
 		if(id_to_loc[k][0] < id)	min = k+1;

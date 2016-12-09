@@ -23,7 +23,7 @@
 //Link** sys: The river system.
 //UnivVars* GlobalVars: Contains all the information that is shared by every link in the system.
 //Note: a few "silly" initializations take place before the loops. This prevents Valgrind from complaining on some systems about pointless errors.
-void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* GlobalVars)
+void Transfer_Data(TransData* my_data,Link* sys,int* assignments,GlobalVars* GlobalVars)
 {
 	int i,j,m,n,sender,steps_to_transfer = 0,curr_idx = 0,parval,s,dim,flag,position,total_links,count,removed = 0,order = 0,num_times = 0;
 	unsigned int loc = 0,l,num_dense;
@@ -140,7 +140,7 @@ void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* Glob
 
 					//Unpack the steps
 					MPI_Unpack(my_data->receive_buffer[i],count,&position,&steps_to_transfer,1,MPI_INT,MPI_COMM_WORLD);
-					current = sys[curr_idx];
+					current = &sys[curr_idx];
 					s = current->list->s;
 					dim = current->dim;
 					num_dense = current->num_dense;
@@ -162,15 +162,15 @@ void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* Glob
 						current->current_iterations += steps_to_transfer;
 						current->last_t = node->t;
 						parval = 0;
-						for(n=0;n<current->c->numparents;n++)
-							parval += (current->c->last_t < current->c->parents[n]->last_t);
-						if(parval == current->c->numparents)
-							current->c->ready = 1;
+						for(n=0;n<current->child->num_parents;n++)
+							parval += (current->child->last_t < current->child->parents[n]->last_t);
+						if(parval == current->child->num_parents)
+							current->child->ready = 1;
 
 						//Make sure the child can take a step if current has reached limit
 						if(current->current_iterations >= GlobalVars->iter_limit)
-							current->c->h = min(current->c->h,current->last_t - current->c->last_t);
-						if(current->c->h + current->c->last_t > current->last_t)	current->c->h *= .999;
+							current->child->h = min(current->child->h,current->last_t - current->child->last_t);
+						if(current->child->h + current->child->last_t > current->last_t)	current->child->h *= .999;
 					}
 
 					//Unpack the discontinuity times
@@ -180,7 +180,7 @@ void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* Glob
 						MPI_Unpack(my_data->receive_buffer[i],count,&position,&discont_time,1,MPI_DOUBLE,MPI_COMM_WORLD);
 						MPI_Unpack(my_data->receive_buffer[i],count,&position,&order,1,MPI_INT,MPI_COMM_WORLD);
 						prev = current;
-						next = current->c;
+						next = current->child;
 						for(n=order;(unsigned int)n<GlobalVars->max_localorder && next != NULL;n++)
 						{
 							if(my_rank == assignments[next->location] && n < next->method->localorder)
@@ -194,7 +194,7 @@ void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* Glob
 							}
 
 							prev = next;
-							next = next->c;
+							next = next->child;
 						}
 					}
 				}
@@ -204,7 +204,7 @@ void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* Glob
 				{
 					MPI_Unpack(my_data->receive_buffer[i],count,&position,&loc,1,MPI_UNSIGNED,MPI_COMM_WORLD);
 					MPI_Unpack(my_data->receive_buffer[i],count,&position,&removed,1,MPI_INT,MPI_COMM_WORLD);
-					sys[loc]->steps_on_diff_proc -= removed;
+					sys[loc].steps_on_diff_proc -= removed;
 				}
 
 				my_data->receiving_flag[i] = 0;
@@ -235,7 +235,7 @@ void Transfer_Data(TransData* my_data,Link** sys,int* assignments,UnivVars* Glob
 //TransData* my_data: Contains information about how the processes will communicate.
 //Link** sys: The river system.
 //UnivVars* GlobalVars: Contains all the information that is shared by every link in the system.
-void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVars* GlobalVars)
+void Transfer_Data_Finish(TransData* my_data,Link* sys,int* assignments,GlobalVars* GlobalVars)
 {
 	int i,j,m,n,steps_to_transfer = 0,curr_idx = 0,s,dim,flag,position,total_links,sender,count,removed = 0,order = 0,num_times = 0;
 	unsigned int loc = 0,parval,l,num_dense;
@@ -373,7 +373,7 @@ void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVar
 					{
 						MPI_Unpack(my_data->receive_buffer[i],count,&position,&curr_idx,1,MPI_INT,MPI_COMM_WORLD);
 						MPI_Unpack(my_data->receive_buffer[i],count,&position,&steps_to_transfer,1,MPI_INT,MPI_COMM_WORLD);
-						current = sys[curr_idx];
+						current = &sys[curr_idx];
 						s = current->list->s;
 						dim = current->dim;
 						num_dense = current->num_dense;
@@ -396,15 +396,15 @@ void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVar
 							current->current_iterations += steps_to_transfer;
 							current->last_t = node->t;
 							parval = 0;
-							for(n=0;n<current->c->numparents;n++)
-								parval += (current->c->last_t < current->c->parents[n]->last_t);
-							if(parval == current->c->numparents)
-								current->c->ready = 1;
+							for(n=0;n<current->child->num_parents;n++)
+								parval += (current->child->last_t < current->child->parents[n]->last_t);
+							if(parval == current->child->num_parents)
+								current->child->ready = 1;
 
 							//Make sure the child can take a step if current has reached limit
 							if(current->current_iterations >= GlobalVars->iter_limit)
-								current->c->h = min(current->c->h,current->last_t - current->c->last_t);
-							if(current->c->h + current->c->last_t > current->last_t)	current->c->h *= .999;
+								current->child->h = min(current->child->h,current->last_t - current->child->last_t);
+							if(current->child->h + current->child->last_t > current->last_t)	current->child->h *= .999;
 						}
 
 						//Unpack the discontinuity times
@@ -415,7 +415,7 @@ void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVar
 							MPI_Unpack(my_data->receive_buffer[i],count,&position,&order,1,MPI_INT,MPI_COMM_WORLD);
 
 							prev = current;
-							next = current->c;
+							next = current->child;
 							for(n=order;(unsigned int)n<GlobalVars->max_localorder && next != NULL;n++)
 							{
 								if(my_rank == assignments[next->location] && n < next->method->localorder)
@@ -427,7 +427,7 @@ void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVar
 								}
 
 								prev = next;
-								next = next->c;
+								next = next->child;
 							}
 						}
 					}
@@ -437,7 +437,7 @@ void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVar
 					{
 						MPI_Unpack(my_data->receive_buffer[i],count,&position,&loc,1,MPI_UNSIGNED,MPI_COMM_WORLD);
 						MPI_Unpack(my_data->receive_buffer[i],count,&position,&removed,1,MPI_INT,MPI_COMM_WORLD);
-						sys[loc]->steps_on_diff_proc -= removed;
+						sys[loc].steps_on_diff_proc -= removed;
 					}
 
 					my_data->receiving_flag[i] = 0;
@@ -465,7 +465,7 @@ void Transfer_Data_Finish(TransData* my_data,Link** sys,int* assignments,UnivVar
 }
 
 
-void Exchange_InitState_At_Forced(Link** system,unsigned int N,unsigned int* assignments,short int* getting,unsigned int* res_list,unsigned int res_size,unsigned int** id_to_loc,UnivVars* GlobalVars)
+void Exchange_InitState_At_Forced(Link* system,unsigned int N,unsigned int* assignments,short int* getting,unsigned int* res_list,unsigned int res_size,unsigned int** id_to_loc,GlobalVars* GlobalVars)
 {
 	unsigned int j,loc;
 
@@ -479,14 +479,14 @@ void Exchange_InitState_At_Forced(Link** system,unsigned int N,unsigned int* ass
 			if(loc < N && assignments[loc] == my_rank)
 			{
 				//!!!! Not sure if this the way to go... !!!!
-				system[loc]->f(system[loc]->last_t,system[loc]->list->tail->y_approx,NULL,0,GlobalVars->global_params,system[loc]->forcing_values,system[loc]->qvs,system[loc]->params,system[loc]->state,system[loc]->user,system[loc]->list->tail->y_approx);
+				system[loc].f(system[loc].last_t,system[loc].list->tail->y_approx,NULL,0,GlobalVars->global_params,system[loc].forcing_values,system[loc].qvs,system[loc].params,system[loc].state,system[loc].user,system[loc].list->tail->y_approx);
 
 				//Check if this initial state needs to be sent to other procs
-				if(system[loc]->c && assignments[system[loc]->c->location] != my_rank)
-					MPI_Send(system[loc]->list->tail->y_approx.ve,system[loc]->dim,MPI_DOUBLE,assignments[system[loc]->c->location],0,MPI_COMM_WORLD);
+				if(system[loc].child && assignments[system[loc].child->location] != my_rank)
+					MPI_Send(system[loc].list->tail->y_approx.ve,system[loc].dim,MPI_DOUBLE,assignments[system[loc].child->location],0,MPI_COMM_WORLD);
 			}
 			else if(getting[loc])
-				MPI_Recv(system[loc]->list->tail->y_approx.ve,system[loc]->dim,MPI_DOUBLE,assignments[loc],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+				MPI_Recv(system[loc].list->tail->y_approx.ve,system[loc].dim,MPI_DOUBLE,assignments[loc],0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
 		}
 	}
 }
@@ -628,47 +628,39 @@ void TransData_Free(TransData* data)
 
 // **********  Postgresql related routines  **********
 
-//Create a ConnData object
-ConnData* CreateConnData(char* connectstring)
+
+#if defined(HAVE_POSTGRESQL)
+
+
+//Disables postgresql notices
+void Quiet(void *arg, const char *message)
 {
-	ConnData* conninfo = (ConnData*) malloc(sizeof(ConnData));
-	conninfo->conn = NULL;
-	conninfo->query = (char*) malloc(1024*sizeof(char));
-	conninfo->connectinfo = (char*) malloc(1024*sizeof(char));
-	strcpy(conninfo->connectinfo,connectstring);
-	conninfo->time_offset = 0;
-	conninfo->num_queries = 0;
-	conninfo->queries = NULL;
-	return conninfo;
+    return;
+}
+
+//Create a ConnData object
+void ConnData_Init(ConnData* const conndata, const char* connstring)
+{
+    memset(conndata, 0, sizeof(ConnData));
+	strcpy(conndata->connectinfo, connstring);
 }
 
 //Destroy a ConnData object
-void ConnData_Free(ConnData* conninfo)
+void ConnData_Free(ConnData* const conninfo)
 {
-	unsigned int i;
-	if(conninfo)
+	if (conninfo)
 	{
 		//if(my_rank == 0 && conninfo->conn != NULL)	PQfinish(conninfo->conn);
-		if(conninfo->conn && PQstatus(conninfo->conn) == CONNECTION_OK)
+		if (conninfo->conn && PQstatus(conninfo->conn) == CONNECTION_OK)
 			PQfinish(conninfo->conn);
-		free(conninfo->query);
-		for(i=0;i<conninfo->num_queries;i++)
+		//free(conninfo->query);
+		for(unsigned int i=0;i<conninfo->num_queries;i++)
             free(conninfo->queries[i]);
-		if(conninfo->queries)	free(conninfo->queries);
-		free(conninfo->connectinfo);
-		free(conninfo);
+		//if(conninfo->queries)	free(conninfo->queries);
+		//free(conninfo->connectinfo);
+		//free(conninfo);
 	}
 }
-
-//Switch the database conninfo connects to
-void SwitchDB(ConnData* conninfo,char connectinfo[])
-{
-	if(conninfo->conn && PQstatus(conninfo->conn) == CONNECTION_OK)
-		PQfinish(conninfo->conn);
-	conninfo->conn = NULL;
-	sprintf(conninfo->connectinfo,"%s",connectinfo);
-}
-
 
 //Connect to the database with information stored in connectinfo
 int ConnectPGDB(ConnData* conninfo)
@@ -679,7 +671,7 @@ int ConnectPGDB(ConnData* conninfo)
 		printf("[%i]: Error: Unable to connect to the database.\n",my_rank);
 		return 1;
 	}
-	PQsetNoticeProcessor(conninfo->conn,ShutUp,NULL);	//Disable annoying notices
+	PQsetNoticeProcessor(conninfo->conn,Quiet,NULL);	//Disable annoying notices
 	return 0;
 }
 
@@ -731,10 +723,21 @@ void CheckConnConnection(ConnData* conninfo)
 	}
 }
 
-//Disables postgresql notices
-void ShutUp(void *arg, const char *message)
-{
-	return;
-}
+#else
+
+void ConnData_Init(ConnData* const conndata, const char* connstring) {}
+void ConnData_Free(ConnData* const conninfo) {}
+
+void CheckConnConnection(ConnData* conninfo) {}
+int CheckResState(PGresult* res, short int error_code) {}
+int CheckResError(PGresult* res, char* event) {}
+void DisconnectPGDB(ConnData* conninfo) {}
+
+void SwitchDB(ConnData* conninfo, char connectinfo[]) {}
+
+int ConnectPGDB(ConnData* conninfo) {}
+
+#endif
+
 
 

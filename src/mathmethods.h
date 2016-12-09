@@ -5,19 +5,19 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-typedef struct 
+typedef struct VEC
 {
 	double* ve;
 	unsigned int dim;
 } VEC;
 
-typedef struct
+typedef struct IVEC
 {
 	int* ve;
 	unsigned int dim;
 } IVEC;
 
-typedef struct
+typedef struct MAT
 {
 	double* storage;
 	double** me;

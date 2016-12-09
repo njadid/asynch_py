@@ -16,7 +16,7 @@ int my_rank;
 int np;
 
 int Output_Linkid(double t,VEC* y_i,VEC* global_params,VEC* params,int state,void* user);
-void Set_Output_User_LinkID(asynchsolver* asynch);
+void Set_Output_User_LinkID(AsynchSolver* asynch);
 
 typedef struct
 {
@@ -25,22 +25,22 @@ typedef struct
 } upstream_data;
 
 //Custom model
-void SetParamSizes_MyModel(UnivVars* GlobalVars,void* external);
+void SetParamSizes_MyModel(GlobalVars* GlobalVars,void* external);
 void ConvertParams_MyModel(VEC* params,unsigned int type,void* external);
 void InitRoutines_MyModel(Link* link,unsigned int type,unsigned int exp_imp,unsigned short int dam,void* external);
 void Precalculations_MyModel(Link* link_i,VEC* global_params,VEC* params,unsigned int disk_params,unsigned int params_size,unsigned short int dam,unsigned int type,void* external);
 int ReadInitData_MyModel(VEC* global_params,VEC* params,QVSData* qvs,unsigned short int dam,VEC* y_0,unsigned int type,unsigned int diff_start,unsigned int no_init_start,void* user,void* external);
 
 //Assim model
-void Setup_Errors(asynchsolver* asynch);
-void Free_Upstream_Links(asynchsolver* asynch);
-void Find_Upstream_Links(asynchsolver* asynch);
-void SetParamSizes_Assim(UnivVars* GlobalVars,void* external);
+void Setup_Errors(AsynchSolver* asynch);
+void FreeUpstreamLinks(AsynchSolver* asynch);
+void FindUpstreamLinks(AsynchSolver* asynch);
+void SetParamSizes_Assim(GlobalVars* GlobalVars,void* external);
 void ConvertParams_Assim(VEC* params,unsigned int type,void* external);
 void InitRoutines_Assim(Link* link,unsigned int type,unsigned int exp_imp,unsigned short int dam,void* external);
 void Precalculations_Assim(Link* link_i,VEC* global_params,VEC* params,unsigned int disk_params,unsigned int params_size,unsigned short int dam,unsigned int type,void* external);
 int ReadInitData_Assim(VEC* global_params,VEC* params,QVSData* qvs,unsigned short int dam,VEC* y_0,unsigned int type,unsigned int diff_start,unsigned int no_init_start,void* user,void* external);
-void assim_river_rainfall_adjusted_custom(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);
+void assim_river_rainfall_adjusted_custom(double t,VEC* y_i,VEC** y_p,unsigned short int num_parents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans);
 
 int main(int argc,char* argv[])
 {
@@ -64,7 +64,7 @@ int main(int argc,char* argv[])
 	//Declare variables
 	time_t start,stop;
 	double total_time;
-	asynchsolver* asynch;
+	AsynchSolver* asynch;
 
 	start = time(NULL);
 
@@ -87,7 +87,7 @@ int main(int argc,char* argv[])
 	Asynch_Load_Network(asynch);
 	if(my_rank == 0)	printf("Partitioning network...\n");
 	Asynch_Partition_Network(asynch);
-	Find_Upstream_Links(asynch);
+	FindUpstreamLinks(asynch);
 	if(my_rank == 0)	printf("Loading parameters...\n");
 	Asynch_Load_Network_Parameters(asynch,0);
 	if(my_rank == 0)	printf("Reading dam and reservoir data...\n");
@@ -166,7 +166,7 @@ int main(int argc,char* argv[])
 	Asynch_Create_Peakflows_Output(asynch);
 
 	//Cleanup
-	Free_Upstream_Links(asynch);
+	FreeUpstreamLinks(asynch);
 	Asynch_Delete_Temporary_Files(asynch);
 	Asynch_Free(asynch);
 	return 0;
@@ -180,7 +180,7 @@ int Output_Linkid(double t,VEC* y_i,VEC* global_params,VEC* params,int state,voi
 }
 
 //!!!! Gross, but not sure how else to handle this. Maybe with a lot of interface functions? !!!!
-void Set_Output_User_LinkID(asynchsolver* asynch)
+void Set_Output_User_LinkID(AsynchSolver* asynch)
 {
 	unsigned int i,my_N = asynch->my_N,*my_sys = asynch->my_sys;
 	Link** sys = asynch->sys;
@@ -194,7 +194,7 @@ void Set_Output_User_LinkID(asynchsolver* asynch)
 
 //Model 191 ************************************************************************************
 
-void SetParamSizes_MyModel(UnivVars* GlobalVars,void* external)
+void SetParamSizes_MyModel(GlobalVars* GlobalVars,void* external)
 {
 
 	//num_global_params = 7;
@@ -279,29 +279,29 @@ int ReadInitData_MyModel(VEC* global_params,VEC* params,QVSData* qvs,unsigned sh
 
 //Data assimilation model (Old Model 315) ************************************************************************************
 
-void Setup_Errors(asynchsolver* asynch)
+void Setup_Errors(AsynchSolver* asynch)
 {
-	UnivVars* GlobalVars = asynch->GlobalVars;
-	ErrorData* GlobalErrors = asynch->GlobalErrors;
+	GlobalVars* GlobalVars = asynch->GlobalVars;
+	ErrorData* errors_tol = asynch->errors_tol;
 	unsigned int i,problem_dim = 2,max_dim = GlobalVars->max_dim;
 
-	GlobalErrors->abstol->ve = realloc(GlobalErrors->abstol->ve,max_dim*sizeof(double));
-	GlobalErrors->reltol->ve = realloc(GlobalErrors->reltol->ve,max_dim*sizeof(double));
-	GlobalErrors->abstol_dense->ve = realloc(GlobalErrors->abstol_dense->ve,max_dim*sizeof(double));
-	GlobalErrors->reltol_dense->ve = realloc(GlobalErrors->reltol_dense->ve,max_dim*sizeof(double));
-	GlobalErrors->abstol->dim = GlobalErrors->reltol->dim = GlobalErrors->reltol_dense->dim = GlobalErrors->reltol_dense->dim = max_dim;
+	errors_tol->abstol->ve = realloc(errors_tol->abstol->ve,max_dim*sizeof(double));
+	errors_tol->reltol->ve = realloc(errors_tol->reltol->ve,max_dim*sizeof(double));
+	errors_tol->abstol_dense->ve = realloc(errors_tol->abstol_dense->ve,max_dim*sizeof(double));
+	errors_tol->reltol_dense->ve = realloc(errors_tol->reltol_dense->ve,max_dim*sizeof(double));
+	errors_tol->abstol->dim = errors_tol->reltol->dim = errors_tol->reltol_dense->dim = errors_tol->reltol_dense->dim = max_dim;
 
 	//Setup error
 	for(i=problem_dim+1;i<max_dim;i++)
 	{
-		GlobalErrors->abstol->ve[i] = GlobalErrors->abstol->ve[problem_dim];
-		GlobalErrors->reltol->ve[i] = GlobalErrors->reltol->ve[problem_dim];
-		GlobalErrors->abstol_dense->ve[i] = GlobalErrors->abstol_dense->ve[problem_dim];
-		GlobalErrors->reltol_dense->ve[i] = GlobalErrors->reltol_dense->ve[problem_dim];
+		errors_tol->abstol->ve[i] = errors_tol->abstol->ve[problem_dim];
+		errors_tol->reltol->ve[i] = errors_tol->reltol->ve[problem_dim];
+		errors_tol->abstol_dense->ve[i] = errors_tol->abstol_dense->ve[problem_dim];
+		errors_tol->reltol_dense->ve[i] = errors_tol->reltol_dense->ve[problem_dim];
 	}
 }
 
-void Free_Upstream_Links(asynchsolver* asynch)
+void FreeUpstreamLinks(AsynchSolver* asynch)
 {
 	upstream_data *data;
 	Link** sys = asynch->sys;
@@ -312,7 +312,7 @@ void Free_Upstream_Links(asynchsolver* asynch)
 		data = (upstream_data*) (sys[i]->user);
 		if(data)
 		{
-			for(j=0;j<sys[i]->numparents;j++)
+			for(j=0;j<sys[i]->num_parents;j++)
 				if(data->upstream[j])	free(data->upstream[j]);
 			free(data->upstream);
 			free(data->num_upstream);
@@ -322,19 +322,19 @@ void Free_Upstream_Links(asynchsolver* asynch)
 	}
 }
 
-void Find_Upstream_Links(asynchsolver* asynch)
+void FindUpstreamLinks(AsynchSolver* asynch)
 {
 	Link **sys = asynch->sys,*current;
 	unsigned int N = asynch->N,parentsval,leaves_size = 0,i,j,l,m;
 	int *assignments = asynch->assignments;
-	UnivVars *GlobalVars = asynch->GlobalVars;
+	GlobalVars *GlobalVars = asynch->GlobalVars;
 	Link **leaves = (Link**) malloc(N*sizeof(Link*));
 	Link **stack = (Link**) malloc(N*sizeof(Link*));
 	unsigned short int* getting = asynch->getting;
 
 	//Find leaves
 	for(i=0;i<N;i++)
-		if(sys[i]->numparents == 0)	leaves[leaves_size++] = sys[i];
+		if(sys[i]->num_parents == 0)	leaves[leaves_size++] = sys[i];
 
 	unsigned int* temp_numupstream = (unsigned int*) calloc(N,sizeof(unsigned int));
 	for(i=0;i<leaves_size;i++)
@@ -346,12 +346,12 @@ void Find_Upstream_Links(asynchsolver* asynch)
 		for(current = leaves[i]->c; current != NULL; current = current->c)
 		{
 			parentsval = 0;
-			for(j=0;j<current->numparents;j++)	parentsval += (temp_numupstream[current->parents[j]->location] > 0);
+			for(j=0;j<current->num_parents;j++)	parentsval += (temp_numupstream[current->parents[j]->location] > 0);
 
-			if(parentsval == current->numparents)	//All parents have temp_numupstream set
+			if(parentsval == current->num_parents)	//All parents have temp_numupstream set
 			{
 				temp_numupstream[current->location] = 1;
-				for(j=0;j<current->numparents;j++)
+				for(j=0;j<current->num_parents;j++)
 					temp_numupstream[current->location] += temp_numupstream[current->parents[j]->location];
 			}
 			else
@@ -378,7 +378,7 @@ void Find_Upstream_Links(asynchsolver* asynch)
 		counter[l]++;
 
 		//Add each parents upstream list
-		for(i=0;i<current->numparents;i++)
+		for(i=0;i<current->num_parents;i++)
 		{
 			m = current->parents[i]->location;
 			for(j=0;j<counter[m];j++)
@@ -392,13 +392,13 @@ void Find_Upstream_Links(asynchsolver* asynch)
 		if(current->c != NULL)
 		{
 			parentsval = 0;
-			for(i=0;i<current->c->numparents;i++)
+			for(i=0;i<current->c->num_parents;i++)
 			{
 				m = current->c->parents[i]->location;
 				parentsval += (counter[m] > 0);
 			}
 
-			if(parentsval == current->c->numparents)
+			if(parentsval == current->c->num_parents)
 			{
 				stack[stack_size] = current->c;
 				stack_size++;
@@ -416,9 +416,9 @@ void Find_Upstream_Links(asynchsolver* asynch)
 			sys[i]->user = malloc(sizeof(upstream_data));
 			data = (upstream_data*) (sys[i]->user);
 
-			data->upstream = (unsigned int**) malloc(sys[i]->numparents * sizeof(unsigned int*));
-			data->num_upstream = (unsigned int*) malloc(sys[i]->numparents * sizeof(unsigned int));
-			for(j=0;j<sys[i]->numparents;j++)
+			data->upstream = (unsigned int**) malloc(sys[i]->num_parents * sizeof(unsigned int*));
+			data->num_upstream = (unsigned int*) malloc(sys[i]->num_parents * sizeof(unsigned int));
+			for(j=0;j<sys[i]->num_parents;j++)
 			{
 				data->upstream[j] = temp_upstream[sys[i]->parents[j]->location];
 				data->num_upstream[j] = temp_numupstream[sys[i]->parents[j]->location];
@@ -450,7 +450,7 @@ void Find_Upstream_Links(asynchsolver* asynch)
 
 	for(i=0;i<N;i++)
 	{
-		for(j=0;j<sys[i]->numparents;j++)
+		for(j=0;j<sys[i]->num_parents;j++)
 		{
 			drop = 0;
 //printf("checking %i (%i)\n",sys[i]->ID,sys[i]->parents[j]->ID);
@@ -475,7 +475,7 @@ void Find_Upstream_Links(asynchsolver* asynch)
 */
 }
 
-void SetParamSizes_Assim(UnivVars* GlobalVars,void* external)
+void SetParamSizes_Assim(GlobalVars* GlobalVars,void* external)
 {
 	GlobalVars->uses_dam = 0;
 	GlobalVars->params_size = 20;
@@ -501,7 +501,7 @@ void InitRoutines_Assim(Link* link,unsigned int type,unsigned int exp_imp,unsign
 	unsigned int i,problem_dim = 2;	//Number of model eqs
 
 	link->dim = problem_dim + problem_dim + (problem_dim-1)*(problem_dim-1);	//Model eqs + variational eqs from this link
-	for(i=0;i<link->numparents;i++)
+	for(i=0;i<link->num_parents;i++)
 		link->dim += data->num_upstream[i] * problem_dim;	//Variational eqs from upstream !!!! Too high? !!!!
 	link->no_ini_start = 2;
 	link->diff_start = 0;
@@ -579,7 +579,7 @@ int ReadInitData_Assim(VEC* global_params,VEC* params,QVSData* qvs,unsigned shor
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s, followed by N entries for the variational equation
-void assim_river_rainfall_adjusted_custom(double t,VEC* y_i,VEC** y_p,unsigned short int numparents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans)
+void assim_river_rainfall_adjusted_custom(double t,VEC* y_i,VEC** y_p,unsigned short int num_parents,VEC* global_params,double* forcing_values,QVSData* qvs,VEC* params,int state,void* user,VEC* ans)
 {
 	unsigned int i,j;
 	unsigned int dim = ans->dim;
@@ -608,7 +608,7 @@ void assim_river_rainfall_adjusted_custom(double t,VEC* y_i,VEC** y_p,unsigned s
 
 	//Flux equation (y_i[0])
 	ans->ve[0] = -q + c_1 * q_pl;
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 		inflow += y_p[i]->ve[0];
 	ans->ve[0] = invtau * q_to_lambda_1 * (inflow + ans->ve[0]);
 
@@ -640,7 +640,7 @@ void assim_river_rainfall_adjusted_custom(double t,VEC* y_i,VEC** y_p,unsigned s
 	offset += 3;
 
 	//Variables from parents
-	for(i=0;i<numparents;i++)
+	for(i=0;i<num_parents;i++)
 	{
 		parent_offset = 1 + problem_dim;
 
