@@ -1,3 +1,5 @@
+.. _c-api:
+
 C API
 =====
 
@@ -175,7 +177,7 @@ Getters and Setters
 .. doxygenfunction:: Asynch_Get_Links_Proc
 
 Database
-~~~~~~~
+~~~~~~~~
 
 .. doxygenfunction:: Asynch_Set_Database_Connection
 

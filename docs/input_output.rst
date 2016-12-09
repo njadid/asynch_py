@@ -5,16 +5,16 @@ Numerous inputs are required to construct and solve the model equations. This in
 
 In addition, ASYNCH must know information about data outputs. This includes where to store the outputs, what the outputs are, at which links outputs will be given, etc.
 
-The format for each input and output is described below For database inputs/outputs, ASYNCH can access PostgreSQL through the libpq libraries Obviously, the user must have read or write permissions to a PostgreSQL database to utilize database features.
+The format for each input and output is described below. For database inputs/outputs, ASYNCH can access PostgreSQL through the libpq libraries. Obviously, the user must have read or write permissions to a PostgreSQL database to utilize database features.
 
 Global File Structure
 ---------------------
 
 Global files (.gbl) are used to specify ALL inputs for the solvers. This includes river network topology files, database connections, initial model states, what information is printed to output files, model forcings, etc. Global files have a very rigid structure, unlike XML files, and information must be specified in a particular order. **The description of each input of the global files below are given in the order in which they are to be specified in the actual file**.
 
-Global files are always ASCII files, assumed to be in UNIX format. The percent sign (``%``) is used for single line comments As described below, certain inputs are expected to be given within a single line Other than this restriction, white space is ignored Arguments surrounded by ``{ }`` below are mandatory, while those surrounded by the square brackets ``[ ]`` are dependent upon values specified by other parameters.
+Global files are always ASCII files, assumed to be in UNIX format. The percent sign ``%`` is used for single line comments As described below, certain inputs are expected to be given within a single line Other than this restriction, white space is ignored Arguments surrounded by ``{ }`` below are mandatory, while those surrounded by the square brackets ``[ ]`` are dependent upon values specified by other parameters.
 
-Although each setting in a global file modifies values for the ASYNCH solvers, their exact use can be modified by the user altering the underlying source code. This can be done with calls to routines described in Section.
+Although each setting in a global file modifies values for the ASYNCH solvers, their exact use can be modified by the user altering the underlying source code. This can be done with calls to routines described in Section :ref:`c-api`.
 
 Model Type and Maxtime
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -316,8 +316,8 @@ This section specifies where snapshot information is produced. A snapshot is a r
 
 ::
 
-%Snapshot information (0 = none, 1 = .rec, 2 = .dbc, 3 = .h5, 4 = periodical .h5)
-4 60 filename_1480000000.h5
+  %Snapshot information (0 = none, 1 = .rec, 2 = .dbc, 3 = .h5, 4 = periodical .h5)
+  4 60 filename_1480000000.h5
 
 generates
 

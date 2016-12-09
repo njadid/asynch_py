@@ -21,6 +21,8 @@ Built-in Models
 
 In this section, a description of a few different models is presented to demonstrate the features described in Section [sec: model descriptions]. These models are already fully implemented in *problems.c* and *definetype.c*, and may be used for simulations.
 
+.. _constant-runoff-model:
+
 Constant Runoff Hydrological Model
 ----------------------------------
 
@@ -313,6 +315,8 @@ Each of these functions must also be declared in *problems.h*:
 
 The routine *ReadInitData* only needs to return a value of 0 for model 190. All states are initialized from through a global file, as no algebraic equations exist for this model, and *no\_ini\_start* is set to *dim*. No state discontinuities are used for this model, so a value of 0 is returned.
 
+.. _top-layer-model:
+
 Top Layer Hydrological Model
 ----------------------------
 
@@ -463,14 +467,14 @@ This model has a total of 7 states. However, initial values for only the first 4
 
 which means initial conditions for the states :math:`q`, :math:`s_p`, :math:`s_t`, and :math:`s_s` must be provided. For this model, we allow the possibility of a reservoir forcing the channel discharge :math:`q` at a particular hillslope. So *num\_forcings* is set to 3 (i.e. precipitation, potential evaporation, and reservoir forcing). Each link will require 2 states from upstream links: :math:`q` and :math:`q_b`. Accordingly, *num\_dense* is set to 2, and *dense\_indices* is set to
 
-::
+.. code-block:: c
 
   GlobalVars->dense_indices[0] = 0;   //Discharge
   GlobalVars->dense_indices[1] = 6;   //Subsurface
 
 In the routine *InitRoutines*, a special case is considered for links with a reservoir forcing. With no reservoir, the Runge-Kutta solver is unchanged from the constant runoff model. The other routines are set by
 
-::
+.. code-block:: c
 
   if(link->res)
   {
@@ -486,7 +490,7 @@ In the routine *InitRoutines*, a special case is considered for links with a res
 
 If a reservoir is present, then instead of setting *f* to a routine for evaluating differential equations, it is set to a routine for describing how the forcing is applied:
 
-::
+.. code-block:: c
 
   void TopLayerHillslope_Reservoirs(double t,VEC* y_i,
   VEC** y_p,unsigned short int numparents,
@@ -508,7 +512,7 @@ All states are taken to be 0, except the channel discharge. This state is set to
 
 As mentioned earlier, the initial conditions for the last 3 states of the state vector are determined in the routine *ReadInitData*:
 
-::
+.. code-block:: c
 
   y_0->ve[4] = 0.0;
   y_0->ve[5] = 0.0;
@@ -630,14 +634,14 @@ Additional parameters are required at links with a dam model:
 
 Every link has 7 local parameters. If a dam is present, 8 additional parameters are required. In the routine *SetParamSizes*, these values are used:
 
-::
+.. code-block:: c
 
   GlobalVars->params_size = 7;
   GlobalVars->dam_params_size = 15;
 
 Discontinuities in the states of the system occur because of the presence of dams. In *InitRoutines*, the appropriate Runge-Kutta solvers are set:
 
-::
+.. code-block:: c
 
   if(type == 21 && dam == 1)
     link->RKSolver = &ExplicitRKIndex1SolverDam;
@@ -646,7 +650,7 @@ Discontinuities in the states of the system occur because of the presence of dam
 
 Further routines are set:
 
-::
+.. code-block:: c
 
   if(dam)
     link->f = &dam_rain_hillslope;
@@ -675,7 +679,7 @@ Two different routines are used for the differential equations, depending upon w
 
 These indices are tracked by the *state\_check* routine:
 
-::
+.. code-block:: c
 
   int dam_check(VEC* y,VEC* global_params,VEC* params,
   QVSData* qvs,unsigned int dam)
@@ -698,7 +702,7 @@ These indices are tracked by the *state\_check* routine:
 
 This model also uses an algebraic equation for channel discharge. The routine for this equation is:
 
-::
+.. code-block:: c
 
   void dam_q(VEC* y,VEC* global_params,VEC* params,  QVSData* qvs,int state,VEC* ans)
   {
@@ -754,7 +758,7 @@ This model also uses an algebraic equation for channel discharge. The routine fo
 
 Three initial states must be determined in the routine *ReadInitData*. The initial condition for the algebraic state :math:`q` should be determined with a call to the algebraic equation routine. In addition, the two hillslope states must be set, and the initial state of the dam returned.
 
-::
+.. code-block:: c
 
   double RC = global_params->ve[3];
   double S_0 = global_params->ve[4];
