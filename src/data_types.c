@@ -11,6 +11,9 @@
 #include "data_types.h"
 
 
+typedef int IsEqualFunc(void* a, void* b);
+
+
 //Comparison functions ***********************************************************************************************
 int IsEqualInt(void* a, void* b)
 {
@@ -40,7 +43,7 @@ int IsEqualChar(void* a, void* b)
 bool DataTypes_IsEqual(enum AsynchTypes type, void* lhs, void* rhs)
 {
 
-    static const int (*IsEqual[ASYNCH_NUM_DATA_TYPES])(void*, void*) = {
+    static IsEqualFunc * const IsEqual[ASYNCH_NUM_DATA_TYPES] = {
         &IsEqualChar,
         &IsEqualShort,
         &IsEqualInt,

@@ -33,6 +33,7 @@ typedef struct TransData TransData;
 typedef struct TempStorage TempStorage;
 typedef struct ConnData ConnData;
 typedef struct QVSData QVSData;
+typedef struct Forcing Forcing;
 typedef struct AsynchSolver AsynchSolver;
 
 typedef struct VEC VEC;
@@ -66,11 +67,11 @@ typedef double (OutputDoubleCallback)(unsigned int id, double t, VEC y_i, VEC gl
 typedef void (PeakflowOutputCallback)(unsigned int, double, VEC, VEC, VEC, double, unsigned int, void*, char*);
 
 //Function signatures
-typedef void (DifferentialFunc)(double, VEC, VEC*, unsigned short int, VEC, double*, struct QVSData*, VEC, int, void*, VEC);                    //!< Right-hand side function for ODE                                            
-typedef void (AlgebraicFunc)(VEC, VEC, VEC, struct QVSData*, int, void*, VEC);                                                                  //!< Function for algebraic variables
-typedef int (CheckStateFunc)(VEC, VEC, VEC, struct QVSData*, unsigned int);                                                                     //!< Function to check what "state" the state variables are in (for discontinuities)
+typedef void (DifferentialFunc)(double, VEC, VEC*, unsigned short int, VEC, double*, QVSData*, VEC, int, void*, VEC);                    //!< Right-hand side function for ODE                                            
+typedef void (AlgebraicFunc)(VEC, VEC, VEC, QVSData*, int, void*, VEC);                                                                  //!< Function for algebraic variables
+typedef int (CheckStateFunc)(VEC, VEC, VEC, QVSData*, unsigned int);                                                                     //!< Function to check what "state" the state variables are in (for discontinuities)
 typedef void (JacobianFunc)(double, VEC, VEC*, unsigned short int, VEC, double*, VEC, MAT*);                                                    //!< Jacobian of right-hand side function
-typedef int (RKSolverFunc)(struct Link*, struct GlobalVars*, int*, bool, FILE*, struct ConnData*, struct Forcing*, struct TempStorage*);   //!< RK solver to use
+typedef int (RKSolverFunc)(Link*, GlobalVars*, int*, bool, FILE*, ConnData*, Forcing*, TempStorage*);   //!< RK solver to use
 typedef void (CheckConsistencyFunc)(VEC y, VEC, VEC);                                                                                           //!< Function to check state variables
 
 // Custom models signatures

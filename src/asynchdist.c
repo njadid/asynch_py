@@ -5,6 +5,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
 
@@ -189,12 +190,7 @@ int main(int argc, char* argv[])
     print_out("Calculating initial step sizes...\n");
     Asynch_Calculate_Step_Sizes(asynch);
 
-    if (my_rank == 0)
-    {
-        printf("\nModel type is %u.\nGlobal parameters are:\n", Asynch_Get_Model_Type(asynch));
-        Print_Vector(Asynch_Get_Global_Parameters(asynch));
-        printf("\n");
-    }
+    print_out("\nModel type is %u.\n", Asynch_Get_Model_Type(asynch));
 
     //Prepare output files
     Asynch_Prepare_Temp_Files(asynch);
