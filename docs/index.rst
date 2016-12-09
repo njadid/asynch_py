@@ -47,6 +47,7 @@ The main documentation for Asynch is organized into a couple of sections:
   custom_models
   c_api
   python_api
+  internal
   contribute
 
 ..  changelog
