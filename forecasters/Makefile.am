@@ -1,3 +1,5 @@
+if HAVE_POSTGRESQL
+
 noinst_LIBRARIES = libforecaster.a
 libforecaster_a_SOURCES = forecaster_methods.c
 
@@ -19,3 +21,5 @@ asynchpersis_end_LDADD = libforecaster.a $(top_builddir)/src/libasynch.a -lm $(P
 
 AM_LDFLAGS = $(POSTGRESQL_LDFLAGS) $(HDF5_LDFLAGS) $(SSH2_LDFLAGS)
 AM_CFLAGS = -I$(srcdir)/../src $(POSTGRESQL_CPPFLAGS) $(HDF5_CFLAGS) $(SSH2_CPPFLAGS)
+
+endif
