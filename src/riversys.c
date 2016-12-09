@@ -37,19 +37,17 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
 {
     Link *system;
     FILE* riverdata = NULL;
-    PGresult *mainres, *res;
     unsigned int *link_ids = NULL;
     unsigned int *dbres_link_id = NULL;
     unsigned int *dbres_parent = NULL;
     unsigned int sizeres = 0;
-    unsigned int i, j, k;
+    unsigned int i, j;
     unsigned int max_children = 10;
     unsigned int *num_parents = NULL;
     unsigned int **loc_to_children = NULL;
     unsigned int *loc_to_children_array = NULL;
     unsigned int curr_loc;
-    int db;
-
+    
     if (globals->rvr_flag == 0)	//Read topo data from file
     {
         if (my_rank == 0)
@@ -116,9 +114,11 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
     }
     else if (globals->rvr_flag == 1)	//Download topo data from database
     {
-        //if(my_rank == 0)	printf("\nTransferring topology data from database...\n");
-        //MPI_Barrier(MPI_COMM_WORLD);
-        //start = time(NULL);
+
+#if defined(HAVE_POSTGRESQL)
+        PGresult *mainres, *res;
+        int db;
+        int k;
 
         if (my_rank == 0)
         {
@@ -140,8 +140,9 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
                 *N = PQntuples(mainres);
 
                 //Get the list of link ids
-                link_ids = (unsigned int*)malloc(*N * sizeof(unsigned int));
-                for (i = 0; i < *N; i++)	link_ids[i] = atoi(PQgetvalue(mainres, i, 0));
+                link_ids = (unsigned int*) malloc(*N * sizeof(unsigned int));
+                for (i = 0; i < *N; i++)
+                    link_ids[i] = atoi(PQgetvalue(mainres, i, 0));
                 PQclear(mainres);
 
                 sizeres = PQntuples(res);
@@ -159,7 +160,8 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
                 //Be careful to not overload the database
                 sprintf(db_connections[ASYNCH_DB_LOC_TOPO].query, db_connections[ASYNCH_DB_LOC_TOPO].queries[2], globals->outletlink);	//For parent data
                 res = PQexec(db_connections[ASYNCH_DB_LOC_TOPO].conn, db_connections[ASYNCH_DB_LOC_TOPO].query);
-                if (CheckResError(res, "querying connectivity"))	return NULL;
+                if (CheckResError(res, "querying connectivity"))
+                    return NULL;
                 DisconnectPGDB(&db_connections[ASYNCH_DB_LOC_TOPO]);
 
                 *N = PQntuples(res) + 1;
@@ -245,9 +247,12 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
             MPI_Bcast(num_parents, *N, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
         }
 
-        //MPI_Barrier(MPI_COMM_WORLD);
-        //stop = time(NULL);
-        //if(my_rank == 0)	printf("Time to receive data: %f\n",difftime(stop,start));
+#else //HAVE_POSTGRESQL
+        
+        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
     }
     else
     {
@@ -369,9 +374,7 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
 int Load_Local_Parameters(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, int* assignments, short int* getting, unsigned int** id_to_loc, GlobalVars* globals, ConnData* db_connections, short int load_all, Model* custom_model, void* external)
 {
     unsigned int i, j, *db_link_id, curr_loc;
-    int db;
     double *db_params_array, **db_params;
-    PGresult *res;
     FILE* paramdata;
 
     //Error checking
@@ -433,8 +436,9 @@ int Load_Local_Parameters(Link* system, unsigned int N, unsigned int* my_sys, un
         }
         else if (globals->prm_flag == 1)
         {
-            //printf("\nTransferring parameter data from database...\n");
-            //start = time(NULL);
+#if defined(HAVE_POSTGRESQL)
+            int db;
+            PGresult *res;
 
             if (globals->outletlink == 0)	//Grab entire network
             {
@@ -479,10 +483,14 @@ int Load_Local_Parameters(Link* system, unsigned int N, unsigned int* my_sys, un
 
             //Cleanup
             PQclear(res);
-        }
 
-        //stop = time(NULL);
-        //printf("Time to receive data: %f\n",difftime(stop,start));
+#else //HAVE_POSTGRESQL
+
+            if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+        }
     }
 
     //Broadcast data
@@ -1258,6 +1266,9 @@ static int Load_Initial_Conditions_Rec(Link* system, unsigned int N, int* assign
 
 static int Load_Initial_Conditions_Dbc(Link* system, unsigned int N, int* assignments, short int* getting, unsigned int** id_to_loc, GlobalVars* globals, ConnData* db_connections, Model* custom_model, void* external)
 {
+
+#if defined(HAVE_POSTGRESQL)
+
     unsigned int i, j, loc;
     short int *who_needs = NULL;
     short int my_need;
@@ -1361,6 +1372,13 @@ static int Load_Initial_Conditions_Dbc(Link* system, unsigned int N, int* assign
         //Clean up
         v_free(&y_0);
     }
+
+#else //HAVE_POSTGRESQL
+
+if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
 
     return 0;
 }
@@ -1556,7 +1574,6 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
     unsigned int i, j, l, m, limit, id, loc;
     FILE* forcingfile = NULL;
     double *buffer = NULL, univ_forcing_change_time[ASYNCH_MAX_NUM_FORCINGS];
-    PGresult *res;
     Link* current;
 
     //Reserve space for forcing data
@@ -1932,6 +1949,9 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
         }
         else if (forcings[l].flag == 3 || forcings[l].flag == 9)	//Database (could be irregular timesteps)
         {
+#if defined(HAVE_POSTGRESQL)
+            PGresult *res;
+
             //Set routines
             if (forcings[l].flag == 3)
             {
@@ -2001,6 +2021,14 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                     }
                 }
             }
+
+#else //HAVE_POSTGRESQL
+
+            if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+
         }
         else if (forcings[l].flag == 4)	//.ustr
         {
@@ -2179,7 +2207,6 @@ int Load_Dams(Link* system, unsigned int N, unsigned int* my_sys, unsigned int m
     Link* current;
     FILE* damfile = NULL;
     double* buffer = NULL;
-    PGresult *res;
 
     //Read dam file
     if (globals->uses_dam && globals->dam_flag == 1)	//.dam file
@@ -2418,6 +2445,8 @@ int Load_Dams(Link* system, unsigned int N, unsigned int* my_sys, unsigned int m
     }
     else if (globals->uses_dam && globals->dam_flag == 3)	//database connection
     {
+#if defined(HAVE_POSTGRESQL)
+        PGresult *res;
         Link* current;
         unsigned int num_pts, curr_loc;
         num_dams = 0;
@@ -2549,6 +2578,13 @@ int Load_Dams(Link* system, unsigned int N, unsigned int* my_sys, unsigned int m
             globals->discont_tol = 1e-8;
             if (my_rank == 0)	printf("Notice: Discontinuity tolerance has been set to %e.\n", globals->discont_tol);
         }
+
+#else //HAVE_POSTGRESQL
+
+if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
     }
     else	//Some other type of discontinuity (or none at all)
     {
@@ -3512,6 +3548,8 @@ int Create_SAV_Data(char filename[], Link* sys, unsigned int N, unsigned int** s
     }
     else if (flag == 2)	//Grab from database
     {
+#if defined(HAVE_POSTGRESQL)
+
         //char* query = conninfo.query;
         PGresult *res;
 
@@ -3538,6 +3576,13 @@ int Create_SAV_Data(char filename[], Link* sys, unsigned int N, unsigned int** s
         MPI_Bcast(size, 1, MPI_INT, 0, MPI_COMM_WORLD);
         if (my_rank != 0)	*save_list = malloc(*size * sizeof(unsigned int));
         MPI_Bcast(*save_list, *size, MPI_INT, 0, MPI_COMM_WORLD);
+
+#else //HAVE_POSTGRESQL
+
+        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
     }
     else if (flag == 3)	//All links
     {

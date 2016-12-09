@@ -50,7 +50,7 @@ int Process_Data(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* s
 {
     int i, proc, k;
     unsigned int j, l, m, loc, id, counter, total_spaces, my_max_disk, max_disk, *space_counter, size = 16;
-    char filename[ASYNCH_MAX_PATH_LENGTH], filenamespace[ASYNCH_MAX_PATH_LENGTH], outputfilename[ASYNCH_MAX_PATH_LENGTH], outputfilename_index[ASYNCH_MAX_PATH_LENGTH];
+    char filename[ASYNCH_MAX_PATH_LENGTH], filenamespace[ASYNCH_MAX_PATH_LENGTH], outputfilename[ASYNCH_MAX_PATH_LENGTH];
     char data_storage[16];
     fpos_t *positions;
     unsigned int dim = globals->num_print;
@@ -378,9 +378,11 @@ int Process_Data(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* s
         free(positions);
         free(space_counter);
     }
+#if defined(ASYNCH_HAVE_RADEK_PATENTED_COMPACT_BINARY_FORMAT_THAT_NO_ONE_ELSE_CAN_READ)
     else if (globals->hydros_loc_flag == 4)	//Radek's patented compact binary files
     {
         size_t io_val;
+        char outputfilename_index[ASYNCH_MAX_PATH_LENGTH];
 
         //Create output .rad and .irad files
         //if(my_rank == 0)
@@ -519,173 +521,7 @@ int Process_Data(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* s
         if (inputfile)	fclose(inputfile);
         if (outputfile)	fclose(outputfile);
     }
-    /*
-            //Create output .dat file
-            if(my_rank == 0)
-            {
-                if(globals->print_par_flag == 1)
-                {
-                    if(!additional_out)
-                        sprintf(outputfilename,"%s",globals->hydros_loc_filename);
-                    else
-                        sprintf(outputfilename,"%s_%s",globals->hydros_loc_filename,additional_out);
-                    for(i=0;i<globals->global_params.dim;i++)
-                    {
-                        sprintf(filenamespace,"_%.4e",globals->global_params.ve[i]);
-                        strcat(outputfilename,filenamespace);
-                    }
-
-                    sprintf(outputfilename_index,"%s.irad",outputfilename);
-                    sprintf(filenamespace,".rad");
-                    strcat(outputfilename,filenamespace);
-                }
-                else
-                {
-                    if(!additional_out)
-                    {
-                        sprintf(outputfilename_index,"%s.irad",globals->hydros_loc_filename);
-                        sprintf(outputfilename,"%s.rad",globals->hydros_loc_filename);
-                    }
-                    else
-                    {
-                        sprintf(outputfilename_index,"%s_%s.irad",globals->hydros_loc_filename,additional_out);
-                        sprintf(outputfilename,"%s_%s.rad",globals->hydros_loc_filename,additional_out);
-                    }
-                }
-
-                outputfile = fopen(outputfilename,"wb");
-                if(!outputfile)
-                {
-                    printf("[%i]: Error creating outputfile %s.\n",my_rank,outputfilename);
-                    return 2;
-                }
-
-                outputfile_index = fopen(outputfilename_index,"wb");
-                if(!outputfile_index)
-                {
-                    printf("[%i]: Error creating index outputfile %s.\n",my_rank,outputfilename_index);
-                    fclose(outputfile);
-                    return 2;
-                }
-
-                //Write index file
-                fwrite(save_list,sizeof(unsigned int),save_size,outputfile_index);
-                fclose(outputfile_index);
-            }
-
-            //Open temporary files
-            if(my_save_size)
-            {
-                if(!additional_temp)
-                    sprintf(filename,"%s",globals->temp_filename);
-                else
-                    sprintf(filename,"%s_%s",globals->temp_filename,additional_temp);				//!!!! When is additional_temp useful? Get rid of it? Global params?? !!!!
-                inputfile = fopen(filename,"rb");
-                if(!inputfile)
-                {
-                    printf("\n[%i]: Error opening inputfile %s.\n",my_rank,filename);
-                    return 2;
-                }
-            }
-
-            //Move data to final output
-            for(i=0;i<save_size;i++)
-            {
-                loc = find_link_by_idtoloc(save_list[i],id_to_loc,N);
-                proc = assignments[loc];
-                current = sys[loc];
-
-                if(proc == my_rank)
-                {
-                    //Find the link in the temp file inputfile
-                    counter = 0;	//index of link in my_save_list of its process
-                    fread(&id,sizeof(unsigned int),1,inputfile);
-                    fread(&total_spaces,sizeof(unsigned int),1,inputfile);
-                    while(id != save_list[i] && !feof(inputfile))
-                    {
-                        jump_size = (long long int) total_spaces * (long long int) line_size;	//Watch overflows!
-                        fseek(inputfile,jump_size,SEEK_CUR);
-                        counter++;
-                        fread(&id,sizeof(unsigned int),1,inputfile);
-                        fread(&total_spaces,sizeof(unsigned int),1,inputfile);
-                    }
-                    if(feof(inputfile))
-                    {
-                        printf("\n[%i]: Error: could not find id %u in temp file %s.\n",my_rank,save_list[i],filename);
-                        return 2;
-                    }
-
-                    //Write id and number of steps
-                    //if(my_rank == 0)
-                        //fprintf(outputfile,"\n%u %u\n",save_list[i],current->disk_iterations);
-                    //else
-                    //if(!my_rank)
-                    //	MPI_Send(&(current->disk_iterations),1,MPI_UNSIGNED,0,save_list[i],MPI_COMM_WORLD);
-
-                    //Read data in the temp file
-                    if(my_rank == 0)
-                    {
-                        for(k=0;k<current->disk_iterations;k++)
-                        {
-                            for(m=0;m<dim;m++)
-                            {
-                                fread(data_storage,globals->output_sizes[m],1,inputfile);
-                                fwrite(data_storage,globals->output_sizes[m],1,outputfile);
-                                //WriteValue(outputfile,globals->output_specifiers[m],data_storage,globals->output_types[m]," ");
-                            }
-                        }
-                    }
-                    else
-                    {
-    //printf("[%i] Sending iters about %i...\n",my_rank,save_list[i]);
-                        MPI_Send(&(current->disk_iterations),1,MPI_UNSIGNED,0,save_list[i],MPI_COMM_WORLD);
-    //printf("[%i] Sent iters\n",my_rank);
-                        for(k=0;k<current->disk_iterations;k++)
-                        {
-    //printf("[%i] Sending data about %i (%i/%i)...\n",my_rank,save_list[i],k,current->disk_iterations);
-                            for(m=0;m<dim;m++)
-                            {
-                                fread(data_storage,globals->output_sizes[m],1,inputfile);
-                                //MPI_Send(&data_storage,size,MPI_CHAR,0,save_list[i],MPI_COMM_WORLD);
-                                MPI_Send(data_storage,size,MPI_CHAR,0,save_list[i],MPI_COMM_WORLD);		//!!!! Why do some sends/recvs have & and some don't? !!!!
-                            }
-    //printf("[%i] Sent data (%i/%i)\n",my_rank,k,current->disk_iterations);
-                        }
-                    }
-
-                    //Skip over the last unused space. This is done so that the file does not need to be rewound.
-                    for(k=0;k<total_spaces-current->disk_iterations;k++)
-                        for(j=0;j<dim;j++)
-                            fread(data_storage,globals->output_sizes[j],1,inputfile);
-                }
-                else if(my_rank == 0)
-                {
-    //printf("[%i] Recving iters from %i about %i...\n",my_rank,proc,save_list[i]);
-                    //Write to file
-                    MPI_Recv(&(current->disk_iterations),1,MPI_UNSIGNED,proc,save_list[i],MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-                    //fprintf(outputfile,"\n%u %u\n",save_list[i],current->disk_iterations);
-    //printf("[%i] Recved iters\n",my_rank);
-
-                    for(k=0;k<current->disk_iterations;k++)
-                    {
-    //printf("[%i] Recving data about %i (%i/%i)...\n",my_rank,save_list[i],k,current->disk_iterations);
-                        for(m=0;m<dim;m++)
-                        {
-                            MPI_Recv(data_storage,size,MPI_CHAR,proc,save_list[i],MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-                            fwrite(data_storage,globals->output_sizes[m],1,outputfile);
-                            //WriteValue(outputfile,globals->output_specifiers[m],data_storage,globals->output_types[m]," ");
-                        }
-    //printf("[%i] Recved data about (%i/%i)\n",my_rank,k,current->disk_iterations);
-                    }
-                }
-            }
-
-            //Cleanup
-            if(inputfile)	fclose(inputfile);
-            if(outputfile)	fclose(outputfile);
-
-        }
-    */
+#endif //ASYNCH_HAVE_RADEK_PATENTED_COMPACT_BINARY_FORMAT_THAT_NO_ONE_ELSE_CAN_READ
 
     if (my_rank == 0)
         printf("\nResults written to file %s.\n", outputfilename);
@@ -706,6 +542,8 @@ int Process_Data(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* s
 
     return 0;
 }
+
+#if defined(HAVE_POSTGRESQL)
 
 void PrepareDatabaseTable(GlobalVars* globals, ConnData* conninfo)
 {
@@ -822,11 +660,12 @@ void PrepareDatabaseTable(GlobalVars* globals, ConnData* conninfo)
 }
 
 
+
 //Assumes temp files.
 //Return value = 0 means everything is good.
 //1 means a database related error.
 //2 means a file system related error.
-int UploadHydrosDB(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out, ConnData* conninfo, FILE** my_tempfile)
+int DumpTimeSerieDB(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out, ConnData* conninfo, FILE** my_tempfile)
 {
     int i, k, nbytes, my_result = 0, result = 0, return_val = 0;
     unsigned int j, loc, id, total_spaces;
@@ -1091,6 +930,7 @@ finished:
     return return_val;
 }
 
+#endif //HAVE_POSTGRESQL
 
 //Creates a peakflow file.
 //Make sure GlobalVars has been initialized first.
@@ -1130,7 +970,7 @@ int PreparePeakFlowFiles(GlobalVars* globals, unsigned int peaksave_size)
 
 
 //Writes to disk the current peakflow information.
-int DumpPeakFlowData(Link* sys, GlobalVars* globals, unsigned int N, int* assignments, unsigned int* peaksave_list, unsigned int peaksave_size, unsigned int** id_to_loc, ConnData* conninfo)
+int DumpPeakFlowText(Link* sys, GlobalVars* globals, unsigned int N, int* assignments, unsigned int* peaksave_list, unsigned int peaksave_size, unsigned int** id_to_loc, ConnData* conninfo)
 {
     unsigned int i, length, error = 0, loc;
     Link* current;
@@ -1208,8 +1048,10 @@ int DumpPeakFlowData(Link* sys, GlobalVars* globals, unsigned int N, int* assign
     return 0;
 }
 
+#if defined(HAVE_POSTGRESQL)
+
 //Uploads the current peakflow information to a database.
-int UploadPeakFlowData(Link* sys, GlobalVars* globals, unsigned int N, int* assignments, unsigned int* peaksave_list, unsigned int peaksave_size, unsigned int** id_to_loc, ConnData* conninfo)
+int DumpPeakFlowDB(Link* sys, GlobalVars* globals, unsigned int N, int* assignments, unsigned int* peaksave_list, unsigned int peaksave_size, unsigned int** id_to_loc, ConnData* conninfo)
 {
     unsigned int i, loc, length, result, return_val = 0, error = 0;
     char temptablename[ASYNCH_MAX_QUERY_LENGTH], buffer[256];
@@ -1356,57 +1198,11 @@ int UploadPeakFlowData(Link* sys, GlobalVars* globals, unsigned int N, int* assi
     return return_val;
 }
 
-/*
-//Writes the initial conditions of each link to disk as an .rec file.
-//All data is sent to proc 0 so that the data file is stored correctly on disk.
-void DataDump(Link** sys,unsigned int N,int* assignments,UnivVars* GlobalVars,unsigned int last_file)
-{
-    unsigned int i,j;
-    FILE* output;
-    char filename[256];
-    unsigned int dim = globals->dim;
-    double buffer[dim];
-
-    if(my_rank == 0)	//Creating the file
-    {
-        sprintf(filename,"%s%u.rec",globals->dump_location,last_file);
-        output = fopen(filename,"w");
-        if(output == NULL)	printf("[%i]: Error opening file %s.\n",my_rank,filename);
-        fprintf(output,"%hu\n%u\n0.0\n\n",globals->type,N);
-
-        for(i=0;i<N;i++)
-        {
-            if(assignments[i] != 0)
-                MPI_Recv(buffer,dim,MPI_DOUBLE,assignments[i],i,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-            else
-                for(j=0;j<dim;j++)	buffer[j] = sys[i].list->tail->y_approx->ve[j];
-
-            fprintf(output,"%u\n",sys[i].ID);
-            for(j=0;j<dim;j++)	fprintf(output,"%.6e ",buffer[j]);
-            fprintf(output,"\n");
-        }
-
-        fclose(output);
-    }
-    else			//Sending data to proc 0
-    {
-        for(i=0;i<N;i++)
-        {
-            if(assignments[i] == my_rank)
-            {
-                for(j=0;j<dim;j++)	buffer[j] = sys[i].list->tail->y_approx->ve[j];
-                MPI_Send(buffer,dim,MPI_DOUBLE,0,i,MPI_COMM_WORLD);
-            }
-        }
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-}
-*/
+#endif //HAVE_POSTGRESQL
 
 
 //This is the same as DataDump, but allows for a generic name
-int DataDump2(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* preface, ConnData* conninfo)
+int DumpStateText(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* preface, ConnData* conninfo)
 {
     unsigned int i, j;
     FILE* output;
@@ -1467,7 +1263,7 @@ int DataDump2(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, 
     return 0;
 }
 
-int DataDumpH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* preface, ConnData* conninfo)
+int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* preface, ConnData* conninfo)
 {
     unsigned int i;
     unsigned int res = 0;
@@ -1544,7 +1340,9 @@ int DataDumpH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals,
     return 0;
 }
 
-int UploadDBDataDump(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* preface, ConnData* conninfo)
+#if defined(HAVE_POSTGRESQL)
+
+int DumpStateDB(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* preface, ConnData* conninfo)
 {
     unsigned int i, j, init_length;
     size_t nbytes;
@@ -1715,6 +1513,7 @@ int UploadDBDataDump(Link* sys, unsigned int N, int* assignments, GlobalVars* gl
     return error;
 }
 
+#endif //HAVE_POSTGRESQL
 
 FILE* PrepareTempFiles(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, char* additional, unsigned int** id_to_loc)
 {
@@ -2172,24 +1971,4 @@ int overwrite_last_step(Link* link_i, GlobalVars *globals, FILE* outputfile)
     return 0;
 }
 
-/*
-int ConvertBinaryToString(double* data_storage,char* submission,unsigned int blocks,unsigned int dimp1,unsigned int id)
-{
-    unsigned int i,j,written,count = 0;
-
-    for(i=0;i<blocks;i++)
-    {
-        written = sprintf(&(submission[count]),"%u,",id);
-        count += written;
-        for(j=0;j<dimp1;j++)
-        {
-            written = sprintf(&(submission[count]),"%.8e,",data_storage[i*dimp1 + j]);
-            count += written;
-        }
-        submission[count-1] = '\n';
-    }
-
-    return count;
-}
-*/
 

@@ -17,7 +17,18 @@ void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_fl
 
     //Prepare Final Time Series Output
     if (hydros_loc_flag == 3)
+    {
+#if defined(HAVE_POSTGRESQL)
+
         output_func->PrepareOutput = &PrepareDatabaseTable;
+
+#else //HAVE_POSTGRESQL
+
+        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+    }
     else
         output_func->PrepareOutput = NULL;
 
@@ -31,25 +42,58 @@ void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_fl
     if (hydros_loc_flag == 1 || hydros_loc_flag == 2 || hydros_loc_flag == 4)
         output_func->CreateOutput = &Process_Data;
     else if (hydros_loc_flag == 3)
-        output_func->CreateOutput = &UploadHydrosDB;
+    {
+#if defined(HAVE_POSTGRESQL)
+
+        output_func->CreateOutput = &DumpTimeSerieDB;
+
+#else //HAVE_POSTGRESQL
+
+        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+    }       
     else
         output_func->CreateOutput = NULL;
 
     //Create Peakflow Output
     if (peaks_loc_flag == 1)
-        output_func->CreatePeakflowOutput = &DumpPeakFlowData;
+        output_func->CreatePeakflowOutput = &DumpPeakFlowText;
     else if (peaks_loc_flag == 2)
-        output_func->CreatePeakflowOutput = &UploadPeakFlowData;
+    {
+#if defined(HAVE_POSTGRESQL)
+
+        output_func->CreatePeakflowOutput = &DumpPeakFlowDB;
+
+#else //HAVE_POSTGRESQL
+
+        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+    }        
     else
         output_func->CreatePeakflowOutput = NULL;
 
     //Set data dump routines
     if (dump_loc_flag == 1)
-        output_func->CreateSnapShot = &DataDump2;
+        output_func->CreateSnapShot = &DumpStateText;
     else if (dump_loc_flag == 2)
-        output_func->CreateSnapShot = &UploadDBDataDump;
+    {
+#if defined(HAVE_POSTGRESQL)
+
+        output_func->CreateSnapShot = &DumpStateDB;
+
+#else //HAVE_POSTGRESQL
+
+        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+    }
     else if (dump_loc_flag == 3)
-        output_func->CreateSnapShot = &DataDumpH5;
+        output_func->CreateSnapShot = &DumpStateH5;
     else
         output_func->CreateSnapShot = NULL;
 }

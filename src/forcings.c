@@ -62,6 +62,9 @@ unsigned int PassesBinaryFiles(Forcing* forcing,double maxtime,ConnData* conninf
 	return passes;
 }
 
+
+#if defined(HAVE_POSTGRESQL)
+
 //For flag = 3
 unsigned int PassesDatabase(Forcing* forcing,double maxtime,ConnData* conninfo)
 {
@@ -106,6 +109,8 @@ unsigned int PassesDatabase_Irregular(Forcing* forcing,double maxtime,ConnData* 
 
 	return forcing->number_timesteps / forcing->increment + 1;
 }
+
+#endif //HAVE_POSTGRESQL
 
 //For flag = 7
 unsigned int PassesRecurring(Forcing* forcing,double maxtime,ConnData* conninfo)

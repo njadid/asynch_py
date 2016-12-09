@@ -525,6 +525,7 @@ int Create_Rain_Data_Grid(Link* sys,unsigned int N,unsigned int my_N,GlobalVars*
 //unsigned int max_files: The maximum number of files to be read.
 int Create_Rain_Database(Link* sys,unsigned int N,unsigned int my_N,GlobalVars* GlobalVars,unsigned int* my_sys,int* assignments,ConnData *conninfo,unsigned int first,unsigned int last,Forcing* forcing,unsigned int** id_to_loc,double maxtime,unsigned int forcing_idx)
 {
+#if defined(HAVE_POSTGRESQL)
 	unsigned int i,j,k,curr_idx,tuple_count;
 	Link* current;
 	float forcing_buffer;
@@ -753,6 +754,13 @@ printf("!!!! i = %i k = %i received = %i unix_time = %i raindb_start = %i\n",i,k
 	free(db_link_id);
 	free(db_rain_intens);
 
+#else //HAVE_POSTGRESQL
+
+    if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+#endif //HAVE_POSTGRESQL
+
 	return 0;
 }
 
@@ -774,6 +782,7 @@ printf("!!!! i = %i k = %i received = %i unix_time = %i raindb_start = %i\n",i,k
 //unsigned int max_files: The maximum number of files to be read.
 int Create_Rain_Database_Irregular(Link* sys,unsigned int N,unsigned int my_N,GlobalVars* GlobalVars,unsigned int* my_sys,int* assignments,ConnData *conninfo,unsigned int first,unsigned int last,Forcing* forcing,unsigned int** id_to_loc,double maxtime,unsigned int forcing_idx)
 {
+#if defined(HAVE_POSTGRESQL)
 	unsigned int i,j,k,curr_idx,tuple_count,current_timestamp;
 	Link* current;
 	float forcing_buffer;
@@ -1064,7 +1073,16 @@ printf("+++++++++\n");
 	free(db_link_id);
 	free(db_rain_intens);
 
-	return last;
+    return last;
+
+#else //HAVE_POSTGRESQL
+
+    if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+    MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+
+    return 0;
+
+#endif //HAVE_POSTGRESQL
 }
 
 

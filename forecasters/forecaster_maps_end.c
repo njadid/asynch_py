@@ -531,7 +531,7 @@ int main(int argc, char* argv[])
         {
             sprintf(snapshot_additional, "%s_%u.rec", snapshot_file_location, first_file);
             Asynch_Set_Snapshot_Output_Name(asynch, snapshot_additional);
-            DataDump2(asynch->sys, asynch->N, asynch->assignments, asynch->globals, NULL, NULL);	//!!!! Dirty... !!!!
+            DumpStateText(asynch->sys, asynch->N, asynch->assignments, asynch->globals, NULL, NULL);	//!!!! Dirty... !!!!
 
             if (my_rank == 0)
             {
