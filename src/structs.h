@@ -47,11 +47,12 @@
 #define ASYNCH_MAX_QUERIES 5
 
 #define ASYNCH_MAX_NUM_FORCINGS 12
-
+#define ASYNCH_MAX_TIMESTAMP_LENGTH 12
 #define ASYNCH_MAX_PATH_LENGTH 1024
 
 #define ASYNCH_MAX_LINE_LENGTH 1024
 #define ASYNCH_MAX_SYMBOL_LENGTH 64
+#define ASYNCH_MAX_QUERY_LENGTH 2048
 
 #define ASYNCH_MAX_DIM 256              //!< Maximum number of Degree of Freedom
 
@@ -288,6 +289,7 @@ typedef struct GlobalVars
     short unsigned int hydros_loc_flag;
     short unsigned int peaks_loc_flag;
     short unsigned int dump_loc_flag;
+    double dump_time;                   //!< Each link states will dump every dump_time minutes.
     short unsigned int res_flag;
     char* hydros_loc_filename;
     char* peaks_loc_filename;

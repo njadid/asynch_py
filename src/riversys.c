@@ -816,7 +816,7 @@ int Initialize_Model(Link* system, unsigned int N, unsigned int* my_sys, unsigne
                     smallest_dim = system[i].errorinfo->reltol_dense.dim;
                 if (globals->min_error_tolerances > smallest_dim)
                 {
-                    printf("[%i] Error: link id %u does not have enough error tolerances (got %u, expected %u)\n", my_rank, system[i].ID, smallest_dim, system[i].dim);
+                    printf("[%i] Error: link id %u does not have enough error tolerances (got %u, expected %u)\n", my_rank, system[i].ID, smallest_dim, globals->min_error_tolerances);
                     my_error_code = 1;
                     break;
                 }
@@ -3111,7 +3111,7 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
             ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
             valsread = sscanf(line_buffer, "%u %lf %u %u", &(forcings[i].increment), &(forcings[i].file_time), &(forcings[i].first_file), &(forcings[i].last_file));
-            if (ReadLineError(valsread, 4, "time increment, file time, first file, and last file"))	return NULL;
+            if (ReadLineError(valsread, 4, "chunk size, time resolution, beginning unix time, and ending unix time"))	return NULL;
             forcings[i].raindb_start_time = forcings[i].first_file;
         }
         else if (forcings[i].flag == 9)	//Database with irregular timesteps
@@ -3342,6 +3342,14 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         if (!CheckFilenameExtension(db_filename, ".dbc"))	return NULL;
         //globals->dump_loc_filename = NULL;
         ReadDBC(db_filename, &db_connections[ASYNCH_DB_LOC_SNAPSHOT_OUTPUT]);
+    }
+    else if (globals->dump_loc_flag == 4)
+    {
+        globals->dump_loc_filename = (char*)malloc(ASYNCH_MAX_PATH_LENGTH * sizeof(char));
+        valsread = sscanf(line_buffer, "%*u %lf %s", &globals->dump_time, globals->dump_loc_filename);
+        if (ReadLineError(valsread, 2, "snapshot time and filename"))	return NULL;
+        if (!CheckFilenameExtension(globals->dump_loc_filename, ".h5"))
+            return NULL;
     }
 
     //Grab folder locations

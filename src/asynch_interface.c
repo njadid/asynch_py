@@ -424,8 +424,8 @@ void Asynch_Free(AsynchSolver* asynch)
     free(asynch->workspace);
     free(asynch->getting);
     if (asynch->outputfile)	fclose(asynch->outputfile);
-    if (asynch->peakfilename)	free(asynch->peakfilename);
-
+    if (asynch->peakfile)	fclose(asynch->peakfile);
+    
     for (i = 0; i < asynch->N; i++)
         Destroy_Link(&asynch->sys[i], asynch->globals->iter_limit, asynch->rkdfilename[0] != '\0', asynch->forcings, asynch->globals);
 

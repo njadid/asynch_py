@@ -92,7 +92,7 @@ void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_fl
 
 #endif //HAVE_POSTGRESQL
     }
-    else if (dump_loc_flag == 3)
+    else if ((dump_loc_flag == 3) || (dump_loc_flag == 4))
         output_func->CreateSnapShot = &DumpStateH5;
     else
         output_func->CreateSnapShot = NULL;

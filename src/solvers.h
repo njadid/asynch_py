@@ -15,6 +15,22 @@
 extern int np;
 extern int my_rank;
 
-void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N, GlobalVars* GlobalVars, int* assignments, short int* getting, unsigned int* res_list, unsigned int res_size, unsigned int** id_to_loc, TempStorage* workspace, Forcing* forcings, ConnData* db_connections, TransData* my_data, bool print_flag, FILE* outputfile);
+void Advance(
+    Link* sys,
+    unsigned int N,
+    unsigned int* my_sys,
+    unsigned int my_N,
+    GlobalVars* globals,
+    int* assignments,
+    short int* getting,
+    unsigned int* res_list,
+    unsigned int res_size,
+    unsigned int** id_to_loc,
+    TempStorage* workspace,
+    Forcing* forcings,
+    ConnData* db_connections,
+    TransData* my_data,
+    bool print_flag,
+    FILE* outputfile);
 
 #endif
