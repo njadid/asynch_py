@@ -51,17 +51,17 @@ function getLatest(re) {
     })
     .reduce(function(max, x) {
       return x.time > max.time ? x : max;
-    });
+    }, {time: null});
 }
 
 // Get the latest available state
 function getLatestState() {
-  return getLatest(/^state_(\d+).(rec|h5)$/);
+  return getLatest(/^state_mrms_(\d+).(rec|h5)$/);
 }
 
 // Get the latest forcing
 function getLatestForcing() {
-  return getLatest(/^forcing_rain_qpe_(\d+).str$/);
+  return getLatest(/^forcing_rain_mrms_(\d+).str$/);
 }
 
 // Create output dir if not exists
@@ -77,30 +77,31 @@ function render(template, out, context) {
 }
 
 //Check whether a simulation is already running
-sge.qstat('IFC_QPE')
+sge.qstat('QPE_MRMS')
 .then(function (status) {
   debug(status);
   if (status && status.state.indexOf('r') !== -1) {
     throw 'Simulation already running';
   } else if (status && status.state.indexOf('w') !== -1) {
     debug('Simulation is waiting, put on hold while job is updated');
-    return sge.qhold('IFC_QPE');
+    return sge.qhold('QPE_MRMS');
   } else {
     debug('No job found, submit a new one');
-    render(templates.job, 'qpe.job', {
-      name: 'IFC_QPE',
-      globalFile: 'qpe.gbl',
-      workingDir: path.resolve(outputDir)
+    render(templates.job, 'qpe_mrms.job', {
+      name: 'QPE_MRMS',
+      globalFile: 'qpe_mrms.gbl',
+      workingDir: path.resolve(outputDir),
+      rainfallProduct: 'mrms'
     });
 
-    return sge.qsub(path.join(outputDir, 'qpe.job'));
+    return sge.qsub(path.join(outputDir, 'qpe_mrms.job'));
   }
 })
 .then(function () {
   // Creating a new database instance from the connection details
-  return pgp.connect(config.qpeConn).then(function (client) {
+  return pgp.connect(config.mrmsConn).then(function (client) {
     // Query the DB to get the latest obs timestamp
-    return client.query('SELECT unix_time FROM rain_maps5_index ORDER BY unix_time DESC LIMIT 1');
+    return client.query('SELECT unix_time FROM link_rain ORDER BY unix_time DESC LIMIT 1');
   });
 })
 .then(function (query){
@@ -110,7 +111,7 @@ sge.qstat('IFC_QPE')
       latestForcing = getLatestForcing();
   
   var currentTime = latestState.time,
-    forcingTime = latestForcing.time || currentTime,
+    forcingTime = latestForcing.time,
     latestTime = result.value,
     user = username.sync();
   
@@ -127,14 +128,14 @@ sge.qstat('IFC_QPE')
       process.exit(1);
   }
 
-  debug('current timestamp ' + currentTime);
-  debug('last rainfall QPE timestamp ' + forcingTime);
-  debug('lastest rainfall QPE timestamp ' + latestTime);
+  debug('current state timestamp ' + currentTime);
+  debug('last rainfall MRMS timestamp ' + forcingTime);
+  debug('lastest rainfall MRMS timestamp ' + latestTime);
 
-  // If we have new obs ready
-  if (forcingTime >= latestTime) {
+  // If we already have the newest obs ready
+  if (forcingTime && forcingTime >= latestTime) {
     debug ('Simulation is already up to date');
-    return sge.qrls('IFC_QPE');
+    return sge.qrls('QPE_MRMS');
   }
 
   var context = {
@@ -144,9 +145,9 @@ sge.qstat('IFC_QPE')
     duration: (latestTime - currentTime) / 60,
     iniStateMode: iniStateMode,
     iniStateFile: latestState.filename,
-    endStateFile: 'state_' + latestTime + '.h5',
+    endStateFile: 'state_mrms_' + latestTime + '.h5',
     rainFileType: 1,
-    rainFile: latestForcing.filename,
+    rainFile: 'forcing_rain_mrms_' + latestTime + '.str',
     outHydrographsFile: {
       file: 'hydrographs.dat'
     },
@@ -155,22 +156,38 @@ sge.qstat('IFC_QPE')
     }
   };
 
-  // Render a new set of config files
-  render(templates.gbl, 'qpe.gbl', context);
+  //Update the run start time
+  pgp.connect(config.outConn).then(function (client) {
+    debug('updating run start time ' + context.begin);
+    return client.query('UPDATE runs SET start_time = to_timestamp($1) WHERE run LIKE $2', [context.begin, 'qpe_mrms']);
+  })
+  .then(function (query){
+    return query.fetchOneRowIfExists();
+  })
+  .then(function (result) {
+    result.client.done();
+    debug('done.');
+  })
+  .catch(function (err) {
+    debug(err);
+  });
 
-  // Get the QPE data and generate the stormfile
+  // Render a new set of config files
+  render(templates.gbl, 'qpe_mrms.gbl', context);
+
+  // Get the QPE MRMS data and generate the stormfile
   var links = {};
-  return result.client.query(config.qpeQuery, [context.begin])
+  return result.client.query(config.mrmsQuery, [context.begin])
     .onRow(stormfile.mapLink(context.begin, 300, links))
   .then(function (result) {
-    debug('got ' + result.rowCount + ' QPE rainfall rows');
+    debug('got ' + result.rowCount + ' MRMS rainfall rows');
     result.client.done();
 
     stormfile.generate(path.join(outputDir, context.rainFile), links);
 
     // Run the simulations
     debug('Release the simulation');
-    return sge.qrls('IFC_QPE');
+    return sge.qrls('QPE_MRMS');
   });
 })
 .catch(function (err) {

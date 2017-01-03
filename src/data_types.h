@@ -5,29 +5,22 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#define ASYNCH_BAD_TYPE -1
-#define ASYNCH_CHAR 0
-#define ASYNCH_SHORT 1
-#define ASYNCH_INT 2
-#define ASYNCH_FLOAT 3
-#define ASYNCH_DOUBLE 4
-#define ASYNCH_NUM_DATA_TYPES 5
+
+#include <stdbool.h>
 
 
-typedef struct DataTypes
+enum AsynchTypes
 {
-	int (*is_equal[ASYNCH_NUM_DATA_TYPES])(void*,void*);
-} DataTypes;
+    ASYNCH_BAD_TYPE = -1,
+    ASYNCH_CHAR,
+    ASYNCH_SHORT,
+    ASYNCH_INT,
+    ASYNCH_FLOAT,
+    ASYNCH_DOUBLE,
+    ASYNCH_NUM_DATA_TYPES
+};
 
-void Init_DataTypes(DataTypes* dt_info);
-void Free_DataTypes(DataTypes* dt_info);
-
-//Comparison functions ***********************************************************************************************
-int IsEqualInt(void* a,void* b);
-int IsEqualShort(void* a,void* b);
-int IsEqualDouble(void* a,void* b);
-int IsEqualFloat(void* a,void* b);
-int IsEqualChar(void* a,void* b);
+bool DataTypes_IsEqual(enum AsynchTypes type, void* lhs , void* rhs);
 
 #endif
 

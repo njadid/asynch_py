@@ -1,4 +1,4 @@
-AC_INIT([asynch], [1.0], [felipe-quintero@uiowa.edu])
+AC_INIT([asynch], [1.1.0], [samuel-debionne@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([tar-ustar foreign -Wall -Werror])
@@ -10,8 +10,10 @@ AC_PROG_RANLIB
 
 # Checks for libraries
 AX_CHECK_ZLIB
-AX_LIB_POSTGRESQL
 AX_LIB_HDF5([serial])
+AX_LIB_POSTGRESQL
+
+AM_CONDITIONAL([HAVE_POSTGRESQL], [test "$HAVE_POSTGRESQL" -eq 1])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile forecasters/Makefile tests/Makefile tools/Makefile])

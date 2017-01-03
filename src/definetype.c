@@ -24,7 +24,7 @@
 //disk_params:		The number of enries in param that are read from DEM data.
 //Currently, this program assumes the same number of differential equations at each link.
 //UnivVars* GlobalVars:	Contains the global variables for the system.
-void SetParamSizes(UnivVars* GlobalVars,void* external)
+void SetParamSizes(GlobalVars* GlobalVars,void* external)
 {
 	unsigned short int type = GlobalVars->type;
 	unsigned int num_global_params;

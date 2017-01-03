@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined(HAVE_SSH2)
+#if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 #if defined(HAVE_UNISTD_H)
@@ -35,9 +35,9 @@ typedef struct ForecastData
 	double forecast_window;
 } ForecastData;
 
-int DeleteFutureValues(ConnData* conninfo,unsigned int num_tables,UnivVars* GlobalVars,char* table_name,char* model_name,unsigned int clear_after,unsigned int equal,char* schema);
-void PerformTableMaintainance(ConnData* conninfo_hydros,UnivVars* GlobalVars,ForecastData* Forecaster,short int* vac,short unsigned int hr1,unsigned int num_tables,char* tablename,char* schema);
-void CheckPartitionedTable(ConnData* conninfo,UnivVars* GlobalVars,ForecastData* Forecaster,unsigned int num_tables,char* tablename,char* colname,char* schema);
+int DeleteFutureValues(ConnData* conninfo,unsigned int num_tables,GlobalVars* GlobalVars,char* table_name,char* model_name,unsigned int clear_after,unsigned int equal,char* schema);
+void PerformTableMaintainance(ConnData* conninfo_hydros,GlobalVars* GlobalVars,ForecastData* Forecaster,short int* vac,short unsigned int hr1,unsigned int num_tables,char* tablename,char* schema);
+void CheckPartitionedTable(ConnData* conninfo,GlobalVars* GlobalVars,ForecastData* Forecaster,unsigned int num_tables,char* tablename,char* colname,char* schema);
 void CreateHaltFile(char* filename);
 short int CheckFinished(char* filename);
 int WaitForDB(ConnData* conninfo,unsigned int naptime,int stale_time,unsigned int query_size);

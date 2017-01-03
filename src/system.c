@@ -11,84 +11,86 @@
 
 #include "system.h"
 
-//Frees link_i.
-//Link* link_i: link to be freed.
-//unsigned int list_length: the length of the list stored with link_i.
+//Frees link.
+//Link* link: link to be freed.
+//unsigned int list_length: the length of the list stored with link.
 //int rkd_flag: should be 1 if an .rkd file was used, 0 if not.
-void Destroy_Link(Link* link_i,unsigned int list_length,int rkd_flag,Forcing** forcings,UnivVars* GlobalVars)
+void Destroy_Link(Link* link,unsigned int list_length,int rkd_flag,Forcing* forcings,GlobalVars* GlobalVars)
 {
 	unsigned int i;
-	if(link_i == NULL)	return;
+	assert(link != NULL);
 
-	v_free(&link_i->params);
+	v_free(&link->params);
 
-	if(link_i->method != NULL)
+	if(link->method != NULL)
 	{
-		free(link_i->forcing_values);
-		free(link_i->forcing_indices);
-		free(link_i->forcing_change_times);
-		if(rkd_flag)	Destroy_ErrorData(link_i->errorinfo);
-		Destroy_List(link_i->list,list_length);
-		//v_free(link_i->params);
-		v_free(&link_i->peak_value);
-		if(link_i->discont != NULL)	free(link_i->discont);
-		if(link_i->discont_send != NULL)
+		free(link->forcing_values);
+		free(link->forcing_indices);
+		free(link->forcing_change_times);
+		if(rkd_flag)
+            Destroy_ErrorData(link->errorinfo);
+		Destroy_List(link->list,list_length);
+		//v_free(link->params);
+		v_free(&link->peak_value);
+		if(link->discont != NULL)
+            free(link->discont);
+		if(link->discont_send != NULL)
 		{
-			free(link_i->discont_send);
-			free(link_i->discont_order_send);
+			free(link->discont_send);
+			free(link->discont_order_send);
 		}
 		for(i=0;i<GlobalVars->num_forcings;i++)
 		{
-			if(link_i->forcing_buff && forcings[i]->flag != 4 && forcings[i]->flag != 7 && link_i->forcing_buff[i] != NULL)
-				Destroy_ForcingData(&(link_i->forcing_buff[i]));
+			if(link->forcing_buff && forcings[i].flag != 4 && forcings[i].flag != 7 && link->forcing_buff[i] != NULL)
+				ForcingData_Free(&(link->forcing_buff[i]));
 		}
-		free(link_i->forcing_buff);
-		if(link_i->qvs != NULL)
+		free(link->forcing_buff);
+		if(link->qvs != NULL)
 		{
 /*
-			for(i=0;i<link_i->qvs->n_values;i++)
-				free(link_i->qvs->points[i]);
+			for(i=0;i<link->qvs->n_values;i++)
+				free(link->qvs->points[i]);
 */
-			free(link_i->qvs->points);
-			free(link_i->qvs->points_array);
-			free(link_i->qvs);
+			free(link->qvs->points);
+			free(link->qvs->points_array);
+			free(link->qvs);
 		}
-		m_free(&link_i->JMatrix);
-		m_free(&link_i->CoefMat);
-		v_free(&link_i->sol_diff);
-        if (link_i->Z_i != NULL)
+		m_free(&link->JMatrix);
+		m_free(&link->CoefMat);
+		v_free(&link->sol_diff);
+        if (link->Z_i != NULL)
         {
 		    for(i=0;i<GlobalVars->max_s;i++)
-			    v_free(&link_i->Z_i[i]);
-		    free(link_i->Z_i);
+			    v_free(&link->Z_i[i]);
+		    free(link->Z_i);
         }
 /*
-		if(GlobalVars->template_flag && link_i->equations != NULL)
+		if(GlobalVars->template_flag && link->equations != NULL)
 		{
-			//mupRelease(link_i->equations->parser);
+			//mupRelease(link->equations->parser);
 			printf("Warning: Not freeing parser in system.c, Destroy_Link\n");
-			v_free(&link_i->equations->variable_values);
-			free(link_i->equations);
+			v_free(&link->equations->variable_values);
+			free(link->equations);
 		}
 */
 	}
 
-	if(link_i->dense_indices)	free(link_i->dense_indices);
+	if(link->dense_indices)
+        free(link->dense_indices);
 
-	free(link_i->parents);
-	free(link_i);
+	free(link->parents);
 }
 
 //Frees rain
 //ForcingData** forcing_buff: forcing data to be freed
-void Destroy_ForcingData(ForcingData** forcing_buff)
+void ForcingData_Free(ForcingData** forcing_buff)
 {
 	unsigned int i;
 	if(forcing_buff && *forcing_buff)
 	{
-		for(i=0;i<(*forcing_buff)->n_times;i++)
-			free((*forcing_buff)->rainfall[i]);
-		free((*forcing_buff)->rainfall);
+		for(i=0;i<(*forcing_buff)->nrows;i++)
+			free((*forcing_buff)->data[i]);
+		free((*forcing_buff)->data);
 		free(*forcing_buff);
 	}
 }
@@ -254,7 +256,7 @@ TempStorage* Create_Workspace(unsigned int dim,unsigned short int s,unsigned sho
 		workspace->temp_k[i] = v_get(dim);
 
 	workspace->ipiv = (int*) malloc(s*dim*sizeof(int));
-	workspace->RHS = v_get(s*dim);
+	workspace->rhs = v_get(s*dim);
 	//workspace->CoefMat = m_get(s*dim,s*dim);
 	workspace->JMatrix = m_get(dim,dim);
 	workspace->Z_i = (VEC*) malloc(s*sizeof(VEC));
@@ -287,7 +289,7 @@ void Destroy_Workspace(TempStorage* workspace,unsigned short int s,unsigned shor
 	free(workspace->temp_k);
 
 	free(workspace->ipiv);
-	v_free(&workspace->RHS);
+	v_free(&workspace->rhs);
 	//m_free(&workspace->CoefMat);
 	m_free(&workspace->JMatrix);
 	for(i=0;i<s;i++)
@@ -297,10 +299,9 @@ void Destroy_Workspace(TempStorage* workspace,unsigned short int s,unsigned shor
 }
 
 //Deallocates UnivVars
-void Destroy_UnivVars(UnivVars* GlobalVars)
+void Destroy_UnivVars(GlobalVars* GlobalVars)
 {
 	unsigned int i;
-	free(GlobalVars->output_data);
 	free(GlobalVars->peakflow_function_name);
 	free(GlobalVars->output_types);
 	free(GlobalVars->output_sizes);

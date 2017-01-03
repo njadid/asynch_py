@@ -24,7 +24,7 @@
 //				to receive information about link i, 0 otherwise.
 //Returns an array of N integers that take values from 0 to np-1. The i-th entry contains which process the link in location i of
 //				the system is assigned to.
-int* Partition_System_By_Leaves(Link** sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting)
+int* Partition_System_By_Leaves(Link* sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting)
 {
 	//Assign leaves
 	unsigned int i,start_index,end_index,extras;
@@ -61,7 +61,7 @@ int* Partition_System_By_Leaves(Link** sys,unsigned int N,Link** leaves,unsigned
 	unsigned int curr_idx;
 	for(i=0;i<numleaves;i++)
 	{
-		current = leaves[i]->c;
+		current = leaves[i]->child;
 		if(current != NULL)
 		{
 			curr_idx = current->location;
@@ -75,7 +75,7 @@ int* Partition_System_By_Leaves(Link** sys,unsigned int N,Link** leaves,unsigned
 					(*my_N)++;
 				}
 				q = current;
-				current = current->c;
+				current = current->child;
 				if(current != NULL)	curr_idx = current->location;
 				else			break;
 			}
@@ -130,7 +130,7 @@ int* Partition_System_By_Leaves(Link** sys,unsigned int N,Link** leaves,unsigned
 	//Assign links to receive_data and send_data
 	for(i=0;i<numleaves;i++)
 	{
-		current = leaves[i]->c;
+		current = leaves[i]->child;
 		if(current != NULL)
 		{
 			curr_idx = current->location;
@@ -140,7 +140,7 @@ int* Partition_System_By_Leaves(Link** sys,unsigned int N,Link** leaves,unsigned
 			{
 				assignments[curr_idx] = assignments[current->parents[0]->location];
 				q = current;
-				current = current->c;
+				current = current->child;
 				if(current != NULL)	curr_idx = current->location;
 				else			break;
 			}
@@ -192,7 +192,7 @@ int* Partition_System_By_Leaves(Link** sys,unsigned int N,Link** leaves,unsigned
 //				to receive information about link i, 0 otherwise.
 //Returns an array of N integers that take values from 0 to np-1. The i-th entry contains which process the link in location i of
 //				the system is assigned to.
-int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting)
+int* Partition_System_By_Leaves_2(Link* sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting)
 {
 	//Assign leaves
 	unsigned int i,j,k,l,start_index,end_index,extras;
@@ -229,7 +229,7 @@ int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsign
 	int curr_idx;
 	for(i=0;i<numleaves;i++)
 	{
-		current = leaves[i]->c;
+		current = leaves[i]->child;
 		if(current != NULL)
 		{
 			curr_idx = current->location;
@@ -245,9 +245,9 @@ int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsign
 				}
 
 				//Check if any parents are leaves. If so, assign them to this process
-				for(j=0;j<current->numparents;j++)
+				for(j=0;j<current->num_parents;j++)
 				{
-					if(current->parents[j]->numparents == 0 && assignments[current->parents[j]->location] != assignments[curr_idx])
+					if(current->parents[j]->num_parents == 0 && assignments[current->parents[j]->location] != assignments[curr_idx])
 					{
 						//Remove the parent from the my_sys it is currently in
 						if(assignments[current->parents[j]->location] == my_rank)
@@ -275,7 +275,7 @@ int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsign
 				}
 
 				q = current;
-				current = current->c;
+				current = current->child;
 				if(current != NULL)	curr_idx = current->location;
 				else			break;
 			}
@@ -324,7 +324,7 @@ int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsign
 
 	for(i=0;i<numleaves;i++)
 	{
-		current = leaves[i]->c;
+		current = leaves[i]->child;
 		if(current != NULL)
 		{
 			curr_idx = current->location;
@@ -335,9 +335,9 @@ int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsign
 				assignments[curr_idx] = assignments[current->parents[0]->location];
 
 				//Check if any parents are leaves. If so, assign them to this process
-				for(j=0;j<current->numparents;j++)
+				for(j=0;j<current->num_parents;j++)
 				{
-					if(current->parents[j]->numparents == 0 && assignments[current->parents[j]->location] != assignments[curr_idx])
+					if(current->parents[j]->num_parents == 0 && assignments[current->parents[j]->location] != assignments[curr_idx])
 					{
 						//Assign the parent
 						assignments[current->parents[j]->location] = assignments[current->location];
@@ -345,7 +345,7 @@ int* Partition_System_By_Leaves_2(Link** sys,unsigned int N,Link** leaves,unsign
 				}
 
 				q = current;
-				current = current->c;
+				current = current->child;
 				if(current != NULL)	curr_idx = current->location;
 				else			break;
 			}
@@ -414,12 +414,12 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
 	{
 		xadj[i] = index;
 		current = sys[i];
-		if(current->c != NULL)
+		if(current->child != NULL)
 		{
-			adjncy[index] = current->c->location;
+			adjncy[index] = current->child->location;
 			index++;
 		}
-		for(j=0;j<current->numparents;j++)
+		for(j=0;j<current->num_parents;j++)
 		{
 			adjncy[index] = current->parents[j]->location;
 			index++;
@@ -458,7 +458,7 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -469,9 +469,9 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 				my_data->send_size[assignments[loc]]++;
 		}
@@ -493,7 +493,7 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -504,9 +504,9 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 			{
 				my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = sys[(*my_sys)[i]];
@@ -558,12 +558,12 @@ int* Partition_METIS_RainChanges(Link** sys,unsigned int N,Link** leaves,unsigne
 	{
 		xadj[i] = index;
 		current = sys[i];
-		if(current->c != NULL)
+		if(current->child != NULL)
 		{
-			adjncy[index] = current->c->location;
+			adjncy[index] = current->child->location;
 			index++;
 		}
-		for(j=0;j<current->numparents;j++)
+		for(j=0;j<current->num_parents;j++)
 		{
 			adjncy[index] = current->parents[j]->location;
 			index++;
@@ -678,7 +678,7 @@ int* Partition_METIS_RainChanges(Link** sys,unsigned int N,Link** leaves,unsigne
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -689,9 +689,9 @@ int* Partition_METIS_RainChanges(Link** sys,unsigned int N,Link** leaves,unsigne
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 				my_data->send_size[assignments[loc]]++;
 		}
@@ -713,7 +713,7 @@ int* Partition_METIS_RainChanges(Link** sys,unsigned int N,Link** leaves,unsigne
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -724,9 +724,9 @@ int* Partition_METIS_RainChanges(Link** sys,unsigned int N,Link** leaves,unsigne
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 			{
 				my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = sys[(*my_sys)[i]];
@@ -778,12 +778,12 @@ int* Partition_METIS_RainVolume(Link** sys,unsigned int N,Link** leaves,unsigned
 	{
 		xadj[i] = index;
 		current = sys[i];
-		if(current->c != NULL)
+		if(current->child != NULL)
 		{
-			adjncy[index] = current->c->location;
+			adjncy[index] = current->child->location;
 			index++;
 		}
-		for(j=0;j<current->numparents;j++)
+		for(j=0;j<current->num_parents;j++)
 		{
 			adjncy[index] = current->parents[j]->location;
 			index++;
@@ -917,7 +917,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -928,9 +928,9 @@ MPI_Barrier(MPI_COMM_WORLD);
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 				my_data->send_size[assignments[loc]]++;
 		}
@@ -955,7 +955,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -966,9 +966,9 @@ MPI_Barrier(MPI_COMM_WORLD);
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 			{
 				my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = sys[(*my_sys)[i]];

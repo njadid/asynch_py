@@ -22,7 +22,7 @@ void CalcHortonOrder(Link** sys,unsigned int N,unsigned int* order,unsigned shor
 	int stack_size = 0;
 	Link** leaves = malloc(N * sizeof(Link*));
 	unsigned int leaves_size = 0;
-	unsigned short int numparents;
+	unsigned short int num_parents;
 
 	for(i=0;i<N;i++)
 	{
@@ -33,7 +33,7 @@ void CalcHortonOrder(Link** sys,unsigned int N,unsigned int* order,unsigned shor
 	//Find the root
 	for(i=0;i<N;i++)
 	{
-		if(sys[i]->c == NULL)
+		if(sys[i]->child == NULL)
 		{
 			root = sys[i];
 			break;
@@ -47,9 +47,9 @@ void CalcHortonOrder(Link** sys,unsigned int N,unsigned int* order,unsigned shor
 	while(stack_size > 0)
 	{
 		current = stack[stack_size-1];	//Top of stack
-		numparents = current->numparents;
+		num_parents = current->num_parents;
 
-		if(numparents == 0)
+		if(num_parents == 0)
 		{
 			stack_size--;
 			leaves[leaves_size] = current;
@@ -58,12 +58,12 @@ void CalcHortonOrder(Link** sys,unsigned int N,unsigned int* order,unsigned shor
 		else
 		{
 			//If current is not a leaf, replace it with it's parents
-			for(i=0;i<numparents;i++)
+			for(i=0;i<num_parents;i++)
 			{
-				stack[stack_size - 1 + i] = current->parents[numparents - 1 - i];
-				stack[stack_size - 1 + i]->c = current;
+				stack[stack_size - 1 + i] = current->parents[num_parents - 1 - i];
+				stack[stack_size - 1 + i]->child = current;
 			}
-			stack_size += numparents - 1;
+			stack_size += num_parents - 1;
 		}
 	}
 
@@ -74,19 +74,19 @@ void CalcHortonOrder(Link** sys,unsigned int N,unsigned int* order,unsigned shor
 		order[current->location] = 1;
 		//complete[current->location] = 1;	//Exclude order 1 links
 
-		while(current->c != NULL)
+		while(current->child != NULL)
 		{
-			current = current->c;
+			current = current->child;
 			loc = current->location;
-			numparents = current->numparents;
-			for(j=0;j<numparents;j++)
+			num_parents = current->num_parents;
+			for(j=0;j<num_parents;j++)
 				order[loc] = (order[loc] > order[current->parents[j]->location]) ? order[loc] : order[current->parents[j]->location];
 
 			//Check if current is a complete ordered link
 			parentsval = 0;
-			for(j=0;j<numparents;j++)
+			for(j=0;j<num_parents;j++)
 				if(order[loc] == order[current->parents[j]->location])	parentsval++;
-			if(parentsval == numparents)
+			if(parentsval == num_parents)
 			{
 				order[loc]++;
 				complete[loc] = 1;
@@ -166,8 +166,8 @@ void CreateGraph(Link** sys,unsigned int N)
 
 	for(i=0;i<N;i++)
 	{
-		if(sys[i]->c != NULL)	fprintf(output,"%u ",sys[i]->c->location + offset);
-		for(j=0;j<sys[i]->numparents;j++)
+		if(sys[i]->child != NULL)	fprintf(output,"%u ",sys[i]->child->location + offset);
+		for(j=0;j<sys[i]->num_parents;j++)
 			fprintf(output,"%u ",sys[i]->parents[j]->location + offset);
 		fprintf(output,"\n");
 	}
@@ -264,8 +264,8 @@ void CreateGraphRain(Link** sys,unsigned int N,UnivVars* GlobalVars)
 	for(i=0;i<N;i++)
 	{
 		fprintf(output,"%u ",total[i]);
-		if(sys[i]->c != NULL)	fprintf(output,"%u ",sys[i]->c->location + offset);
-		for(j=0;j<sys[i]->numparents;j++)
+		if(sys[i]->child != NULL)	fprintf(output,"%u ",sys[i]->child->location + offset);
+		for(j=0;j<sys[i]->num_parents;j++)
 			fprintf(output,"%u ",sys[i]->parents[j]->location + offset);
 		fprintf(output,"\n");
 	}
@@ -322,7 +322,7 @@ int* Partition_System_File(Link** sys,unsigned int N,Link** leaves,unsigned int 
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -333,9 +333,9 @@ int* Partition_System_File(Link** sys,unsigned int N,Link** leaves,unsigned int 
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 				my_data->send_size[assignments[loc]]++;
 		}
@@ -357,7 +357,7 @@ int* Partition_System_File(Link** sys,unsigned int N,Link** leaves,unsigned int 
 	for(i=0;i<*my_N;i++)
 	{
 		//Receiving
-		for(j=0;j<sys[(*my_sys)[i]]->numparents;j++)
+		for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
 		{
 			loc = sys[(*my_sys)[i]]->parents[j]->location;
 			if(assignments[loc] != my_rank)
@@ -368,9 +368,9 @@ int* Partition_System_File(Link** sys,unsigned int N,Link** leaves,unsigned int 
 		}
 
 		//Sending
-		if(sys[(*my_sys)[i]]->c != NULL)
+		if(sys[(*my_sys)[i]]->child != NULL)
 		{
-			loc = sys[(*my_sys)[i]]->c->location;
+			loc = sys[(*my_sys)[i]]->child->location;
 			if(assignments[loc] != my_rank)
 			{
 				my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = sys[(*my_sys)[i]];
@@ -400,7 +400,7 @@ void CalculateWidth(Link** sys,unsigned int N)
 
 	//Find the root
 	for(i=0;i<N;i++)
-		if(sys[i]->c == NULL)	break;
+		if(sys[i]->child == NULL)	break;
 
 	//Find the distance of each link to the root
 	queue[0] = sys[i];
@@ -412,12 +412,12 @@ void CalculateWidth(Link** sys,unsigned int N)
 	for(i=0;i<N;i++)
 	{
 		current = queue[i];
-		for(j=0;j<current->numparents;j++)
+		for(j=0;j<current->num_parents;j++)
 		{
 			queue[curr_idx] = current->parents[j];
 			distance[curr_idx] = distance[i] + 1;
 			width[distance[curr_idx]-1]++;
-			if(current->parents[j]->numparents == 0)	width_E[distance[curr_idx]-1]++;
+			if(current->parents[j]->num_parents == 0)	width_E[distance[curr_idx]-1]++;
 			else						width_I[distance[curr_idx]-1]++;
 			curr_idx++;
 		}
@@ -464,7 +464,7 @@ void CalculateWidth(Link** sys,unsigned int N)
 	{
 		ave_l += sys[i]->params.ve[1];
 		ave_a += sys[i]->params.ve[2];
-		if(sys[i]->numparents == 0)
+		if(sys[i]->num_parents == 0)
 		{
 			ave_l_E += sys[i]->params.ve[1];
 			count_E++;
