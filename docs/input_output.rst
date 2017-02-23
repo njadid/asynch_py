@@ -145,7 +145,7 @@ Format:
 
   0
 
-A forcing flag of 0 specifies no forcing input This is the same as a forcing value of 0 0 for all links and all time.
+A forcing flag of `0` specifies no forcing input. This is the same as a forcing value of `0.0` for all links and all time.
 
 Storm File
 ^^^^^^^^^^
@@ -156,7 +156,7 @@ Format:
 
   1 {.str filename}
 
-A forcing flag of 1 indicates the forcing is specified by a .str file. The filename and path of a valid storm (.str) file is required.
+A forcing flag of `1` indicates the forcing is specified by a .str file. The filename and path of a valid storm (.str) file is required.
 
 Binary Files
 ^^^^^^^^^^^^
@@ -168,7 +168,7 @@ Format:
   2 {binary file identifier}
   {chunk size} {time resolution} {beginning file index} {ending file index}
 
-A forcing flag of 2 indicates the forcing is specified by a collection of binary forcing files. The identifier can be adorned with a path to the binary files. The chunk size is a positive integer that indicates the number of binary files kept in memory at once. The time resolution indicates the amount of time between successively indexed binary files. This value is a floating point number with units equal to those of the time variable of the model used The beginning and ending file indices indicate the range of the binary files to be used. The indices are integer valued. The simulation will begin using the binary file with index given by the beginning file index. If the total simulation time would require binary files with index greater than the ending file index, the forcing values are taken to be 0.0 for all such binary files.
+A forcing flag of `2` indicates the forcing is specified by a collection of binary forcing files. The identifier can be adorned with a path to the binary files. The chunk size is a positive integer that indicates the number of binary files kept in memory at once. The time resolution indicates the amount of time between successively indexed binary files. This value is a floating point number with units equal to those of the time variable of the model used The beginning and ending file indices indicate the range of the binary files to be used. The indices are integer valued. The simulation will begin using the binary file with index given by the beginning file index. If the total simulation time would require binary files with index greater than the ending file index, the forcing values are taken to be 0.0 for all such binary files.
 
 Forcings from Databases
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -180,7 +180,7 @@ Format:
   3 {.dbc filename}
   {chunk size} {time resolution} {beginning unix time} {ending unix time}
 
-A forcing flag of 3 indicates the forcing data will be pulled from a PostgreSQL database. The database connection filename can include a path. The chunk size is a positive integer representing the number of forcing values pulled from the database at once from each link. A chunk size of 10 tends to work well. A larger chunk size requires more memory and larger datasets returned from the database, but a small number of queries. The time resolution is a floating point number with units in minutes. This represents the time resolution of the data in the accessed table. The integrity of the database table is not thoroughly checked by the solvers.
+A forcing flag of `3` indicates the forcing data will be pulled from a PostgreSQL database. The database connection filename can include a path. The chunk size is a positive integer representing the number of forcing values pulled from the database at once from each link. A chunk size of 10 tends to work well. A larger chunk size requires more memory and larger datasets returned from the database, but a small number of queries. The time resolution is a floating point number with units in minutes. This represents the time resolution of the data in the accessed table. The integrity of the database table is not thoroughly checked by the solvers.
 
 The simulation will begin using the data from the database with unix time given by the beginning unix time. If the total simulation time would require data from the database with unix time greater than the ending unix time, the forcing values are taken to be 0.0 for times greater than the ending unix time.
 
@@ -193,7 +193,7 @@ Format:
 
   4 {.ustr filename}
 
-A forcing flag of 4 indicates a forcing that is uniform in space. The forcings are given by a uniform storm file (.ustr).
+A forcing flag of `4` indicates a forcing that is uniform in space. The forcings are given by a uniform storm file (.ustr).
 
 GZipped Binary Files
 ^^^^^^^^^^^^^^^^^^^^
@@ -205,7 +205,7 @@ Format:
   6 {gzipped binary file identifier}
   {chunk size} {time resolution} {beginning file index} {ending file index}
 
-A forcing flag of 6 indicates the forcing is specified by a collection of binary forcing files that have been gzipped (compressed as .gz files). All parameters for this flag are identical to that of using binary files with forcing flag 3.
+A forcing flag of `6` indicates the forcing is specified by a collection of binary forcing files that have been gzipped (compressed as .gz files). All parameters for this flag are identical to that of using binary files with forcing flag 3.
 
 Monthly Forcings
 ^^^^^^^^^^^^^^^^
@@ -217,7 +217,7 @@ Format:
   7 { mon filename}
   {beginning unix time} {ending unix time}
 
-A forcing flag of 7 indicates a uniform in space forcing that recurs monthly. When the end of the calendar year is reached, the monthly forcing file (.mon) is read again from the beginning The beginning unix time is used to determine the month the simulation begins (for this forcing). If the total simulation time takes the simulation past the ending unix time, the forcing is assumed to be ``0.0`` for all locations and times beyond the ending unix time
+A forcing flag of `7` indicates a uniform in space forcing that recurs monthly. When the end of the calendar year is reached, the monthly forcing file (.mon) is read again from the beginning The beginning unix time is used to determine the month the simulation begins (for this forcing). If the total simulation time takes the simulation past the ending unix time, the forcing is assumed to be ``0.0`` for all locations and times beyond the ending unix time
 
 Grid Cell Files
 ^^^^^^^^^^^^^^^
@@ -229,7 +229,7 @@ Format:
   8 {index filename}
   {chunk size} {beginning file index} {ending file index}
 
-A forcing flag of 8 indicates the forcing is specified by a collection of grid cell forcing files. The index filename can be adorned with a path to the index file. The chunk size is a positive integer that indicates the number of grid cell files kept in memory at once. The beginning and ending file indices indicate the range of the grid cell files to be used. The indices are integer valued.
+A forcing flag of `8` indicates the forcing is specified by a collection of grid cell forcing files. The index filename can be adorned with a path to the index file. The chunk size is a positive integer that indicates the number of grid cell files kept in memory at once. The beginning and ending file indices indicate the range of the grid cell files to be used. The indices are integer valued.
 
 The simulation will begin using the grid cell file with index given by the beginning file index. If the total simulation time would require grid cell files with index greater than the ending file index, the forcing values are taken to be 0 0 for all such grid cell files. In addition, if a grid cell file is missing, all values at each cell are assumed to be 0.0.
 
