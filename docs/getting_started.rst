@@ -21,7 +21,7 @@ First, be sure to follow the steps in Section :ref:`install` for installing the 
         module load hdf5/1.8.18_parallel_studio-2017.1
         module load openmpi/2.0.1_parallel_studio-2017.1
         
-.. tip:: For Iowa HPC Argon users.
+.. tip:: For Iowa HPC Neon users.
     For those using Iowa HPC resources, downloading and compiling the source code is not necessary. But to be able to use the prebuilt executables, setting up your environment is necessary. The prefered way is to edit your ``~/.bash_profile``:
 
     .. code-block:: sh
