@@ -1,3 +1,7 @@
+#ifndef LIBPQ_FE_H
+#define LIBPQ_FE_H
+
+
 /* PGconn encapsulates a connection to the backend.
 * The contents of this struct are not supposed to be known to applications.
 */
@@ -15,3 +19,6 @@ typedef struct pg_result PGresult;
 * The contents of this struct are not supposed to be known to applications.
 */
 typedef struct pg_cancel PGcancel;
+
+
+#endif   /* LIBPQ_FE_H */
