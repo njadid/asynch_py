@@ -30,8 +30,6 @@ First, be sure to follow the steps in Section :ref:`install` for installing the 
 
         export PATH=$PATH:$HOME/.local/bin:/Dedicated/IFC/.local/bin:/Dedicated/IFC/.neon/bin
 
-        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/Dedicated/IFC/.argon/lib
-
         # Load module OpenMPI and HDF5
         module load openmpi/intel-composer_xe_2015.3.187-1.8.8
         module load hdf5/1.8.17
