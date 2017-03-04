@@ -17,7 +17,8 @@
 #include <mpi.h>
 #endif
 
-#include "libpq-fwd.h"
+#include "libpq_fwd.h"
+#include "structs_fwd.h"
 
 #include "asynch_interface.h"
 
@@ -64,20 +65,20 @@
 //struct GlobalVars;
 //struct TransData;
 
-// Forward definitions
-typedef struct ErrorData ErrorData;
-typedef struct GlobalVars GlobalVars;
-typedef struct Link Link;
-typedef struct RKMethod RKMethod;
-typedef struct TransData TransData;
-typedef struct TempStorage TempStorage;
-typedef struct ConnData ConnData;
-typedef struct Forcing Forcing;
-typedef struct AsynchSolver AsynchSolver;
+//// Forward definitions
+//typedef struct ErrorData ErrorData;
+//typedef struct GlobalVars GlobalVars;
+//typedef struct Link Link;
+//typedef struct RKMethod RKMethod;
+//typedef struct TransData TransData;
+//typedef struct TempStorage TempStorage;
+//typedef struct ConnData ConnData;
+//typedef struct Forcing Forcing;
+//typedef struct AsynchSolver AsynchSolver;
 
 /// Structure to store temporary memory needed for RK solvers.
 ///
-typedef struct TempStorage
+struct TempStorage
 {
     //Memory for all Solvers
     VEC sum, temp, temp2, temp3;       //!< Vectors for summations and temp workspace. size = dim of problem at each link.
@@ -91,11 +92,11 @@ typedef struct TempStorage
     MAT JMatrix;            //!< Holds jacobian matrix of the right hand side function of the ode. size = dim x dim.
     VEC* Z_i;               //!< Space for s internal stages. Each had size = dim.
     VEC err;                //!< Space for error approximations. size = dim.
-} TempStorage;
+};
 
 /// Holds all information for an RK method.
 /// These are intended for dense output methods, but regular RK methods could be stored here as well.
-typedef struct RKMethod
+struct RKMethod
 {
     MAT A;                  //!< A coefficients
     VEC b;                  //! <b coefficients
@@ -115,11 +116,11 @@ typedef struct RKMethod
     VEC w;                              //!< Weights for lagrange polynomial
     unsigned short int exp_imp;         //!< 0 if method is explicit, 1 if implicit
     unsigned short int localorder;      //!< Local order of the method
-} RKMethod;
+};
 
 /// Holds the error estimation information for a link.
 /// See Hairer, E. and Norsett, S.P. and Wanner, G., Solving Ordinary Differential Equations I, Nonstiff Problems.
-typedef struct ErrorData
+struct ErrorData
 {
     double facmax;          //!< Parameter for error estimation
     double facmin;          //!< Parameter for error estimation
@@ -128,11 +129,11 @@ typedef struct ErrorData
     VEC reltol;             //!< Relative tolerance
     VEC abstol_dense;       //!< Absolute tolerance for dense output
     VEC reltol_dense;       //!< Relative tolerance for dense output
-} ErrorData;
+};
 
 /// Node for a linked list of the numerical solution for a link. Each node holds the numerical solution at time t.
 ///
-typedef struct RKSolutionNode
+struct RKSolutionNode
 {
     VEC* k;                 //!< Array of all k values at time t
     VEC y_approx;           //!< Approximate solution at time t
@@ -140,35 +141,35 @@ typedef struct RKSolutionNode
     struct RKSolutionNode* next;    //!< Next node in the linked list
     struct RKSolutionNode* prev;    //!< Previous node in the linked list
     int state;              //!< State of the solution
-} RKSolutionNode;
+};
 
 /// Linked list for the numerical solution of a link.
 ///
-typedef struct RKSolutionList
+struct RKSolutionList
 {
     RKSolutionNode* list_data;  //!< A pointer to the nodes in this list. Used for allocation/deallocation.
     RKSolutionNode* head;       //!< The beginning of the list. This node has the small t value.
     RKSolutionNode* tail;       //!< The end of the list. This node has the largest t value.
     //unsigned int dim;         //!< The dimension of the problem. This is the size of all y_approx vectors in each node.
     unsigned short int s;       //!< The number of stages in the RK method used to create these approximations.
-} RKSolutionList;
+};
 
 /// Structure to contain the forcing data of a link.
 ///
-typedef struct ForcingData
+struct ForcingData
 {
     double** data;          //!< 2D array with 2 columns. First column is time the rainfall changes to the rate in the second column
     unsigned int nrows;     //!< Number of rows in rainfall
-} ForcingData;
+};
 
 /// Structure to contain the discharge vs storage data of a link.
 ///
-typedef struct QVSData
+struct QVSData
 {
     double** points;            //!< 2D array with 2 columns. First column is time the rainfall changes to the rate in the second column
     double* points_array;       //!< 1D equivalent of points
     unsigned int n_values;      //!< Number of rows in points (2*n_values is the number entries in points_array)
-} QVSData;
+};
 
 /*
 //Structure to contain the diff eqs for the standardized template models
@@ -181,7 +182,7 @@ typedef struct Formula
 
 /// Structure to hold information about an PostgreSQL database
 ///
-typedef struct ConnData
+struct ConnData
 {
     PGconn* conn;                                   //!< Connection to a database
     char connectinfo[ASYNCH_MAX_CONNSTRING_LENGTH]; //!< Connection information for a database
@@ -193,9 +194,9 @@ typedef struct ConnData
     //unsigned int submission_content;    //Amount of characters (bytes) currently stored in submission
     unsigned int time_offset;       //!< Added to the integration time to get the actual unix time
 
-} ConnData;
+};
 
-typedef struct OutputFunc
+struct OutputFunc
 {
     //Temporary Calculations
     FILE* (*PrepareTempOutput)(struct Link*, unsigned int, int*, struct GlobalVars*, unsigned int*, unsigned int, unsigned int, char*, unsigned int**);
@@ -210,12 +211,12 @@ typedef struct OutputFunc
 
     //Create Snapshot
     int (*CreateSnapShot)(struct Link*, unsigned int, int*, struct GlobalVars*, char*, struct ConnData*);
-} OutputFunc;
+};
 
 
 /// Structure to contain all data that is global to the river system.
 ///
-typedef struct GlobalVars
+struct GlobalVars
 {
     unsigned short int type;        //!< Index for the model used
 
@@ -322,12 +323,12 @@ typedef struct GlobalVars
     char* dump_table;
     //char* dump_location;
     //char* halt_filename;
-} GlobalVars;
+};
 
 
 /// This structure holds all the data for a link in the river system.
 ///
-typedef struct Link
+struct Link
 {
     RKMethod* method;                   //!< RK method to use for solving the ODEs for this link
     RKSolutionList* list;               //!< The list for the calculated numerical solution
@@ -413,9 +414,9 @@ typedef struct Link
     unsigned int discont_send_count;    //!< Number of times in discont_send and discont_order_send
     double* discont_send;               //!< List of discontinuity times to send downstream
     unsigned int* discont_order_send;   //!< List of discontinuity derivative orders to send downstream
-} Link;
+};
 
-typedef struct Model
+struct Model
 {
     SetParamSizesFunc *set_param_sizes;
     ConvertFunc *convert;
@@ -423,12 +424,12 @@ typedef struct Model
     PrecalculationsFunc *precalculations;
     InitializeEqsFunc *initialize_eqs;
     PartitionFunc *partition;
-} Model;
+};
 
 
 /// This structure holds all the data for a forcing in the river system.
 ///
-typedef struct Forcing
+struct Forcing
 {
     unsigned int(*GetPasses)(struct Forcing*, double maxtime, struct ConnData* conninfo);
     double(*GetNextForcing)(struct Link*, unsigned int, unsigned int*, unsigned int, int*, struct GlobalVars*, struct Forcing*, struct ConnData*, unsigned int**, unsigned int);
@@ -465,12 +466,12 @@ typedef struct Forcing
     unsigned int lastused_first_file;   //!< The value of first_file when the GetPasses routine was last called. 0 if never set.
     unsigned int lastused_last_file;    //!< The value of last_file when the GetPasses routine was last called. 0 if never set.
     unsigned int number_timesteps;      //!< The number of times which feature a forcing at some link.
-} Forcing;
+};
 
 
 /// This structure holds information about how data is to be transfered between processes.
 ///
-typedef struct TransData
+struct TransData
 {
     Link*** send_data;              //!< 2D array. send_data[i][j] points to a link about which data will be sent to process i.
     Link*** receive_data;           //!< 2D array. receive_data[i][j] points to a link about which data will be received from process i.
@@ -487,11 +488,11 @@ typedef struct TransData
     unsigned int* num_sent;         //!< num_sent[i] is number of messages sent to process i
     unsigned int* num_recv;         //!< num_recv[i] is number of messages received from process i
     unsigned int* totals;           //!< workspace for flushing of size np
-} TransData;
+};
 
 /// This is the main structure that holds the state of the server and associated data structures for a simulation.
 ///
-typedef struct AsynchSolver
+struct AsynchSolver
 {
     //MPI Stuff
     MPI_Comm comm;		//!< COMM on which the solver works
@@ -544,7 +545,7 @@ typedef struct AsynchSolver
     Forcing forcings[ASYNCH_MAX_DB_CONNECTIONS - ASYNCH_DB_LOC_FORCING_START];	//!< Forcing information
     Model* custom_model;
     void* ExternalInterface;
-} AsynchSolver;
+};
 
 
 #endif //STRUCTS_H

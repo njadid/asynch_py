@@ -12,7 +12,7 @@
 #include "structs.h"
 #include "system.h"
 #include "sort.h"
-#include "libpq-fwd.h"
+#include "libpq_fwd.h"
 
 extern int my_rank;
 extern int np;

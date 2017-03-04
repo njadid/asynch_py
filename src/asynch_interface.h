@@ -18,26 +18,27 @@
 //#include "structs.h"
 //#include "solvers.h"
 //#include "io.h"
+#include "structs_fwd.h"
 #include "data_types.h"
 #include "mathmethods.h"
 
 
 //#define ASYNCH_MAX_DB_CONNECTIONS 20
 
-// Forward definitions
-typedef struct ErrorData ErrorData;
-typedef struct GlobalVars GlobalVars;
-typedef struct Link Link;
-typedef struct RKMethod RKMethod;
-typedef struct TransData TransData;
-typedef struct TempStorage TempStorage;
-typedef struct ConnData ConnData;
-typedef struct QVSData QVSData;
-typedef struct Forcing Forcing;
-typedef struct AsynchSolver AsynchSolver;
+//// Forward definitions
+//typedef struct ErrorData ErrorData;
+//typedef struct GlobalVars GlobalVars;
+//typedef struct Link Link;
+//typedef struct RKMethod RKMethod;
+//typedef struct TransData TransData;
+//typedef struct TempStorage TempStorage;
+//typedef struct ConnData ConnData;
+//typedef struct QVSData QVSData;
+//typedef struct Forcing Forcing;
+//typedef struct AsynchSolver AsynchSolver;
 
-typedef struct VEC VEC;
-typedef struct MAT MAT;
+//typedef struct VEC VEC;
+//typedef struct MAT MAT;
 
 
 //Callback signatures

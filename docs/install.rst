@@ -13,7 +13,7 @@ In addition to the source code, several programs and libraries are needed:
 -  A C compiler
 -  GNU Make
 -  An MPI implementation
--  Libpq libraries
+-  HDF5, libpq libraries
 
 A brief description of each is provided below.
 
@@ -102,21 +102,16 @@ If the source code is ever updated, you may want to run ``make clean`` before re
 Iowa HPC Clusters
 -----------------
 
-Currently, the University of Iowa has two HPC clusters available: Neon and Argon. ASYNCH is already compiled on these clusters and is available to anyone with access to IFC shared resources. All required software should be available The makefile included with the source code should work without modification on these clusters.
+Currently, the University of Iowa has two HPC clusters available: Neon and Argon. ASYNCH is already compiled on these clusters and is available to anyone with access to IFC shared resources. All required software should be available. The build system included with the source code should work without modification on these clusters.
 
-However, these clusters do use OpenMPI through modules. The module for OpenMPI must be loaded once per login session to run ASYNCH. On Helium, this can be done with the command
-
-.. code-block:: sh
-
-  module load openmpi\_gnu\_1.4.3
-
-On Neon, use the command
+However, these clusters do use third party software through modules. The module for OpenMPI and HDF5 must be loaded once per login session to run ASYNCH. On Neon, use the command:
 
 .. code-block:: sh
 
-  module load openmpi/gcc44-1.6.5
+  module load openmpi/intel-composer_xe_2015.3.187-1.8.8
+  module load hdf5/1.8.17
 
-This loads OpenMPI version 1.4.3 or version 1.6.5 for use with the GNU compiler gcc (which was used to compile the existing version of ASYNCH). Instead of loading these modules manually, the commands can be added to the end of the file ``.bash_profile`` in the user's home directory. Note that Helium and Neon each have a separate ``.bash_profile`` file. In addition, if using the Python interface functions on Helium, the appropriate Python module must be loaded. This can be done with a call to
+These load OpenMPI version 1.8.8 for use with the Intel compiler as well as the HDF5 library. Instead of loading these modules manually, the commands can be added to the end of the file ``.bash_profile`` in the user's home directory. Note that Helium and Neon each have a separate ``.bash_profile`` file. In addition, if using the Python interface functions on Helium, the appropriate Python module must be loaded. This can be done with a call to
 
 .. code-block:: sh
 
@@ -152,14 +147,14 @@ These are the generic instruction for an out of source build (prefered method):
 Installing the package on NEON
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, ``git clone`` the repository or ``tar xzf`` a released packages. To install the software for the IFC group, load the following modules:
+First, ``git clone`` the repository or extract ``tar xzf`` a release packages. To install the software for the IFC group, load the following modules:
 
 .. code-block:: sh
 
   module load openmpi/intel-composer_xe_2015.3.187-1.8.8
   module load hdf5/1.8.17
 
-Then run the class GNU tool chain:
+Then run the classic GNU build tool chain:
 
 .. code-block:: sh
 
