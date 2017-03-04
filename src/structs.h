@@ -302,12 +302,11 @@ struct GlobalVars
 
     //Outputs
     unsigned int num_states_for_printing;   //!< Number of states used for printing
-    unsigned int num_print;                 //!< Number of outputs
+    unsigned int num_outputs;               //!< Number of outputs
     unsigned int* print_indices;            //!< List of indices in solution vectors where data is written to output (size is num_states_for_printing)
-    OutputIntCallback **outputs_i;
-    OutputDoubleCallback **outputs_d;
+    OutputCallback *outputs;
     char** output_names;
-    char** output_specifiers;
+    const char** output_specifiers;
     enum AsynchTypes* output_types;
     short int* output_sizes;
 
@@ -351,7 +350,7 @@ struct Link
     unsigned int location;              //!< Index of this link in the system array
     short int ready;                    //!< Flag that is 1 if a step can be taken, 0 if not
     unsigned short int num_parents;     //!< Number of upstream links
-    int disk_iterations;                //!< Number of iterations stored on disk
+    unsigned int disk_iterations;       //!< Number of iterations stored on disk
     double peak_time;                   //!< The time at which the largest discharge has occurred for this link
     VEC peak_value;                     //!< The value of the largest discharge for this link
     struct Link** parents;             //!< An array of all upstream links (parents)

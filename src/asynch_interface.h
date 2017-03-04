@@ -65,6 +65,26 @@ typedef int (OutputIntCallback)(unsigned int id, double t, VEC y_i, VEC global_p
 /// \return Returns the data to be written as output.
 typedef double (OutputDoubleCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
 
+
+/// 
+///
+/// \param t The current time.
+/// \param y The current state vector at time *t* for the link.
+/// \param global_params The vector of parameters uniform amongst all links.
+/// \param params The vector of parameters for the link.
+/// \param state : The current state of the state vector.
+/// \param user: User defined data.
+/// \return Returns the data to be written as output.
+typedef float (OutputFloatCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
+
+
+typedef union OutputCallback {
+    OutputIntCallback *out_int;
+    OutputDoubleCallback *out_double;
+    OutputFloatCallback *out_float;
+} OutputCallback;
+
+
 typedef void (PeakflowOutputCallback)(unsigned int, double, VEC, VEC, VEC, double, unsigned int, void*, char*);
 
 //Function signatures
@@ -340,6 +360,21 @@ int Asynch_Set_Output_Int(AsynchSolver* asynch, char* name, OutputIntCallback* c
 /// \param num_states Numver of indiciced in used_states.
 /// \see Asynch_Set_Output_Int
 int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallback* callback, unsigned int* used_states, unsigned int num_states);
+
+/// This routine sets a custom output time series. A function is required that will be called every time
+/// output data is to be written for a link. The function set in this routine should have the
+/// specification
+/// Asynch_Set_Output_Double must also be given an array *used_states*. This array contains the indices of
+/// the states in the state vectors which are needed by the user specified routine *callback*. All states
+/// listed in this array are guaranteed to be available for the routine *callback*.
+///
+/// \param asynch A pointer to a AsynchSolver object to use.
+/// \param name Name of the custom time series.
+/// \param callback Routine to call when writing data for the custom output.
+/// \param  used_states Array of the all indices in the state vector used by *callback*.
+/// \param num_states Numver of indiciced in used_states.
+/// \see Asynch_Set_Output_Int
+int Asynch_Set_Output_Float(AsynchSolver* asynch, char* name, OutputFloatCallback* callback, unsigned int* used_states, unsigned int num_states);
 
 /// This routine sets the filename of the output peakflow file. If a database connection is used, then
 /// no changes are made.

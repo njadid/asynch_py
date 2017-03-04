@@ -39,8 +39,8 @@ void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_fl
         output_func->PreparePeakflowOutput = NULL;
 
     //Create Final Time Series Output
-    if (hydros_loc_flag == 1 || hydros_loc_flag == 2 || hydros_loc_flag == 4)
-        output_func->CreateOutput = &Process_Data;
+    if (hydros_loc_flag == 1 || hydros_loc_flag == 2 || hydros_loc_flag == 4 || hydros_loc_flag == 5)
+        output_func->CreateOutput = &DumpTimeSerieFile;
     else if (hydros_loc_flag == 3)
     {
 #if defined(HAVE_POSTGRESQL)
@@ -222,7 +222,7 @@ void ReadDBC(char* filename, ConnData* const conninfo)
 
 //!!!! This really sucks. Is there any way to improve it? !!!!
 //Writes a value to an ASCII file
-void WriteValue(FILE* outputfile, char* specifier, char* data_storage, short int data_type, char* delim)
+void WriteValue(FILE* outputfile, const char* specifier, char* data_storage, short int data_type, char* delim)
 {
     switch (data_type)
     {
@@ -253,11 +253,6 @@ unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, Globa
 {
     unsigned int i;
 
-    double output_d;
-    //float output_f;
-    //short int output_s;
-    int output_i;
-    //char output_c;
     long int total_written = 0;
 
     //Set file to current position
@@ -265,18 +260,28 @@ unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, Globa
     if (pos_offset)	fseek(outputfile, *pos_offset, SEEK_SET);
 
     //Write the step
-    for (i = 0; i < GlobalVars->num_print; i++)
+    for (i = 0; i < GlobalVars->num_outputs; i++)
     {
         switch (GlobalVars->output_types[i])	//!!!! Get rid of this. Try char[] and output_sizes. !!!!
         {
-        case ASYNCH_DOUBLE:
-            output_d = (GlobalVars->outputs_d[i])(id, t, y, GlobalVars->global_params, params, state, user);
-            fwrite(&output_d, sizeof(double), 1, outputfile);
-            break;
         case ASYNCH_INT:
-            output_i = (GlobalVars->outputs_i[i])(id, t, y, GlobalVars->global_params, params, state, user);
+        {
+            int output_i = (GlobalVars->outputs[i].out_int)(id, t, y, GlobalVars->global_params, params, state, user);
             fwrite(&output_i, sizeof(int), 1, outputfile);
             break;
+        }
+        case ASYNCH_DOUBLE:
+        {
+            double output_d = (GlobalVars->outputs[i].out_double)(id, t, y, GlobalVars->global_params, params, state, user);
+            fwrite(&output_d, sizeof(double), 1, outputfile);
+            break;
+        }
+        case ASYNCH_FLOAT:
+        {
+            float output_f = (GlobalVars->outputs[i].out_float)(id, t, y, GlobalVars->global_params, params, state, user);
+            fwrite(&output_f, sizeof(float), 1, outputfile);
+            break;
+        }
         default:
             printf("[%i]: Error: Invalid output %s (%hi).\n", my_rank, GlobalVars->output_specifiers[i], GlobalVars->output_types[i]);
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -289,7 +294,8 @@ unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, Globa
     return total_written;
 }
 
-unsigned int CatBinaryToString(char* submission, char* specifier, char* data_storage, short int data_type, char* delim)
+
+unsigned int CatBinaryToString(char* submission, const char* specifier, void* data_storage, short int data_type, char* delim)
 {
     unsigned int written = 0;
 
@@ -297,6 +303,12 @@ unsigned int CatBinaryToString(char* submission, char* specifier, char* data_sto
     {
     case ASYNCH_DOUBLE:
         written = sprintf(submission, specifier, *(double*)data_storage);
+        break;
+    case ASYNCH_FLOAT:
+        written = sprintf(submission, specifier, *(float*)data_storage);
+        break;
+    case ASYNCH_SHORT:
+        written = sprintf(submission, specifier, *(short*)data_storage);
         break;
     case ASYNCH_INT:
         written = sprintf(submission, specifier, *(int*)data_storage);

@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -13,70 +14,70 @@
 
 #include "modeloutputs.h"
 
-void SetOutputFunctions(char* outputname, char* specifier, unsigned int* states_used, unsigned int* num_states_used, short int* output_size, enum AsynchTypes* output_type, OutputIntCallback **output_i, OutputDoubleCallback **output_d)
+void SetDefaultOutputFunctions(char* outputname, const char** specifier, unsigned int* states_used, unsigned int* num_states_used, short int* output_size, enum AsynchTypes* output_type, OutputCallback *output)
 {
     if (strcmp(outputname, "Time") == 0)
     {
         *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_Time;
+        output->out_double = &Output_Time;
     }
     else if (strcmp(outputname, "State0") == 0)
     {
         states_used[(*num_states_used)++] = 0;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State0;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State0;
     }
     else if (strcmp(outputname, "State1") == 0)
     {
         states_used[(*num_states_used)++] = 1;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State1;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State1;
     }
     else if (strcmp(outputname, "State2") == 0)
     {
         states_used[(*num_states_used)++] = 2;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State2;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State2;
     }
     else if (strcmp(outputname, "State3") == 0)
     {
         states_used[(*num_states_used)++] = 3;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State3;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State3;
     }
     else if (strcmp(outputname, "State4") == 0)
     {
         states_used[(*num_states_used)++] = 4;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State4;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State4;
     }
     else if (strcmp(outputname, "State5") == 0)
     {
         states_used[(*num_states_used)++] = 5;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State5;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State5;
     }
     else if (strcmp(outputname, "State6") == 0)
     {
         states_used[(*num_states_used)++] = 6;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State6;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State6;
     }
     else if (strcmp(outputname, "State7") == 0)
     {
         states_used[(*num_states_used)++] = 7;
-        *output_type = ASYNCH_DOUBLE;
-        *output_d = &Output_State7;
+        *output_type = ASYNCH_FLOAT;
+        output->out_float = &Output_State7;
     }
     else if (strcmp(outputname, "TimeI") == 0)
     {
         *output_type = ASYNCH_INT;
-        *output_i = &Output_Time_Int;
+        output->out_int = &Output_Time_Int;
     }
     else if(strcmp(outputname,"LinkID") == 0)
     {
         *output_type = ASYNCH_INT;
-        *output_i = &Output_LinkID;
+        output->out_int = &Output_LinkID;
     }
     else	//Must be a user defined output
     {
@@ -87,7 +88,7 @@ void SetOutputFunctions(char* outputname, char* specifier, unsigned int* states_
     }
 
     *output_size = GetByteSize(*output_type);
-    GetSpecifier(specifier, *output_type);
+    *specifier = GetSpecifier(*output_type);
 }
 
 void SetPeakflowOutputFunctions(char* outputname, void(**peak_output)(unsigned int, double, VEC, VEC, VEC, double, unsigned int, void*, char*))
@@ -109,44 +110,49 @@ void SetPeakflowOutputFunctions(char* outputname, void(**peak_output)(unsigned i
 //ASYNCH_INT = 2
 //ASYNCH_FLOAT = 3
 //ASYNCH_DOUBLE = 4
-short int GetByteSize(short int type)
+short int GetByteSize(enum AsynchTypes type)
 {
     const short int data_sizes[] = { sizeof(char), sizeof(short int), sizeof(int), sizeof(float), sizeof(double) };
     return data_sizes[type];
 }
 
-void GetSpecifier(char* specifier, short int type)
+const char* GetSpecifier(enum AsynchTypes type)
 {
     const char *data_specifiers[5] = { "%c", "%hi", "%i", "%.6e", "%.12e" };
-    memcpy(specifier, data_specifiers[type], strlen(data_specifiers[type]) + 1);
+    //memcpy(specifier, data_specifiers[type], strlen(data_specifiers[type]) + 1);
+
+    return data_specifiers[type];
 }
 
 unsigned int CalcTotalOutputSize(GlobalVars* GlobalVars)
 {
     unsigned int i, total = 0;
 
-    for (i = 0; i < GlobalVars->num_print; i++)
+    for (i = 0; i < GlobalVars->num_outputs; i++)
         total += GlobalVars->output_sizes[i];
 
     return total;
 }
 
 //Returns 0 if an output is not set, 1 if all outputs are good to go.
-int OutputsSet(GlobalVars* GlobalVars)
+bool AreOutputsSet(GlobalVars* GlobalVars)
 {
     unsigned int i;
 
-    for (i = 0; i < GlobalVars->num_print; i++)
+    for (i = 0; i < GlobalVars->num_outputs; i++)
     {
         switch (GlobalVars->output_types[i])
         {
         case ASYNCH_BAD_TYPE:
-            return 0;
-        case ASYNCH_DOUBLE:
-            if (!(GlobalVars->outputs_d[i]))	return 0;
-            break;
+            return false;
         case ASYNCH_INT:
-            if (!(GlobalVars->outputs_i[i]))	return 0;
+            if (!(GlobalVars->outputs[i].out_int))	return false;
+            break;
+        case ASYNCH_DOUBLE:
+            if (!(GlobalVars->outputs[i].out_double))	return false;
+            break;
+        case ASYNCH_FLOAT:
+            if (!(GlobalVars->outputs[i].out_float))	return false;
             break;
         default:
             printf("[%i]: Error: Bad output type (%hi) encountered while checking if outputs set.\n", my_rank, GlobalVars->output_types[i]);
@@ -154,7 +160,7 @@ int OutputsSet(GlobalVars* GlobalVars)
         }
     }
 
-    return 1;
+    return true;
 }
 
 //Returns 0 if peakflow output is not set, 1 if it is.
@@ -177,44 +183,44 @@ double Output_Time(unsigned int id, double t, VEC y_i, VEC global_params, VEC pa
     return t;
 }
 
-double Output_State0(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State0(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[0];
+    return (float) y_i.ve[0];
 }
 
-double Output_State1(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State1(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[1];
+    return (float) y_i.ve[1];
 }
 
-double Output_State2(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State2(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[2];
+    return (float) y_i.ve[2];
 }
 
-double Output_State3(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State3(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[3];
+    return (float) y_i.ve[3];
 }
 
-double Output_State4(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State4(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[4];
+    return (float) y_i.ve[4];
 }
 
-double Output_State5(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State5(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[5];
+    return (float) y_i.ve[5];
 }
 
-double Output_State6(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State6(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[6];
+    return (float) y_i.ve[6];
 }
 
-double Output_State7(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
+float Output_State7(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)
 {
-    return y_i.ve[7];
+    return (float) y_i.ve[7];
 }
 
 int Output_Time_Int(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user)

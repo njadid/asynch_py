@@ -305,15 +305,12 @@ void Destroy_UnivVars(GlobalVars* GlobalVars)
 	free(GlobalVars->peakflow_function_name);
 	free(GlobalVars->output_types);
 	free(GlobalVars->output_sizes);
-	for(i=0;i<GlobalVars->num_print;i++)
+	for(i=0;i<GlobalVars->num_outputs;i++)
 	{
 		free(GlobalVars->output_names[i]);
-		free(GlobalVars->output_specifiers[i]);
 	}
 	free(GlobalVars->output_names);
-	free(GlobalVars->output_specifiers);
-	free(GlobalVars->outputs_i);
-	free(GlobalVars->outputs_d);
+    free(GlobalVars->outputs);
 	if(GlobalVars->rsv_filename)	free(GlobalVars->rsv_filename);
 	if(GlobalVars->rvr_filename)	free(GlobalVars->rvr_filename);
 	if(GlobalVars->prm_filename)	free(GlobalVars->prm_filename);

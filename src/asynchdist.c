@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
     //Init asynch object and the river network
     AsynchSolver *asynch = Asynch_Init(MPI_COMM_WORLD);
     print_out("Reading global file...\n");
-    Asynch_Parse_GBL(asynch, argv[1]);
+    Asynch_Parse_GBL(asynch, global_filename);
     print_out("Loading network...\n");
     Asynch_Load_Network(asynch);
     print_out("Partitioning network...\n");

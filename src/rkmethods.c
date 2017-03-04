@@ -497,7 +497,7 @@ int ExplicitRKSolver(Link* link_i, GlobalVars* GlobalVars, int* assignments, boo
     unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
-    unsigned int num_print = GlobalVars->num_print;
+    unsigned int num_outputs = GlobalVars->num_outputs;
     VEC temp = workspace->temp;
     VEC sum = workspace->sum;
     VEC** temp_parent_approx = workspace->temp_parent_approx;
@@ -901,7 +901,7 @@ int ExplicitRKIndex1Solver(Link* link_i, GlobalVars* GlobalVars, int* assignment
     const unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
-    unsigned int num_print = GlobalVars->num_print;
+    unsigned int num_outputs = GlobalVars->num_outputs;
     unsigned int* print_indices = GlobalVars->print_indices;
     VEC temp = workspace->temp;
     VEC sum = workspace->sum;
@@ -1218,7 +1218,7 @@ int ExplicitRKIndex1SolverDam(Link* link_i, GlobalVars* GlobalVars, int* assignm
     const unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
-    unsigned int num_print = GlobalVars->num_print;
+    unsigned int num_outputs = GlobalVars->num_outputs;
     unsigned int* print_indices = GlobalVars->print_indices;
     VEC temp = workspace->temp;
     VEC sum = workspace->sum;
@@ -1683,7 +1683,7 @@ int ExplicitRKSolverDiscont(Link* link_i, GlobalVars* GlobalVars, int* assignmen
     const unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
-    unsigned int num_print = GlobalVars->num_print;
+    unsigned int num_outputs = GlobalVars->num_outputs;
     unsigned int* print_indices = GlobalVars->print_indices;
     VEC temp = workspace->temp;
     VEC sum = workspace->sum;
@@ -2599,7 +2599,7 @@ int ForcedSolutionSolver(Link* link_i, GlobalVars* GlobalVars, int* assignments,
     const unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
-    unsigned int num_print = GlobalVars->num_print;
+    unsigned int num_outputs = GlobalVars->num_outputs;
     VEC** temp_parent_approx = workspace->temp_parent_approx;
     VEC* temp_k = workspace->temp_k;
 

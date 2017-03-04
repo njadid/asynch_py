@@ -2952,10 +2952,10 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     //Grab components to print
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
-    valsread = sscanf(line_buffer, "%u", &(globals->num_print));
+    valsread = sscanf(line_buffer, "%u", &(globals->num_outputs));
     if (ReadLineError(valsread, 1, "number of indices to print"))	return NULL;
-    globals->output_names = (char**)malloc(globals->num_print * sizeof(char*));
-    for (i = 0; i < globals->num_print; i++)
+    globals->output_names = (char**)malloc(globals->num_outputs * sizeof(char*));
+    for (i = 0; i < globals->num_outputs; i++)
     {
         globals->output_names[i] = (char*)malloc(ASYNCH_MAX_SYMBOL_LENGTH * sizeof(char));
         ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
@@ -2990,17 +2990,14 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     //Find the states needed for printing
     globals->num_states_for_printing = 0;
-    globals->print_indices = (unsigned int*)calloc(globals->num_print, sizeof(unsigned int));
-    globals->outputs_i = (OutputIntCallback **)calloc(globals->num_print, sizeof(OutputIntCallback*));
-    globals->outputs_d = (OutputDoubleCallback **)calloc(globals->num_print, sizeof(OutputDoubleCallback*));
-    globals->output_types = (enum AsynchTypes*)malloc(globals->num_print * sizeof(enum AsynchTypes));
-    globals->output_sizes = (short int*)malloc(globals->num_print * sizeof(short int));
-    globals->output_specifiers = (char**)malloc(globals->num_print * sizeof(char*));
-    for (i = 0; i < globals->num_print; i++)
-    {
-        globals->output_specifiers[i] = (char*)malloc(16 * sizeof(char));
-        SetOutputFunctions(globals->output_names[i], globals->output_specifiers[i], globals->print_indices, &(globals->num_states_for_printing), &(globals->output_sizes[i]), &(globals->output_types[i]), &(globals->outputs_i[i]), &(globals->outputs_d[i]));
-    }
+    globals->print_indices = (unsigned int*)calloc(globals->num_outputs, sizeof(unsigned int));
+    globals->outputs = (OutputCallback *)calloc(globals->num_outputs, sizeof(OutputCallback));
+    globals->output_types = (enum AsynchTypes*)malloc(globals->num_outputs * sizeof(enum AsynchTypes));
+    globals->output_sizes = (short int*)malloc(globals->num_outputs * sizeof(short int));
+    globals->output_specifiers = (char**)malloc(globals->num_outputs * sizeof(char*));
+    for (i = 0; i < globals->num_outputs; i++)
+        SetDefaultOutputFunctions(globals->output_names[i], &(globals->output_specifiers[i]), globals->print_indices, &(globals->num_states_for_printing), &(globals->output_sizes[i]), &(globals->output_types[i]), &(globals->outputs[i]));
+
     globals->print_indices = (unsigned int*)realloc(globals->print_indices, globals->num_states_for_printing * sizeof(unsigned int));
 
     //Grab the stored steps limits
@@ -3226,15 +3223,15 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         globals->res_forcing_idx = -1;
     }
 
-    //Grab where to write the hydrographs
+    //Grab where to write the timeseries
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
     valsread = sscanf(line_buffer, "%hu", &(globals->hydros_loc_flag));
-    if (ReadLineError(valsread, 1, "hydrographs location"))	return NULL;
+    if (ReadLineError(valsread, 1, "timeseries location"))	return NULL;
 
     globals->hydros_loc_filename = NULL;
     globals->hydro_table = NULL;
 
-    if (globals->hydros_loc_flag == 1 || globals->hydros_loc_flag == 2 || globals->hydros_loc_flag == 4)
+    if (globals->hydros_loc_flag == 1 || globals->hydros_loc_flag == 2 || globals->hydros_loc_flag == 4 || globals->hydros_loc_flag == 5)
     {
         globals->hydros_loc_filename = (char*)malloc(ASYNCH_MAX_PATH_LENGTH * sizeof(char));
         valsread = sscanf(line_buffer, "%*u %lf %s", &(globals->print_time), globals->hydros_loc_filename);
@@ -3242,11 +3239,13 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         if (globals->hydros_loc_flag == 1 && !CheckFilenameExtension(globals->hydros_loc_filename, ".dat"))	return NULL;
         if (globals->hydros_loc_flag == 2 && !CheckFilenameExtension(globals->hydros_loc_filename, ".csv"))	return NULL;
         if (globals->hydros_loc_flag == 4 && !CheckFilenameExtension(globals->hydros_loc_filename, ".rad"))	return NULL;
+        if (globals->hydros_loc_flag == 5 && !CheckFilenameExtension(globals->hydros_loc_filename, ".h5"))	return NULL;
         //globals->output_flag = (globals->hydros_loc_flag == 1) ? 0 : 1;
 
         if (globals->hydros_loc_flag == 1)	RemoveSuffix(globals->hydros_loc_filename, ".dat");
         else if (globals->hydros_loc_flag == 2)	RemoveSuffix(globals->hydros_loc_filename, ".csv");
         else if (globals->hydros_loc_flag == 4)	RemoveSuffix(globals->hydros_loc_filename, ".rad");
+        else if (globals->hydros_loc_flag == 5)	RemoveSuffix(globals->hydros_loc_filename, ".h5");
     }
     else if (globals->hydros_loc_flag == 3)
     {
