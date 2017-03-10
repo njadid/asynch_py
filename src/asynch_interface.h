@@ -12,34 +12,9 @@
 #include <mpi.h>
 #endif 
 
-//#include "comm.h"
-//#include "riversys.h"
-//#include "processdata.h"
-//#include "structs.h"
-//#include "solvers.h"
-//#include "io.h"
 #include "structs_fwd.h"
 #include "data_types.h"
 #include "mathmethods.h"
-
-
-//#define ASYNCH_MAX_DB_CONNECTIONS 20
-
-//// Forward definitions
-//typedef struct ErrorData ErrorData;
-//typedef struct GlobalVars GlobalVars;
-//typedef struct Link Link;
-//typedef struct RKMethod RKMethod;
-//typedef struct TransData TransData;
-//typedef struct TempStorage TempStorage;
-//typedef struct ConnData ConnData;
-//typedef struct QVSData QVSData;
-//typedef struct Forcing Forcing;
-//typedef struct AsynchSolver AsynchSolver;
-
-//typedef struct VEC VEC;
-//typedef struct MAT MAT;
-
 
 //Callback signatures
 
@@ -78,10 +53,12 @@ typedef double (OutputDoubleCallback)(unsigned int id, double t, VEC y_i, VEC gl
 typedef float (OutputFloatCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
 
 
+
+/// This union 
 typedef union OutputCallback {
-    OutputIntCallback *out_int;
-    OutputDoubleCallback *out_double;
-    OutputFloatCallback *out_float;
+    OutputIntCallback *out_int;         //!< The callback for an integer
+    OutputDoubleCallback *out_double;   //!< The callback for a double
+    OutputFloatCallback *out_float;     //!< The callback for a float
 } OutputCallback;
 
 
