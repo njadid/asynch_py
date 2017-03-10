@@ -1564,22 +1564,6 @@ int Load_Initial_Conditions(Link* system, unsigned int N, int* assignments, shor
         res = -1;
     }
 
-#if !defined(NDEBUG)
-    //TODO Check intial conditions
-    for (unsigned int i = 0; i < N; i++)
-    {
-        if (system[i].list)
-        {
-            VEC y = system[i].list->head->y_approx;
-            if (y.ve[0] < 0.0 || y.ve[1] < 0.0 || y.ve[2] < 0.0 || y.ve[3] < 0.0)
-            {
-                printf("ERROR: Invalid initial conditions");
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
-#endif
-
     return res;
 }
 
@@ -2897,6 +2881,10 @@ int FinalizeSystem(Link* system, unsigned int N, unsigned int* my_sys, unsigned 
 // *********************************************************************************************
 
 
+#if defined(_MSC_VER)
+#   define timegm _mkgmtime
+#endif
+
 
 //Reads in the data from a .gbl file. All data will be global data for the entire river system.
 //char globalfilename[]: String with the filename of the .gbl file.
@@ -2940,10 +2928,37 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     globals->rain_filename = NULL;
 
-    //Grab the type and maxtime
+    //Grab the model uid
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
-    valsread = sscanf(line_buffer, "%hu %lf", &(globals->type), &(globals->maxtime));
-    if (ReadLineError(valsread, 2, "type and maxtime"))	return NULL;
+    valsread = sscanf(line_buffer, "%hu", &(globals->type));
+    if (ReadLineError(valsread, 1, "model type"))	return NULL;
+
+    //Grab the begin and end time
+    struct tm begin_tm;
+    memset(&begin_tm, 0, sizeof(struct tm));
+    
+    ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
+    valsread = sscanf(line_buffer, "%d-%d-%d %d:%d", &begin_tm.tm_year, &begin_tm.tm_mon, &begin_tm.tm_mday, &begin_tm.tm_hour, &begin_tm.tm_min);
+    if (ReadLineError(valsread, 5, "begin YYYY-MM-DD HH:MM"))	return NULL;
+
+    begin_tm.tm_year = begin_tm.tm_year - 1900;
+    begin_tm.tm_mon = begin_tm.tm_mon - 1;
+    globals->begin_time = timegm(&begin_tm);
+
+    struct tm end_tm;
+    memset(&end_tm, 0, sizeof(struct tm));
+
+    ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
+    valsread = sscanf(line_buffer, "%d-%d-%d %d:%d", &end_tm.tm_year, &end_tm.tm_mon, &end_tm.tm_mday, &end_tm.tm_hour, &end_tm.tm_min);
+    if (ReadLineError(valsread, 5, "begin YYYY-MM-DD HH:MM"))	return NULL;
+
+    end_tm.tm_year = end_tm.tm_year - 1900;
+    end_tm.tm_mon = end_tm.tm_mon - 1;
+    globals->end_time = timegm(&end_tm);
+
+    globals->maxtime = (double)(globals->end_time - globals->begin_time) / 60.0;
+    if (globals->maxtime <= 0.0)
+        printf("Error: Simulation period invalid (begin >= end)\n");
 
     //Grab the output filename info
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
@@ -3365,6 +3380,11 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         if (ReadLineError(valsread, 2, "snapshot time and filename"))	return NULL;
         if (!CheckFilenameExtension(globals->dump_loc_filename, ".h5"))
             return NULL;
+
+        //Strip the extension
+        char *ext = strrchr(globals->dump_loc_filename, '.');
+        unsigned int filename_len = (unsigned int)(ext - globals->dump_loc_filename);
+        globals->dump_loc_filename[filename_len] = '\0';
     }
 
     //Grab folder locations

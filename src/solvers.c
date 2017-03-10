@@ -47,6 +47,9 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
         current = &sys[my_sys[my_N - 1]];
         curr_idx = 0;
         last_idx = my_N - 1;
+
+        //Advance the current time
+        globals->t = sys[my_sys[0]].last_t;
         
         memset(done, 0, my_N * sizeof(short int));
 
@@ -57,7 +60,7 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
             if (forcings[i].active)
             {
                 //printf("Forcing %u is active  %e %e\n",i,sys[my_sys[0]]->last_t,forcings[i].maxtime);
-                if (fabs(sys[my_sys[0]].last_t - forcings[i].maxtime) < 1e-14)
+                if (fabs(globals->t - forcings[i].maxtime) < 1e-14)
                 {
                     forcings[i].maxtime = forcings[i].GetNextForcing(sys, N, my_sys, my_N, assignments, globals, &forcings[i], db_connections, id_to_loc, i);
                     //(forcings[i].iteration)++;	if flag is 3 (dbc), this happens in GetNextForcing
@@ -70,14 +73,11 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
         //Check shapshot next time
         if (globals->dump_loc_flag == 4)
         {
-            double last_time = sys[my_sys[0]].last_t;
-            double next_time = fmod(last_time, globals->dump_time);
+            double next_time = fmod(globals->t, globals->dump_time);
             if (next_time < 1e-14)
             {
-                char suffix[ASYNCH_MAX_TIMESTAMP_LENGTH];
-                snprintf(suffix, ASYNCH_MAX_TIMESTAMP_LENGTH, "%d", (int)round(last_time));
-                globals->output_func.CreateSnapShot(sys, N, assignments, globals, suffix, NULL);
-                next_time = last_time + globals->dump_time;
+                globals->output_func.CreateSnapShot(sys, N, assignments, globals, NULL, NULL);
+                next_time = globals->t + globals->dump_time;
             }
             else
                 next_time = ceil(next_time) * globals->dump_time;
@@ -117,7 +117,7 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
         //This might be needed. Sometimes some procs get stuck in Finish for communication, but makes runs much slower.
         MPI_Barrier(MPI_COMM_WORLD);
 
-        if (sys[my_sys[0]].last_t < globals->maxtime)
+        if (globals->t < globals->maxtime)
             while (alldone < my_N)
             {
                 //Find the next link to iterate

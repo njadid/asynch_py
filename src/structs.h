@@ -12,6 +12,7 @@
 #endif
 
 #include <stdio.h>
+#include <time.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -220,11 +221,12 @@ struct GlobalVars
 {
     unsigned short int type;        //!< Index for the model used
 
-    double maxtime;                 //!< Integrate up to this time (duration)
+    double maxtime;                 //!< Integrate up to this time (duration) [minutes]
     double t_0;                     //!< Initial time to start integration
+    double t;                       //!< Current time of integration
 
-    unsigned int start_time;        //!< Unix start time
-    unsigned int end_time;          //!< Unix end time
+    time_t begin_time;        //!< Unix begin time
+    time_t end_time;          //!< Unix end time
 
     unsigned short int method;      //!< RK method to use (if it is the same for all links)
     unsigned short int max_s;       //!< The largest number of internal stages of any RK method used    !!!! Is this needed? !!!!

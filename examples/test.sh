@@ -17,9 +17,8 @@
 /bin/echo In directory: `pwd`
 /bin/echo Starting on: `date`
 /bin/echo "Got $NSLOTS processors."
-/bin/echo 
-/bin/echo 
-/bin/echo 
+/bin/echo
+/bin/echo
+/bin/echo
 
-mpirun -np 1 /Groups/IFC/Asynch/bin_neon/ASYNCH Global190.gbl
-
+mpirun -np 1 /Dedicated/IFC/.argon/asynch test.gbl
