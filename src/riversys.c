@@ -2968,6 +2968,7 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
     {
         int end_time;
         valsread = sscanf(line_buffer, "%d", &end_time);
+        if (ReadLineError(valsread, 1, "end YYYY-MM-DD HH:MM || unix_time"))	return NULL;
         globals->end_time = end_time;
     }
 
