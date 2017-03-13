@@ -114,7 +114,7 @@ Let’s walk through the required setup for this model. The above information fo
 
 The function :code:`SetParamSizes` contains the block of code for model ``190``:
 
-::
+.. code-block:: c
 
   globals->dim = 3;
   globals->template_flag = 0;
@@ -163,7 +163,7 @@ When passing information from one link to another downstream, only the channel d
 
 In the :code:`SetParamSizes` routine, an array *dense\_indices* is created with a single element (the size is *num\_dense*). For model ``190``, the entry is set via:
 
-::
+.. code-block:: c
 
   globals->dense_indices[0] = 0;   //Discharge
 
@@ -171,29 +171,29 @@ Because the state :math:`q` is passed to other links, its index in state vectors
 
 In the routine *ConvertParams*, two parameters are opted to receive a unit conversion:
 
-::
+.. code-block:: c
 
-  params->ve[1] *= 1000;  //L: km -> m
-  params->ve[2] *= 1e6;   //A_h: km^2 -> m^2
+  params.ve[1] *= 1000;  //L: km -> m
+  params.ve[2] *= 1e6;   //A_h: km^2 -> m^2
 
 The parameter with index 1 (:math:`L`) is multiplied by 1000 to convert from :math:`km` to :math:`m`. Similarly, the parameter with index 2 (:math:`A_h`) is converted to :math:`km^2` to :math:`m^2`. Although these conversions are optional, the model differential equations contain these conversions explicitly. By converting units now, the conversions do not need to be performed during the evaluation of the differential equations.
 
-In the routine *Precalculations*, each of the parameters for the constant runoff model are calculated at each link. The code for the calculations is:
+In the routine :code:`Precalculations`, each of the parameters for the constant runoff model are calculated at each link. The code for the calculations is:
 
-::
+.. code-block:: c
 
   else if(type == 190)
   {
-    double* vals = params->ve;
-    double A = params->ve[0];
-    double L = params->ve[1];
-    double A_h = params->ve[2];
-    double v_r = global_params->ve[0];
-    double lambda_1 = global_params->ve[1];
-    double lambda_2 = global_params->ve[2];
-    double RC = global_params->ve[3];
-    double v_h = global_params->ve[4];
-    double v_g = global_params->ve[5];
+    double* vals = params.ve;
+    double A = params.ve[0];
+    double L = params.ve[1];
+    double A_h = params.ve[2];
+    double v_r = global_params.ve[0];
+    double lambda_1 = global_params.ve[1];
+    double lambda_2 = global_params.ve[2];
+    double RC = global_params.ve[3];
+    double v_h = global_params.ve[4];
+    double v_g = global_params.ve[5];
 
     vals[3] = v_h * L / A_h * 60.0;   //k_2
     vals[4] = v_g * L / A_h * 60.0;   //k_3
@@ -202,11 +202,11 @@ In the routine *Precalculations*, each of the parameters for the constant runoff
     vals[7] = (1.0-RC)*(0.001/60.0);  //c_2
   }
 
-Here, the array of parameters is named *vals* (simply as an abbreviation). The input parameters of the system are extracted (with the conversions from *ConvertParams*), and the remaining parameters are calculated, and saved into the corresponding index in *params*.
+Here, the array of parameters is named *vals* (simply as an abbreviation). The input parameters of the system are extracted (with the conversions from :code:`ConvertParams`), and the remaining parameters are calculated, and saved into the corresponding index in *params*.
 
 In the routine :code:`InitRoutines`, the Runge-Kutta solver is selected based upon whether an explicit or implicit method is requested:
 
-::
+.. code-block:: c
 
   else if(exp_imp == 0)
     link->RKSolver = &ExplicitRKSolver;
@@ -215,7 +215,7 @@ In the routine :code:`InitRoutines`, the Runge-Kutta solver is selected based up
 
 Other routines are set here:
 
-::
+.. code-block:: c
 
   else if(type == 190)
   {
@@ -226,9 +226,9 @@ Other routines are set here:
     &CheckConsistency_Nonzero_3States;
   }
 
-The routines for the algebraic equations and the system state check are set to *NULL*, as they are not used for this model. The routines for the differential equations and state consistency are found in ``problems.c``. The routine for the differential equations is *LinearHillslope\_MonthlyEvap*:
+The routines for the algebraic equations and the system state check are set to *NULL*, as they are not used for this model. The routines for the differential equations and state consistency are found in ``problems.c``. The routine for the differential equations is :code:`LinearHillslope_MonthlyEvap`:
 
-::
+.. code-block:: c
 
   void LinearHillslope_MonthlyEvap
   (double t,VEC* y_i,VEC** y_p,
@@ -239,18 +239,18 @@ The routines for the algebraic equations and the system state check are set to *
   {
     unsigned short int i;
 
-    double lambda_1 = global_params->ve[1];
+    double lambda_1 = global_params.ve[1];
 
-    double A_h = params->ve[2];
-    double k2 = params->ve[3];
-    double k3 = params->ve[4];
-    double invtau = params->ve[5];
-    double c_1 = params->ve[6];
-    double c_2 = params->ve[7];
+    double A_h = params.ve[2];
+    double k2 = params.ve[3];
+    double k3 = params.ve[4];
+    double invtau = params.ve[5];
+    double c_1 = params.ve[6];
+    double c_2 = params.ve[7];
 
-    double q = y_i->ve[0];      //[m^3/s]
-    double s_p = y_i->ve[1];    //[m]
-    double s_s = y_i->ve[2];    //[m]
+    double q = y_i.ve[0];      //[m^3/s]
+    double s_p = y_i.ve[1];    //[m]
+    double s_s = y_i.ve[2];    //[m]
 
     double q_pc = k2 * s_p;
     double q_sc = k3 * s_s;
@@ -278,35 +278,35 @@ The routines for the algebraic equations and the system state check are set to *
     double e_s = Corr_evap * C_s * e_pot;
 
     //Discharge
-    ans->ve[0] = -q + (q_pc + q_sc) * A_h/60.0;
+    ans.ve[0] = -q + (q_pc + q_sc) * A_h/60.0;
     for(i=0;i<numparents;i++)
-    ans->ve[0] += y_p[i]->ve[0];
-    ans->ve[0] = invtau * pow(q,lambda_1) * ans->ve[0];
+    ans.ve[0] += y_p[i]->ve[0];
+    ans.ve[0] = invtau * pow(q,lambda_1) * ans.ve[0];
 
     //Hillslope
-    ans->ve[1] = forcing_values[0]*c_1 - q_pc - e_p;
-    ans->ve[2] = forcing_values[0]*c_2 - q_sc - e_a;
+    ans.ve[1] = forcing_values[0]*c_1 - q_pc - e_p;
+    ans.ve[2] = forcing_values[0]*c_2 - q_sc - e_a;
   }
 
 The names of parameters and states match with those defined in the mathematics above. The current states and hillslope parameters are unpacked from the state vector *y\_i* and the vector *params*, respectively. The current precipitation value is available in *forcing\_values[0]* and the current potential evaporation is available in *forcing\_values[1]*. The fluxes :math:`q_{pc}` and :math:`q_{sc}` are calculated and used as *q\_pc* and *q\_sc*, respectively. The evaluation of the right side of the differential equations is stored in the equation-value vector *ans*. The channel discharges for the parent links are found in the array of state vectors *y\_p[i]->ve[0]*, with *i* ranging over the number of parents.
 
-The state consistency routine for the constant runoff model is called :code:`CheckConsistency\_Nonzero\_3States`. It is defined as:
+The state consistency routine for the constant runoff model is called :code:`CheckConsistency_Nonzero_3States`. It is defined as:
 
-::
+.. code-block:: c
 
   void CheckConsistency_Nonzero_3States(VEC* y,
   VEC* params,VEC* global_params)
   {
-    if(y->ve[0] < 1e-14)    y->ve[0] = 1e-14;
-    if(y->ve[1] < 0.0)  y->ve[1] = 0.0;
-    if(y->ve[2] < 0.0)  y->ve[2] = 0.0;
+    if(y.ve[0] < 1e-14)    y.ve[0] = 1e-14;
+    if(y.ve[1] < 0.0)  y.ve[1] = 0.0;
+    if(y.ve[2] < 0.0)  y.ve[2] = 0.0;
   }
 
 The hillslope states :math:`s_p` and :math:`s_s` should not take negative values, as each is a linear reservoir. Similarly, the channel discharge :math:`q` decays to 0 exponentially as the fluxes from the hillslope and upstream links goes to 0. However, because of the dependence upon :math:`q^{\lambda_1}` in the equation for :math:`\frac{dq}{dt}`, :math:`q` must be kept away from 0. We therefore force it to never become smaller than :math:`10^{-14}\ m^3/s`. It is worth noting that this restriction on :math:`q` can only work if the absolute error tolerance for :math:`q` is greater than :math:`10^{-14}\ m^3/s`.
 
 Each of these functions must also be declared in ``problems.h``:
 
-::
+.. code-block:: c
 
   void LinearHillslope_MonthlyEvap(double t,VEC* y_i,  VEC** y_p,unsigned short int numparents,  VEC* global_params,double* forcing_values,  QVSData* qvs,VEC* params,IVEC* iparams,  int state,unsigned int** upstream,  unsigned int* numupstream,VEC* ans);
   void CheckConsistency_Nonzero_3States(VEC* y,  VEC* params,VEC* global_params);
@@ -433,7 +433,7 @@ Much of the required setup for this model is similar to that of the constant run
 
 Several significant differences occur in the routine for :code:`SetParamSizes`:
 
-::
+.. code-block:: c
 
   globals->dim = 7;
   globals->no_ini_start = 4;
@@ -485,13 +485,13 @@ If a reservoir is present, then instead of setting *f* to a routine for evaluati
   unsigned int** upstream,unsigned int* numupstream,
   VEC* ans)
   {
-    ans->ve[0] = forcing_values[2];
-    ans->ve[1] = 0.0;
-    ans->ve[2] = 0.0;
-    ans->ve[3] = 0.0;
-    ans->ve[4] = 0.0;
-    ans->ve[5] = 0.0;
-    ans->ve[6] = 0.0;
+    ans.ve[0] = forcing_values[2];
+    ans.ve[1] = 0.0;
+    ans.ve[2] = 0.0;
+    ans.ve[3] = 0.0;
+    ans.ve[4] = 0.0;
+    ans.ve[5] = 0.0;
+    ans.ve[6] = 0.0;
   }
 
 All states are taken to be 0, except the channel discharge. This state is set to the current forcing value from the reservoir forcing.
@@ -500,9 +500,9 @@ As mentioned earlier, the initial conditions for the last 3 states of the state 
 
 .. code-block:: c
 
-  y_0->ve[4] = 0.0;
-  y_0->ve[5] = 0.0;
-  y_0->ve[6] = 0.0;
+  y_0.ve[4] = 0.0;
+  y_0.ve[5] = 0.0;
+  y_0.ve[6] = 0.0;
 
 Clearly, these three states are all initialized to 0.
 
@@ -665,12 +665,12 @@ These indices are tracked by the *state\_check* routine:
   {
     if(dam == 0)    return 0;
 
-    double H_spill = params->ve[7];
-    double H_max = params->ve[8];
-    double S_max = params->ve[9];
-    double alpha = params->ve[10];
-    double diam = params->ve[11];
-    double S = y->ve[1];
+    double H_spill = params.ve[7];
+    double H_max = params.ve[8];
+    double S_max = params.ve[9];
+    double alpha = params.ve[10];
+    double diam = params.ve[11];
+    double S = y.ve[1];
     double h = H_max * pow(S/S_max,alpha);
 
     if(h < diam)        return 4;
@@ -685,23 +685,23 @@ This model also uses an algebraic equation for channel discharge. The routine fo
 
   void dam_q(VEC* y,VEC* global_params,VEC* params,  QVSData* qvs,int state,VEC* ans)
   {
-    double lambda_1 = global_params->ve[1];
-    double invtau = params->ve[5];
-    double S = (y->ve[1] < 0.0) ? 0.0 : y->ve[1];
+    double lambda_1 = global_params.ve[1];
+    double invtau = params.ve[5];
+    double S = (y.ve[1] < 0.0) ? 0.0 : y.ve[1];
 
     if(state == 0)
-      ans->ve[0] = invtau/60.0*pow(S,1.0/(1.0-lambda_1));
+      ans.ve[0] = invtau/60.0*pow(S,1.0/(1.0-lambda_1));
     else
     {
-      double orifice_area = params->ve[6];
-      double H_spill = params->ve[7];
-      double H_max = params->ve[8];
-      double S_max = params->ve[9];
-      double alpha = params->ve[10];
-      double diam = params->ve[11];
-      double c_1 = params->ve[12];
-      double c_2 = params->ve[13];
-      double L_spill = params->ve[14];
+      double orifice_area = params.ve[6];
+      double H_spill = params.ve[7];
+      double H_max = params.ve[8];
+      double S_max = params.ve[9];
+      double alpha = params.ve[10];
+      double diam = params.ve[11];
+      double c_1 = params.ve[12];
+      double c_2 = params.ve[13];
+      double L_spill = params.ve[14];
       double g = 9.81;
 
       double h = H_max * pow(S/S_max,alpha);
@@ -709,14 +709,14 @@ This model also uses an algebraic equation for channel discharge. The routine fo
       (h - H_spill >= 0) ? h - H_spill : 0.0;
 
       if(state == 1)
-      ans->ve[0] =
+      ans.ve[0] =
       c_1*orifice_area*pow(2*g*h,.5);
       else if(state == 2)
-      ans->ve[0] =
+      ans.ve[0] =
       c_1*orifice_area*pow(2*g*h,.5)
       + c_2*L_spill*pow(diff,1.5);
       else if(state == 3)
-      ans->ve[0] =
+      ans.ve[0] =
       c_1*orifice_area*pow(2*g*h,.5)
       + c_2*L_spill*pow(diff,1.5)
       + invtau/60.0
@@ -730,7 +730,7 @@ This model also uses an algebraic equation for channel discharge. The routine fo
         -r*r*(acos(frac)
         - pow(1.0-frac*frac,.5)*frac
         - 3.141592653589);
-        ans->ve[0] = c_1*A*pow(2*g*h,.5);
+        ans.ve[0] = c_1*A*pow(2*g*h,.5);
       }
     }
   }
@@ -739,11 +739,11 @@ Three initial states must be determined in the routine :code:`ReadInitData`. The
 
 .. code-block:: c
 
-  double RC = global_params->ve[3];
-  double S_0 = global_params->ve[4];
-  double A_h = params->ve[2];
-  y_0->ve[2] = RC * S_0 * A_h;
-  y_0->ve[3] = (1.0 - RC) * S_0 * A_h;
+  double RC = global_params.ve[3];
+  double S_0 = global_params.ve[4];
+  double A_h = params.ve[2];
+  y_0.ve[2] = RC * S_0 * A_h;
+  y_0.ve[3] = (1.0 - RC) * S_0 * A_h;
 
   state = dam_check(y_0,global_params,params,qvs,dam);
   dam_q(y_0,global_params,params,qvs,state,y_0);
