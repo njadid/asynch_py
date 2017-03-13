@@ -8,7 +8,17 @@ A numerical library for solving differential equations with a tree structure. Em
 
 The documentation is available [here](http://asynch.readthedocs.io/). Thank you to the people running Read the Docs for such an excellent service.
 
-The source for the documentation is in the `docs` folder if you want to built it and read it locally.
+The source for the documentation is in the `docs` folder. Here are the instructions to built and read it locally. The documentation is built with [Doxygen](http://www.doxygen.org/) and [Sphynx](http://www.sphinx-doc.org). The sphynx template is from [ReadtheDocs](https://docs.readthedocs.io). [Breathe](https://breathe.readthedocs.io) provides a bridge between the Sphinx and Doxygen documentation systems.
+
+    pip install sphynx sphinx-autobuild breathe
+    apt-get doxygen
+
+    cd docs  
+    doxygen api.dox
+    doxygen devel.dox
+    make html
+
+The html documentation is generated in `docs/.build/html`.
 
 ## Testing
 
