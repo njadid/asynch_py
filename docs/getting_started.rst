@@ -3,7 +3,7 @@ Getting started
 
 In this section, we will give the steps and data needed for running basic simulations. This section is intended for getting a new user up and running quickly, and to provide links in this documentation for more information when needed.
 
-First, be sure to follow the steps in Section :ref:`install` for installing the ASYNCH solvers.
+First, be sure to follow the steps in Section :ref:`Installation` for installing the ASYNCH solvers.
 
 .. tip:: For Iowa HPC Argon users.
     For those using Iowa HPC resources, downloading and compiling the source code is not necessary. But to be able to use the prebuilt executables, setting up your environment is necessary. The prefered way is to edit your ``~/.bash_profile``:

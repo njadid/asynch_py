@@ -1,5 +1,5 @@
 Built-in Models
-================
+===============
 
 +------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
 | Model Type | Description                           | States                                                                                            |
@@ -661,8 +661,7 @@ These indices are tracked by the *state\_check* routine:
 
 .. code-block:: c
 
-  int dam_check(VEC* y,VEC* global_params,VEC* params,
-  QVSData* qvs,unsigned int dam)
+  int dam_check(VEC* y,VEC* global_params,VEC* params, QVSData* qvs,unsigned int dam)
   {
     if(dam == 0)    return 0;
 

@@ -157,25 +157,22 @@ This can also be added to the ``.bash_profile`` file to automate the loading pro
 Installing the package on ARGON
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, ``git clone`` the repository or extract ``tar xzf`` a release packages. To install the software for the IFC group, load the following modules:
-
-.. code-block:: sh
-
-  module load openmpi/intel-composer_xe_2015.3.187-1.8.8
-  module load hdf5/1.8.17
+First, ``git clone`` the repository or ``tar xf`` a release package.
 
 Then run the classic GNU build tool chain:
 
 .. code-block:: sh
 
   mkdir build && cd build
-  ../configure --prefix=/Dedicated/IFC/.neon CFLAGS="-O3 -march=core-avx2 -DNDEBUG" CHECK_CFLAGS=-I/Dedicated/IFC/.local/include CHECK_LIBS=/Dedicated/IFC/.local/lib/libcheck.a
+  ../configure --prefix=/Dedicated/IFC/.argon CFLAGS="-O3 -march=core-avx2 -DNDEBUG" CHECK_CFLAGS=-I/Dedicated/IFC/.local/include CHECK_LIBS=/Dedicated/IFC/.local/lib/libcheck.a
   make
   make check
   make install
 
 Updating the package
 --------------------
+
+Whenever the ``autoconf`` or ``automake`` files are modified, the build system needs to be update:
 
 .. code-block:: sh
 

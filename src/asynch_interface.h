@@ -53,8 +53,7 @@ typedef double (OutputDoubleCallback)(unsigned int id, double t, VEC y_i, VEC gl
 typedef float (OutputFloatCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
 
 
-
-/// This union 
+/// Output formating callback 
 typedef union OutputCallback {
     OutputIntCallback *out_int;         //!< The callback for an integer
     OutputDoubleCallback *out_double;   //!< The callback for a double
@@ -66,29 +65,58 @@ typedef void (PeakflowOutputCallback)(unsigned int, double, VEC, VEC, VEC, doubl
 
 //Function signatures
 
-/// These are the right-hand side functions for the ODEs.
+/// These are the right-hand side functions for the differential equations.
 ///
-/// \param t The current time
-/// \param y_i The approximate value of the solution to the ODEs at the current link at time t
-/// \param y_p y_p[j] has the approximate values for the immediately upstream link j to the current link at time t
+/// \param t The current time (typically measured in minutes).
+/// \param y_i The vector of the current states of the system at this link. Only states defined by a differential equation are available. This means the indices from diff_start and beyond are available. States defined by algebraic equations must be calculated, if needed for the differential equations.
+/// \param y_p The array of vectors of the states of the system of each upstream (parent) link. Only states defined by a differential equation are available. States defined by algebraic equations must be calculated. Further, only those states listed in dense_indices (defined in SetParamSizes) are available.
 /// \param num_parents The number of upstream links (parents) to link i
-/// \param global_params The global parameters
-/// \param forcings The rain fall values for link i
-/// \param params The parameters for link i
-/// \param state The current state of the system
-/// \param user A pointer to user specified data
-/// \param ans (set by method, assumed that space is allocated): The value returned by the right-hand side function
-typedef void (DifferentialFunc)(double t, VEC y_i, VEC* y_p, unsigned short int num_parents, VEC global_params, double* forcings, QVSData*, VEC params, int state, void* user, VEC ans);                    //!< Right-hand side function for ODE                                            
-typedef void (AlgebraicFunc)(VEC, VEC, VEC, QVSData*, int, void*, VEC);                                                                  //!< Function for algebraic variables
-typedef int (CheckStateFunc)(VEC, VEC, VEC, QVSData*, unsigned int);                                                                     //!< Function to check what "state" the state variables are in (for discontinuities)
+/// \param global_params The vector of parameters constant in both space and time.
+/// \param forcings The array of current forcing values.
+/// \param qvs The table of discharge vs storage relationships. This is only available if a dam is present at this link, and the dam_flag is set to 2.
+/// \param params The vector of parameters for link i.
+/// \param state The current discontinuity state of the states.
+/// \param user A pointer to user specified data.
+/// \param ans The vector of function evaluations. Each entry of ans from diff_start (and including diff_start) should be set by this routine.
+typedef void (DifferentialFunc)(double t, VEC y_i, VEC* y_p, unsigned short int num_parents, VEC global_params, double* forcings, QVSData* qvs, VEC params, int state, void* user, VEC ans);
+
+/// These are the right-hand side functions for the algebraic equations.
+///
+/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
+/// \param global_params The vector of parameters constant in both space and time.
+/// \param params The vector of parameters for this link.
+/// \param qvs The table of discharge vs storage relationships.This is only available if a dam is present at this link, and the *dam\_flag* is set to 2.
+/// \param state The current discontinuity state of the states.
+/// \param user A pointer to user specified data.
+/// \param ans The vector of function evaluations.Each entry of *ans* from 0 to *diff\_start* (exclusive)should be set by this routine.
+typedef void (AlgebraicFunc)(VEC y, VEC global_params, VEC params, QVSData* qvs, int state, void* user, VEC ans);
+
+/// This routine determines in which discontinuity state the system currently is.
+///
+/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
+/// \param global_params The vector of parameters constant in both space and time.
+/// \param params The vector of parameters for this link.
+/// \param qvs The table of discharge vs storage relationships.This is only available if a dam is present at this link, and only if *dam\_flag* is 2.
+/// \param dam The dam flag for this link.If 1, a dam is present at this link.If 0, no dam is present.
+typedef int (CheckStateFunc)(VEC y, VEC global_params, VEC params, QVSData* qvs, unsigned int dam);
+
+
 typedef void (JacobianFunc)(double, VEC, VEC*, unsigned short int, VEC, double*, VEC, MAT*);                                                    //!< Jacobian of right-hand side function
 typedef int (RKSolverFunc)(Link*, GlobalVars*, int*, bool, FILE*, ConnData*, Forcing*, TempStorage*);   //!< RK solver to use
-typedef void (CheckConsistencyFunc)(VEC y, VEC, VEC);                                                                                           //!< Function to check state variables
+
+/// This routine is called by the integrator to guarantee these constraints are satisfied.
+///
+/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
+/// \param params The vector of parameters for this link.
+/// \param global_params The vector of parameters constant in both space and time.
+typedef void (CheckConsistencyFunc)(VEC y, VEC, VEC);
 
 // Custom models signatures
 typedef void (SetParamSizesFunc)(GlobalVars*, void*);
 typedef void (ConvertFunc)(VEC, unsigned int, void*);
 typedef void (RoutinesFunc)(Link*, unsigned int, unsigned int, unsigned short int, void*);
+
+/// This routine allows computations that are static in time and independent of state to be performed.
 typedef void (PrecalculationsFunc)(Link*, VEC, VEC, unsigned int, unsigned int, unsigned short int, unsigned int, void*);
 typedef int (InitializeEqsFunc)(VEC, VEC, QVSData*, unsigned short int, VEC, unsigned int, unsigned int, unsigned int, void*, void*);
 typedef int* (PartitionFunc)(Link*, unsigned int, Link**, unsigned int, unsigned int**, unsigned int*, TransData*, short int*);
