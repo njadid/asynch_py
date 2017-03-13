@@ -2940,26 +2940,43 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
     
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
     valsread = sscanf(line_buffer, "%d-%d-%d %d:%d", &begin_tm.tm_year, &begin_tm.tm_mon, &begin_tm.tm_mday, &begin_tm.tm_hour, &begin_tm.tm_min);
-    if (ReadLineError(valsread, 5, "begin YYYY-MM-DD HH:MM"))	return NULL;
-
-    begin_tm.tm_year = begin_tm.tm_year - 1900;
-    begin_tm.tm_mon = begin_tm.tm_mon - 1;
-    globals->begin_time = timegm(&begin_tm);
-
+    if (valsread == 5) 
+    {
+        begin_tm.tm_year = begin_tm.tm_year - 1900;
+        begin_tm.tm_mon = begin_tm.tm_mon - 1;
+        globals->begin_time = timegm(&begin_tm);
+    }
+    else
+    {
+        int begin_time;
+        valsread = sscanf(line_buffer, "%d", &begin_time);
+        if (ReadLineError(valsread, 1, "begin YYYY-MM-DD HH:MM || unix_time"))	return NULL;
+        globals->begin_time = begin_time;
+    }
+        
     struct tm end_tm;
     memset(&end_tm, 0, sizeof(struct tm));
 
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
     valsread = sscanf(line_buffer, "%d-%d-%d %d:%d", &end_tm.tm_year, &end_tm.tm_mon, &end_tm.tm_mday, &end_tm.tm_hour, &end_tm.tm_min);
-    if (ReadLineError(valsread, 5, "begin YYYY-MM-DD HH:MM"))	return NULL;
-
-    end_tm.tm_year = end_tm.tm_year - 1900;
-    end_tm.tm_mon = end_tm.tm_mon - 1;
-    globals->end_time = timegm(&end_tm);
+    if (valsread == 5)
+    {
+        end_tm.tm_year = end_tm.tm_year - 1900;
+        end_tm.tm_mon = end_tm.tm_mon - 1;
+        globals->end_time = timegm(&end_tm);
+    }
+    {
+        int end_time;
+        valsread = sscanf(line_buffer, "%d", &end_time);
+        globals->end_time = end_time;
+    }
 
     globals->maxtime = (double)(globals->end_time - globals->begin_time) / 60.0;
     if (globals->maxtime <= 0.0)
+    {
         printf("Error: Simulation period invalid (begin >= end)\n");
+        return NULL;
+    }
 
     //Grab the output filename info
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
