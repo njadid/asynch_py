@@ -3804,7 +3804,7 @@ int FindPath(char* filename, char* path)
 //Returns 1 if fullpath is just a path (the filename variable is set to empty).
 int FindFilename(char* fullpath, char* filename)
 {
-    size_t i;
+    int i;
     size_t len = strlen(fullpath);
 
     if (len == 0 || fullpath[len - 1] == '/')
@@ -3813,7 +3813,7 @@ int FindFilename(char* fullpath, char* filename)
         return 1;
     }
 
-    for (i = len - 2; i >= 0; i--)
+    for (i = (int)(len - 2); i >= 0; i--)
     {
         if (fullpath[i] == '/')
             break;

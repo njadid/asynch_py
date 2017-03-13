@@ -283,7 +283,7 @@ unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, Globa
             break;
         }
         default:
-            printf("[%i]: Error: Invalid output %s (%hi).\n", my_rank, GlobalVars->output_specifiers[i], GlobalVars->output_types[i]);
+            printf("[%i]: Error: Invalid output %s (%i).\n", my_rank, GlobalVars->output_specifiers[i], GlobalVars->output_types[i]);
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
         total_written += GlobalVars->output_sizes[i];
