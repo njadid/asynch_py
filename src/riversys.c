@@ -70,7 +70,8 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
             link_ids = (unsigned int*)malloc(*N * sizeof(unsigned int));
             loc_to_children_array = (unsigned int*)calloc(*N*max_children, sizeof(unsigned int));
             loc_to_children = (unsigned int**)malloc(*N * sizeof(unsigned int*));	//This holds the ID of the children
-            for (i = 0; i < *N; i++)	loc_to_children[i] = &(loc_to_children_array[i*max_children]);
+            for (i = 0; i < *N; i++)	
+                loc_to_children[i] = &(loc_to_children_array[i*max_children]);
             num_parents = (unsigned int*)malloc(*N * sizeof(unsigned int));
 
             for (i = 0; i < *N; i++)
@@ -2669,7 +2670,7 @@ int CalculateInitialStepSizes(Link* system, unsigned int* my_sys, unsigned int m
 //Reads the link ids for saving data.
 //Sets in GlobalVars: save_list, save_size, peaksave_list, peaksave_size.
 //Also sets: my_save_size.
-int BuildSaveLists(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, unsigned int* assignments, unsigned int** id_to_loc, GlobalVars* globals, unsigned int** save_list, unsigned int* save_size, unsigned int* my_save_size, unsigned int** peaksave_list, unsigned int* peaksave_size, unsigned int* my_peaksave_size, ConnData* db_connections)
+int BuildSaveLists(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, int* assignments, unsigned int** id_to_loc, GlobalVars* globals, unsigned int** save_list, unsigned int* save_size, unsigned int* my_save_size, unsigned int** peaksave_list, unsigned int* peaksave_size, unsigned int* my_peaksave_size, ConnData* db_connections)
 {
     unsigned int j, k;
     Link* current;
@@ -2761,7 +2762,7 @@ int BuildSaveLists(Link* system, unsigned int N, unsigned int* my_sys, unsigned 
 }
 
 //Finalizes the system for calculations. Basically, lots of small miscellaneous initializations are made.
-int FinalizeSystem(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, unsigned int* assignments, short int* getting, unsigned int** id_to_loc, TransData* my_data, GlobalVars* globals, ConnData* db_connections, TempStorage** workspace)
+int FinalizeSystem(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, int* assignments, short int* getting, unsigned int** id_to_loc, TransData* my_data, GlobalVars* globals, ConnData* db_connections, TempStorage** workspace)
 {
     unsigned int i, j;
     int ii;
@@ -3005,11 +3006,11 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     //Find the states needed for printing
     globals->num_states_for_printing = 0;
-    globals->print_indices = (unsigned int*)calloc(globals->num_outputs, sizeof(unsigned int));
-    globals->outputs = (OutputCallback *)calloc(globals->num_outputs, sizeof(OutputCallback));
-    globals->output_types = (enum AsynchTypes*)malloc(globals->num_outputs * sizeof(enum AsynchTypes));
-    globals->output_sizes = (short int*)malloc(globals->num_outputs * sizeof(short int));
-    globals->output_specifiers = (char**)malloc(globals->num_outputs * sizeof(char*));
+    globals->print_indices = calloc(globals->num_outputs, sizeof(unsigned int));
+    globals->outputs = calloc(globals->num_outputs, sizeof(OutputCallback));
+    globals->output_types = malloc(globals->num_outputs * sizeof(enum AsynchTypes));
+    globals->output_sizes = malloc(globals->num_outputs * sizeof(short int));
+    globals->output_specifiers = malloc(globals->num_outputs * sizeof(char*));
     for (i = 0; i < globals->num_outputs; i++)
         SetDefaultOutputFunctions(globals->output_names[i], &(globals->output_specifiers[i]), globals->print_indices, &(globals->num_states_for_printing), &(globals->output_sizes[i]), &(globals->output_types[i]), &(globals->outputs[i]));
 
@@ -3767,7 +3768,6 @@ int CheckWinFormat(FILE* file)
 //Returns 2 if filename is just a path (the path variable is still set).
 int FindPath(char* filename, char* path)
 {
-    size_t i;
     size_t len = strlen(filename);
     char holder;
 
@@ -3783,7 +3783,7 @@ int FindPath(char* filename, char* path)
         return 2;
     }
 
-    for (i = len - 2; i >= 0; i--)
+    for (int i = (int)(len - 2); i >= 0; i--)
     {
         if (filename[i] == '/')
         {
