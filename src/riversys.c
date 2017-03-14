@@ -2965,6 +2965,7 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         end_tm.tm_mon = end_tm.tm_mon - 1;
         globals->end_time = timegm(&end_tm);
     }
+    else
     {
         int end_time;
         valsread = sscanf(line_buffer, "%d", &end_time);
