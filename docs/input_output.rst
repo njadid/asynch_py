@@ -545,21 +545,22 @@ A parameter file is an ASCII text file with the following format:
 ::
 
   {number of links}
-  {link id 1}
-  {parameter 1} {parameter 2} {parameter 3}
-  {link id 2}
-  {parameter 1} {parameter 2} {parameter 3}
+  {link id 1} {parameter 1} {parameter 2} {parameter 3}
+  {link id 2} {parameter 1} {parameter 2} {parameter 3}
 
 White space can be used freely throughout the file. The layout in the above specification is purely optional; the order of the information is what is important. The file begins with the total number of links. Then each link id is specified, followed by the parameters for that link.
 
 If the parameters are pulled from a database, a corresponding database connection file is used This file requires two queries:
 
--  Query to pull all parameters
--  Inputs: none
--  Returned tuples: (link id, parameter 1, parameter 2, )
--  Query to pull all parameters above an outlet
--  Inputs: outlet link id
--  Returned tuples: (link id, parameter 1, parameter 2, )
+1.  Query to pull all parameters
+
+  -  Inputs: none
+  -  Returned tuples: (link id, parameter 1, parameter 2, ...)
+
+2.  Query to pull all parameters above an outlet
+
+  -  Inputs: outlet link id
+  -  Returned tuples: (link id, parameter 1, parameter 2, ...)
 
 Initial Values Input
 --------------------
@@ -578,7 +579,7 @@ An initial value file is an ASCII text file that lists the initial values for ea
   {link id 2}
   {initial value 1} {initial value 2}
 
-The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial states must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors See Section 8 1 1.
+The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial states must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors See :ref:`SetParamSizes`.
 
 A uniform initial value file is similar to an initial value file, but the initial values, when required, are the same at every link The format is given by:
 
@@ -588,7 +589,7 @@ A uniform initial value file is similar to an initial value file, but the initia
   {initial time}
   {initial value 1} {initial value 2}
 
-The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial values must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors. See Section 8 1 1. Notice that unlike an initial value file, no link ids are given, and only one set of initial values are given.
+The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial values must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors. See :ref:`SetParamSizes`. Notice that unlike an initial value file, no link ids are given, and only one set of initial values are given.
 
 A recovery file is an ASCII text file that lists the initial values for each link. The format is:
 
@@ -602,13 +603,14 @@ A recovery file is an ASCII text file that lists the initial values for each lin
   {link id 2}
   {initial value 1} {initial value 2}
 
-The format is identical to that of an initial value file, with one important exception The initial value of EVERY state must be provided at each link For models with ``diff_start`` set to 0and ``no_ini_start`` set to dim, a recovery file is identical to an initial value file See Section 8 1 1 Warning: For the initial values of algebraic equations, no checks on the input data are performed to ensure the solution is consistent.
+The format is identical to that of an initial value file, with one important exception The initial value of EVERY state must be provided at each link For models with ``diff_start`` set to 0and ``no_ini_start`` set to dim, a recovery file is identical to an initial value file See :ref:`SetParamSizes` Warning: For the initial values of algebraic equations, no checks on the input data are performed to ensure the solution is consistent.
 
 If the initial values are pulled from a database, a corresponding database connection file is used. This file requires one query:
 
--  Query to pull all initial states for every link:
--  Inputs: integer value
--  Returned tuples: (link id, initial value 1, initial value 2, )
+1. Query to pull all initial states for every link:
+
+  -  Inputs: integer value
+  -  Returned tuples: (link id, initial value 1, initial value 2, )
 
 The query allows for one input to be used to obtain the needed information. This value could be, for example, an outlet link id or a unix time. Similar to recovery files, initial values must be provided for every link.
 
@@ -723,13 +725,20 @@ Database Forcing
 
 If the forcing data is pulled from a database, a corresponding database connection file is used. This file requires three queries:
 
--  Query to pull rainfall data for all link ids present in the database table
--  Inputs: lower unix time, upper unix time -Returned tuples: (unix time, forcing value, link id)
--  Query to pull rainfall data for all link ids upstream from an outlet link
--  Inputs: outlet link id, lower unix time, upper unix time -Returned tuples: (unix time, forcing value, link id)
--  Query to pull a single forcing intensity from the database table
--  Inputs: none
--  Returned tuple: (unix time)
+1. Query to pull rainfall data for all link ids present in the database table
+
+  -  Inputs: lower unix time, upper unix time
+  - Returned tuples: (unix time, forcing value, link id)
+
+2. Query to pull rainfall data for all link ids upstream from an outlet link
+
+  - Inputs: outlet link id, lower unix time, upper unix time
+  - Returned tuples: (unix time, forcing value, link id)
+
+3. Query to pull a single forcing intensity from the database table
+
+  -  Inputs: none
+  -  Returned tuple: (unix time)
 
 The first and second queries are similar, except that the second pulls only a subset of links from the database table. Forcing values are read in blocks from the table, with forcing values coming between the lower (inclusive) and upper (exclusive) unix times available to the queries. If a value for a link is not pulled from the database, the value is assumed to be 0.
 
@@ -749,7 +758,7 @@ Two formats currently exist for setting parameters at links with dams: dam param
   {parameter 1} {parameter 2} {parameter 3} ...
   ...
 
-The number of parameters needed for each link is model dependent and determined by the value dam params size. See Section 8 1 1. For dam parameter files, only the links with dams must be listed here. Only links with id appearing in this file will have dams.
+The number of parameters needed for each link is model dependent and determined by the value dam params size. See :ref:`SetParamSizes`. For dam parameter files, only the links with dams must be listed here. Only links with id appearing in this file will have dams.
 
 Discharge vs storage files take a series of discharge values and a corresponding series of storage values to decide the relationship between two states. The format of these files is similar to storm files (see :ref:`Forcing Inputs`):
 
@@ -787,7 +796,7 @@ Data files are in ASCII text format. These files are designed to be generic and 
   {value 2 for series 1} {value 2 for series 2} {value 2 for series 3}
   ...
 
-The series for the links appear in a column The number of points can vary from link to link, depending upon the user's selection in the global file The number of output values determines how many values appear in each line of the time series
+The series for the links appear in a column The number of points can vary from link to link, depending upon the user's selection in the global file The number of output values determines how many values appear in each line of the time series.
 
 A CSV file is a typical format to make data easy to read in spreadsheet software. The structure of CSV files is:
 
@@ -801,7 +810,12 @@ A CSV file is a typical format to make data easy to read in spreadsheet software
 
 The series for the links appear in a row. Under link id 1, each requested series appears, followed by the series for link id 2, and so on.
 
-A database connection file can be used to upload results into a database table This file requires only one query: - Query to create a table for uploading data - Inputs: table name - Returned tuples: none
+A database connection file can be used to upload results into a database table This file requires only one query:
+
+1. Query to create a table for uploading data
+
+  - Inputs: table name
+  - Returned tuples: none
 
 The query should create the table where the series information is to be stored ASYNCH does NOT remove any existing data from the table, or check if the table exists already.
 
@@ -820,9 +834,19 @@ Peakflow files created with the "Classic" peakflow function take the structure:
   {link id 2} {peakflow value} {time to peak} {area}
   {link id 3} {peakflow value} {time to peak} {area}
 
-The time to peak is measured since the beginning of the simulation. The peakflow value for each link is the maximum value achieved over the simulation for the state with index ``0`` in the state vector. The area given is the parameter from the link parameters with index area idx. See Section 8 1 1.
+The time to peak is measured since the beginning of the simulation. The peakflow value for each link is the maximum value achieved over the simulation for the state with index ``0`` in the state vector. The area given is the parameter from the link parameters with index area idx. See :ref:`SetParamSizes`.
 
-Peakfow output may be written to a database table if a database connection file is specified. One query is required, and one additional query is optional: - Query to create a table for uploading data - Inputs: table name - Returned tuples: none - Query to delete contents from a table - Inputs: table name - Returned tuples: none
+Peakfow output may be written to a database table if a database connection file is specified. One query is required, and one additional query is optional:
+
+1. Query to create a table for uploading data
+
+  - Inputs: table name
+  - Returned tuples: none
+
+2. Query to delete contents from a table
+
+  - Inputs: table name
+  - Returned tuples: none
 
 The first query should create the table where the peakflow information is to be stored ASYNCH does NOT remove any existing data from the table, or check if the table exists already. The second query is optional, and will be used to delete any existing contents from the table before uploading data. The particular values uploaded to the database are determined through the peakflow function defined in :ref:`Peakflow Statistics Function Name`.
 
@@ -844,26 +868,32 @@ If a link id is specified in a save file, but is not present in the network, a w
 
 For pulling links from a database table, only one query is required:
 
--  Query to pull link ids
--  Inputs: none
--  Returned tuples: (link id)
+1.  Query to pull link ids
+
+  -  Inputs: none
+  -  Returned tuples: (link id)
 
 Snapshot Output
 ---------------
 
 Snapshot outputs can take two formats: recovery files and database tables. The format for recovery files is covered in :ref:`Initial Values Input` as an input.
 
-For using a database table, a database connection file is specified The database connection file has three optional queries:
+For using a database table, a database connection file is specified. The database connection file has three optional queries:
 
--  Query to create a database table before the first upload
--  Inputs: table name
--  Returned tuples: none
--  Query to delete a table before the first upload
--  Inputs: table name
--  Returned tuples: none
--  Query to truncate a table before every upload
--  Inputs: table name
--  Returned tuples: none
+1. Query to create a database table before the first upload
+
+  -  Inputs: table name
+  -  Returned tuples: none
+
+2.  Query to delete a table before the first upload
+
+  -  Inputs: table name
+  -  Returned tuples: none
+
+3.  Query to truncate a table before every upload
+
+  -  Inputs: table name
+  -  Returned tuples: none
 
 In practice, snapshots are often applied periodically as a way to create check points for the program. The third query allows the user to limit the number of snapshots in a table to one.
 

@@ -43,7 +43,7 @@ The ASYNCH directory contains a folder called ``examples``, which contains sever
 
   cp -r /Dedicated/IFC/asynch/examples/ ~/
 
-For the first example, we will produce output for a small basin with 11 links using a hydrological model with constant runoff. The global file to setup this simulation is ``Global190.gbl``. This uses the model given in Section :ref:`Constant Runoff Hydrological Model`. If using your own machine, the simulation can be run with the command
+For the first example, we will produce output for a small basin with 11 links using a hydrological model with constant runoff. The global file to setup this simulation is ``test.gbl``. This uses the model given in Section :ref:`Constant Runoff Hydrological Model`. If using your own machine, the simulation can be run with the command
 
 .. code-block:: sh
 
@@ -82,4 +82,16 @@ or modify ``test.sh`` to use more processes. This can be done by modifying the e
 
 to use 2 processes instead of 1. Also be sure to modify the last line with mpirun so MPI looks for 2 processes. When using more than 1 process, your results may difer slightly from those in ``examples/results``. In fact, the results may vary slightly from simulation to simulation, even if nothing changed in the global file. This is a result from the asynchronous communication used by ASYNCH for MPI processes and is an expected behavior.
 
-As a second example, try the same procedure as before using the global file ``clearcreek.gbl``. If using an Iowa HPC resource, the submit script ``clearcreek.sh`` can be used. The model for this simulation is the toplayer hydrological model using the Clear Creek river basin See Section :ref:`Top Layer Hydrological Model`. Results for the output discharge and basefow are given in Figure 3. This basin is larger than in the previous simulation as it contains about 6,000 links. This is a good example to experiment with the number of processes used. A time series of the channel discharge and basefow at the outlet are given in Figure 3.
+.. _figure-2:
+
+.. figure:: figures/test.png
+
+  Output from the sample simulation.
+
+As a second example, try the same procedure as before using the global file ``clearcreek.gbl``. If using an Iowa HPC resource, the submit script ``clearcreek.sh`` can be used. The model for this simulation is the toplayer hydrological model using the Clear Creek river basin See Section :ref:`Top Layer Hydrological Model`. Results for the output discharge and basefow are given in :ref:`figure-3`. This basin is larger than in the previous simulation as it contains about 6,000 links. This is a good example to experiment with the number of processes used.
+
+.. _figure-3:
+
+.. figure:: figures/clearcreek.png
+
+  Output from the toplayer model sample simulation.
