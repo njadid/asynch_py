@@ -37,6 +37,7 @@ The main documentation for Asynch is organized into a couple of sections:
   input_output
   builtin_options
   builtin_models
+  cookbook
 
 .. _dev-docs:
 
