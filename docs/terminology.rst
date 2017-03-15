@@ -48,22 +48,22 @@ The dependency of these clusters is one way in the sense that the equations for 
 Links
 -----
 
-In the ASYNCH source code and in this document, the clusters of variables are referred to as *links*. Every link has a positive integer attached to it that identifies the link uniquely. This number is referred to as the *link ID*. The unknowns in the clusters are referred to as the *states of the link*.
+In the ASYNCH source code and in this document, the clusters of variables are referred to as **links**. Every link has a positive integer attached to it that identifies the link uniquely. This number is referred to as the **link ID**. The unknowns in the clusters are referred to as the **states of the link**.
 
 Peakflow
 --------
 
-The term *peakflow* is used frequently with ASYNCH. This is a hydrological term, but it can take meaning in other applications. A peakflow of a state is the maximum value of that state over a period of time.
+The term **peakflow** is used frequently with ASYNCH. This is a hydrological term, but it can take meaning in other applications. A peakflow of a state is the maximum value of that state over a period of time.
 
 Model
 -----
 
-The term *model* is used frequently in technical disciplines to refer to a (usually mathematical) procedure or computer program for obtaining a description for how a natural process works. In this documentation, a model refers to the collection of equations, *but not their solution*. The entire purpose of ASYNCH is to solve ODEs efficiently, thus producing their solution. No model created for ASYNCH should ever contain time steps. The equations (:ref:`_explicit-example`) are an example of a model.
+The term **model** is used frequently in technical disciplines to refer to a (usually mathematical) procedure or computer program for obtaining a description for how a natural process works. In this documentation, a model refers to the collection of equations, **but not their solution**. The entire purpose of ASYNCH is to solve ODEs efficiently, thus producing their solution. No model created for ASYNCH should ever contain time steps. The equations (:ref:`_explicit-example`) are an example of a model.
 
 State vector
 ------------
 
-Each model has a number of states that are to be determined at each link. At a specific time, these states are stored in a vector, known as a *state vector*. Similarly, the value of the differential and algebraic equations at a particular time and state are stored in an *equation-value vector*. There is a correspondence between state and equation-value vectors at each link. For example, if the underlying model is a system of differential equations, then the derivative of the first state in a state vector is stored in the first entry of the equation-value vectors, the derivative of the second state in a state vector is stored in the second entry of the equation-value vectors, etc.
+Each model has a number of states that are to be determined at each link. At a specific time, these states are stored in a vector, known as a **state vector**. Similarly, the value of the differential and algebraic equations at a particular time and state are stored in an **equation-value vector**. There is a correspondence between state and equation-value vectors at each link. For example, if the underlying model is a system of differential equations, then the derivative of the first state in a state vector is stored in the first entry of the equation-value vectors, the derivative of the second state in a state vector is stored in the second entry of the equation-value vectors, etc.
 
 As an example, a state vector for equations ([eq: explicit example]) will look like
 
@@ -88,19 +88,19 @@ Some models contain discontinuities in their equations. This can include not onl
                                             -(y-5)^2 + f(t), \mbox{for } y \geq 5
                            \end{array} \right.
 
-with some forcing function :math:`f`, has a discontinuity in the derivative of :math:`y`. Each component of the piecewise function is referred to as a *discontinuity state*.
+with some forcing function :math:`f`, has a discontinuity in the derivative of :math:`y`. Each component of the piecewise function is referred to as a **discontinuity state**.
 
 Computing
 ---------
 
 A few computer related terms are thrown around frequently in this document (and in parallel computing in general) that are worth describing.
 
--  A *node* is a physical computer. This includes any related hardware inside the computer (cores, memory, hard disks, etc). The term *cluster* is used to refer to an interconnected group of nodes.
+-  A **node** is a physical computer. This includes any related hardware inside the computer (cores, memory, hard disks, etc). The term **cluster** is used to refer to an interconnected group of nodes.
 
--  A *core*, *processor*, or *slot* (in the case of Iowa HPC resources) are the physical processing units in computers. These are the components that actually perform computations.
+-  A **core**, **processor**, or **slot** (in the case of Iowa HPC resources) are the physical processing units in computers. These are the components that actually perform computations.
 
--  A *process* is an instance of a running program. ASYNCH uses MPI processes to achieve parallelism. This means several instances of ASYNCH are run simultaneously, each able to communicate with each other. Because this document refers to ASYNCH, the phrase *MPI process* is interchangeable with process. It is simply used to emphasize that communication occurs with MPI.
+-  A **process** is an instance of a running program. ASYNCH uses MPI processes to achieve parallelism. This means several instances of ASYNCH are run simultaneously, each able to communicate with each other. Because this document refers to ASYNCH, the phrase **MPI process** is interchangeable with process. It is simply used to emphasize that communication occurs with MPI.
 
--  A *thread* is a sequence of instructions (code) to a processor. *Multithreading* is when many threads are created by a program and potentially executed simultaneously on a single node. ASYNCH does not currently support multithreading explicitly (it may occur “behind the scenes” in MPI, however).
+-  A **thread** is a sequence of instructions (code) to a processor. **Multithreading** is when many threads are created by a program and potentially executed simultaneously on a single node. ASYNCH does not currently support multithreading explicitly (it may occur “behind the scenes” in MPI, however).
 
 Generally with ASYNCH, a one-to-one correspondence between the number of cores and processes is desired. More processes than cores means some cores must run more than one process, creating computational bottlenecks. More cores than processes means some cores will have no work to complete.

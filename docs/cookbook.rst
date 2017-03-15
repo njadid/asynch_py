@@ -6,7 +6,7 @@ This is not a section about French cuisine, although you will find pretty good r
 Preprocessing
 --------------
 
-
+Todo.
 
 Postprocessing
 --------------
@@ -18,9 +18,9 @@ You may have to install the ``tables`` package.
 
 .. code-block:: sh
 
-  pip install table
+  pip install tables
 
-Reading pyTables is pretty straighforward:
+Reading `PyTables <http://www.pytables.org>`_ is pretty straighforward:
 
 .. code-block:: python
 

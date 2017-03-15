@@ -88,8 +88,6 @@ FastX is a program for connecting to the HPC systems with a GUI desktop environm
 Source Code, Compiling, and Running ASYNCH
 ------------------------------------------
 
-.. note:: Users of Iowa's HPC resources should NOT need to download and compile source code on Neon and Argon. Binaries for ASYNCH are located in ``/Dedicated/IFC/.neon/bin`` on Neon and in ``/Dedicated/IFC/.argon/bin`` on Argon. Libraries for linking `libasynch` with your own software are located in the directory ``/Dedicated/IFC/.<cluster>/lib``.
-
 The ASYNCH source code is available in a repository hosted by GitHub. Downloading on of the release version the code from the repository requires the use of Git See `Git`_. The source code can also be downloaded directly from GitHub as a zip file.
 
 If the source code is ever updated, you may want to run ``make clean`` before recompiling. This removes all binaries and object files of the old version. Once compiled, ASYNCH can be run with the command:
@@ -126,7 +124,7 @@ These are the generic instruction for an out of source build (prefered method):
 Iowa HPC Clusters
 -----------------
 
-Currently, the executable used on Neon and Argon ar maintained by yours truly. All required software should be available. The build system included with the source code should work without modification on these clusters.
+Currently, the executable used on Neon and Argon ar maintained by yours truly. Users of Iowa's HPC resources should NOT need to download and compile source code on Neon and Argon. Binaries for ASYNCH are located in ``/Dedicated/IFC/.neon/bin`` on Neon and in ``/Dedicated/IFC/.argon/bin`` on Argon. Libraries for linking `libasynch` with your own software are located in the directory ``/Dedicated/IFC/.<cluster>/lib``. As of the compilation of derived work, all required software should be available. The build system included with the source code should work without modification on these clusters.
 
 Setting up the environment on ARGON
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
