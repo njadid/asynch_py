@@ -205,7 +205,7 @@ Format:
 
 ::
 
-  {topology flag} [output link id] { rvr filename or dbc filename}
+  {topology flag} [output link id] {.rvr filename or .dbc filename}
 
 This is where connectivity of the river network is specified. This can be done in one of two ways If the topology flag is ``0``, a river topology file (.rvr) is used. If the topology flag is ``1``, then topology is downloaded from the database specified with the database file (.dbc). The database connection allows for one additional feature: a subbasin can be specified If the output link id is taken to be 0, all link ids found in the database are used. Otherwise, the link with link id specified and all upstream links are used. Pulling subbasins from a topology file is not currently supported.
 
@@ -216,7 +216,7 @@ Format:
 
 ::
 
-  {parameter flag} { prm filename or dbc filename}
+  {parameter flag} {.prm filename or .dbc filename}
 
 This specifies where parameters which vary by link and not time, are specified If the parameter flag is ``0``, the parameters are given in a parameter (.prm) file. If the flag is ``1``, then the parameters are downloaded from the database specified by the database connection file (.dbc). The number, order, meaning, and units of these parameters varies from model to model.
 
@@ -227,7 +227,7 @@ Format:
 
 ::
 
-  {initial state flag} { ini, uini, rec, or dbc filename} [unix time]
+  {initial state flag} {.ini, .uini, .rec, or .dbc filename} [unix time]
 
 This section specifies the initial state of the model. The values for the initial state flag can be ``0``, ``1``, ``2``, ``3`` or ``4`` corresponding, respectively, to a ini, uini, rec, dbc, h5 file. The unix time argument is used for database connections only. This value is available in the query of the database connection file and can be used for selecting values from tables.
 
@@ -351,7 +351,7 @@ Format:
 
 ::
 
-  {dam flag} [ dam or qvs filename]
+  {dam flag} [.dam or .qvs filename]
 
 This section specifies whether dams will be used A dam flag of ``0`` means no dams are used. A flag of ``1`` indicates a dam file ( dam) will be used, and a flag value of ``2`` indicates a discharge vs storage file ( qvs) will be used. Some models do not support dams. For these models, the dam flag must be set to ``0`` or an error occurs.
 
@@ -362,7 +362,7 @@ Format:
 
 ::
 
-  {reservoir flag} [ rsv or dbc filename] [forcing index]
+  {reservoir flag} [.rsv or .dbc filename] [forcing index]
 
 This section specifies whether a provided forcing (see :ref:`Forcings`) is to be used as a forcing of the states of differential or algebraic equations at some links. A reservoir flag of ``0`` indicates no forcing will by applied to system states. A flag of ``1`` indicates state forcings will be applied to all link ids in the specified .rsv file. A reservoir flag of ``2`` indicates state forcing will be applied to all link ids pulled from the database the given .dbc file. If the reservoir flag is not ``0``, then the index of the forcing must be specified.
 
@@ -373,13 +373,22 @@ Format:
 
 ::
 
-  {time series flag} [time resolution] [ dat / csv / dbc filename] [table name]
+  {time series flag} [time resolution] [.dat or .csv or .h5 or .dbc filename] [table name]
 
-This section specifies where the final output time series will be saved. A time series flag value of ``0`` indicates no time series data will be produced. Any flag with value greater than ``0`` requires a time resolution for the data. This value has units equal to the units of total simulation time (typically minutes). A value of -1 uses a resolution which varies from link to link based upon the expression:
+This section specifies where the final output time series will be saved. A time series flag value of ``0`` indicates no time series data will be produced. Any flag with value greater than ``0`` requires a time resolution for the data. This value has units equal to the units of total simulation time (typically minutes). A value of ``-1`` uses a resolution which varies from link to link based upon the expression:
 
-where A is the upstream of the link, measured in km2.
+.. math::
 
-A time series flag of ``1`` indicates the results of the simulation will be saved as a .dat file. The filename complete with a path must be specified. If a file with the name and path given already exists, it is overwritten. A time series flag of ``2`` indicates the results will be stored as a csv file. A time series flag of ``3`` indicates the results will be uploaded into the database described by the given .dbc file. In this case, a table name accessible by the queries in the .dbc file must be specified.
+  \begin{align}
+   \left(0.1 \cdot \frac{A}{1 \ km^2} \right)^{\frac{1}{2}} \ min
+  \end{align}
+
+where :math:`A` is the upstream of the link, measured in km2.
+
+A time series flag of ``1`` indicates the results of the simulation will be saved as a .dat file. The filename complete with a path must be specified. If a file with the name and path given already exists, it is overwritten.
+A time series flag of ``2`` indicates the results will be stored as a .csv file.
+A time series flag of ``3`` indicates the results will be uploaded into the database described by the given .dbc file. In this case, a table name accessible by the queries in the .dbc file must be specified.
+A time series flag of ``5`` indicates indicates the results will be stored as a .h5 HDF5 file.
 
 This section is independent of the section for Link IDs to Save described below (see :ref:`Global Parameters`) For example, if link ids are specified in the Link IDs to Save section and the time series flag in the Time Series Locations set to ``0``, no output is generated. Similarly, if *the time series id flag* is set to ``0`` in the Link IDs to Save section and the time series flag is set to ``1``, a .dat file with ``0`` time series is produced.
 
