@@ -54,7 +54,7 @@ Here is a typical global file taken from the examples folder:
   %DEM Parameters (0 = .prm, 1 = database)
   0 test.prm
 
-  %Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc, 3 = .h5)
+  %Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc, 4 = .h5)
   1 test.uini
 
   %Forcings (0 = none, 1 = .str, 2 = binary, 3 = database, 4 = .ustr,
@@ -306,8 +306,8 @@ Format:
 
 A forcing flag of ``4`` indicates a forcing that is uniform in space. The forcings are given by a uniform storm file (.ustr).
 
-GZipped Binary Files
-^^^^^^^^^^^^^^^^^^^^
+GZipped Binary
+^^^^^^^^^^^^^^
 
 Format:
 
@@ -330,8 +330,8 @@ Format:
 
 A forcing flag of ``7`` indicates a uniform in space forcing that recurs monthly. When the end of the calendar year is reached, the monthly forcing file (.mon) is read again from the beginning The beginning unix time is used to determine the month the simulation begins (for this forcing). If the total simulation time takes the simulation past the ending unix time, the forcing is assumed to be ``0.0`` for all locations and times beyond the ending unix time
 
-Grid Cell Files
-^^^^^^^^^^^^^^^
+Grid Cell
+^^^^^^^^^
 
 Format:
 
@@ -567,6 +567,9 @@ Initial Values Input
 
 The link initial values input specifies the initial values for the states of the differential and algebraic model equations This information can be provided in several different formats: an initial value file (.ini), a uniform initial value file (.uini), a recovery file (.rec), and through a database table.
 
+Ini Files
+~~~~~~~~~
+
 An initial value file is an ASCII text file that lists the initial values for each link. The format is:
 
 ::
@@ -581,6 +584,9 @@ An initial value file is an ASCII text file that lists the initial values for ea
 
 The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial states must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors See :ref:`SetParamSizes`.
 
+Uini Files
+~~~~~~~~~~
+
 A uniform initial value file is similar to an initial value file, but the initial values, when required, are the same at every link The format is given by:
 
 ::
@@ -590,6 +596,9 @@ A uniform initial value file is similar to an initial value file, but the initia
   {initial value 1} {initial value 2}
 
 The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial values must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors. See :ref:`SetParamSizes`. Notice that unlike an initial value file, no link ids are given, and only one set of initial values are given.
+
+Rec Files
+~~~~~~~~~
 
 A recovery file is an ASCII text file that lists the initial values for each link. The format is:
 
@@ -605,6 +614,9 @@ A recovery file is an ASCII text file that lists the initial values for each lin
 
 The format is identical to that of an initial value file, with one important exception The initial value of EVERY state must be provided at each link For models with ``diff_start`` set to 0and ``no_ini_start`` set to dim, a recovery file is identical to an initial value file See :ref:`SetParamSizes` Warning: For the initial values of algebraic equations, no checks on the input data are performed to ensure the solution is consistent.
 
+Ini Database Table
+~~~~~~~~~~~~~~~~~~
+
 If the initial values are pulled from a database, a corresponding database connection file is used. This file requires one query:
 
 1. Query to pull all initial states for every link:
@@ -613,6 +625,75 @@ If the initial values are pulled from a database, a corresponding database conne
   -  Returned tuples: (link id, initial value 1, initial value 2, )
 
 The query allows for one input to be used to obtain the needed information. This value could be, for example, an outlet link id or a unix time. Similar to recovery files, initial values must be provided for every link.
+
+Ini HDF5 Files
+~~~~~~~~~~~~~~
+
+H5 outputs files are the prefered output format as it is both compact and efficient. There are also easy to read with third party software, see :ref:`Reading the HDF5 outputs with Python` for example.
+
+H5 Output files are H5 that contains a single resizable Packet Tables or PyTable `snapshot`. Two HDF5 tools can be used to get the strucutre of the outputs, ``l5hs`` and ``h5dump``:
+
+.. code-block:: sh
+
+  >h5ls -v test_1483228800.h5
+  snapshot                 Dataset {11/Inf}
+      Location:  1:1024
+      Links:     1
+      Chunks:    {512} 14336 bytes
+      Storage:   308 logical bytes, 80 allocated bytes, 385.00% utilization
+      Filter-0:  deflate-1 OPT {5}
+      Type:      struct {
+                     "link_id"          +0    native unsigned int
+                     "state_0"          +4    native double
+                     "state_1"          +12   native double
+                     "state_2"          +20   native double
+                 } 28 bytes
+
+.. code-block:: sh
+
+  >h5dump -H test_1483228800.h5
+  HDF5 "test_1483228800.h5" {
+  GROUP "/" {
+     ATTRIBUTE "model" {
+        DATATYPE  H5T_STD_U16LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "unix_time" {
+        DATATYPE  H5T_STD_U32LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "version" {
+        DATATYPE  H5T_STRING {
+           STRSIZE 4;
+           STRPAD H5T_STR_NULLTERM;
+           CSET H5T_CSET_ASCII;
+           CTYPE H5T_C_S1;
+        }
+        DATASPACE  SCALAR
+     }
+     DATASET "snapshot" {
+        DATATYPE  H5T_COMPOUND {
+           H5T_STD_U32LE "link_id";
+           H5T_IEEE_F64LE "state_0";
+           H5T_IEEE_F64LE "state_1";
+           H5T_IEEE_F64LE "state_2";
+        }
+        DATASPACE  SIMPLE { ( 11 ) / ( H5S_UNLIMITED ) }
+     }
+  }
+  }
+
+Three global attributes are available :
+
++------------+--------------------------------------------------+
+| Name       | Description                                      |
++============+==================================================+
+| version    | The version of ASYNCH used to generate this file |
++------------+--------------------------------------------------+
+| model      | The model id used to generate this file          |
++------------+--------------------------------------------------+
+| issue_time | The unix time at the beginning of the time serie |
++------------+--------------------------------------------------+
 
 Forcing Inputs
 --------------
@@ -747,7 +828,12 @@ The last query is used to find an actual valid timestamp in the database table. 
 Dam Parameters Input
 --------------------
 
-Two formats currently exist for setting parameters at links with dams: dam parameter files (.dam) and discharge vs storage files (.qvs). The format of dam parameter files is similar to that of parameter files:
+Two formats currently exist for setting parameters at links with dams: dam parameter files (.dam) and discharge vs storage files (.qvs).
+
+Dam Files
+~~~~~~~~~
+
+The format of dam parameter files is similar to that of parameter files:
 
 ::
 
@@ -759,6 +845,9 @@ Two formats currently exist for setting parameters at links with dams: dam param
   ...
 
 The number of parameters needed for each link is model dependent and determined by the value dam params size. See :ref:`SetParamSizes`. For dam parameter files, only the links with dams must be listed here. Only links with id appearing in this file will have dams.
+
+QVS Files
+~~~~~~~~~
 
 Discharge vs storage files take a series of discharge values and a corresponding series of storage values to decide the relationship between two states. The format of these files is similar to storm files (see :ref:`Forcing Inputs`):
 
@@ -781,6 +870,9 @@ Time Series Output
 
 Three formats are supported for outputting time series calculations: data files (.dat), comma-separated values (.csv), and a database table. The particular time series calculated is set in the global file (see :ref:`Time Series Location`). The structure of each format is considerably different.
 
+Data Files
+~~~~~~~~~~
+
 Data files are in ASCII text format. These files are designed to be generic and flexible so as to be easily read by whatever data analysis program the user prefers. Data files are created with the format:
 
 ::
@@ -798,6 +890,9 @@ Data files are in ASCII text format. These files are designed to be generic and 
 
 The series for the links appear in a column The number of points can vary from link to link, depending upon the user's selection in the global file The number of output values determines how many values appear in each line of the time series.
 
+CSV Files
+~~~~~~~~~
+
 A CSV file is a typical format to make data easy to read in spreadsheet software. The structure of CSV files is:
 
 ::
@@ -810,6 +905,9 @@ A CSV file is a typical format to make data easy to read in spreadsheet software
 
 The series for the links appear in a row. Under link id 1, each requested series appears, followed by the series for link id 2, and so on.
 
+Out Database Table
+~~~~~~~~~~~~~~~~~~
+
 A database connection file can be used to upload results into a database table This file requires only one query:
 
 1. Query to create a table for uploading data
@@ -818,6 +916,77 @@ A database connection file can be used to upload results into a database table T
   - Returned tuples: none
 
 The query should create the table where the series information is to be stored ASYNCH does NOT remove any existing data from the table, or check if the table exists already.
+
+.. _out-hdf5-files:
+
+Out HDF5 Files
+~~~~~~~~~~~~~~
+
+H5 outputs files are the prefered output format as it is both compact and efficient. There are also easy to read with third party software, see :ref:`Reading the HDF5 outputs with Python` for example.
+
+H5 Output files are H5 that contains a single resizable Packet Tables or PyTable `outputs`. Two HDF5 tools can be used to get the strucutre of the outputs, ``l5hs`` and ``h5dump``:
+
+.. code-block:: sh
+
+  > l5hs -v outputs.h5
+  Opened "outputs.h5" with sec2 driver.
+  outputs                  Dataset {578/Inf}
+      Location:  1:1024
+      Links:     1
+      Chunks:    {512} 8192 bytes
+      Storage:   9248 logical bytes, 3455 allocated bytes, 267.67% utilization
+      Filter-0:  deflate-1 OPT {5}
+      Type:      struct {
+                     "Time"             +0    native double
+                     "LinkID"           +8    native int
+                     "State0"           +12   native float
+                 } 16 bytes
+
+.. code-block:: sh
+
+  >h5dump -H  outputs.h5
+  HDF5 "outputs.h5" {
+  GROUP "/" {
+     ATTRIBUTE "issue_time" {
+        DATATYPE  H5T_STD_U32LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "model" {
+        DATATYPE  H5T_STD_U16LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "version" {
+        DATATYPE  H5T_STRING {
+           STRSIZE 4;
+           STRPAD H5T_STR_NULLTERM;
+           CSET H5T_CSET_ASCII;
+           CTYPE H5T_C_S1;
+        }
+        DATASPACE  SCALAR
+     }
+     DATASET "outputs" {
+        DATATYPE  H5T_COMPOUND {
+           H5T_IEEE_F64LE "Time";
+           H5T_STD_I32LE "LinkID";
+           H5T_IEEE_F32LE "State0";
+        }
+        DATASPACE  SIMPLE { ( 578 ) / ( H5S_UNLIMITED ) }
+     }
+  }
+  }
+
+Three global attributes are available :
+
++------------+--------------------------------------------------+
+| Name       | Description                                      |
++============+==================================================+
+| version    | The version of ASYNCH used to generate this file |
++------------+--------------------------------------------------+
+| model      | The model id used to generate this file          |
++------------+--------------------------------------------------+
+| issue_time | The unix time at the beginning of the time serie |
++------------+--------------------------------------------------+
+
 
 Peakflow Output
 ---------------

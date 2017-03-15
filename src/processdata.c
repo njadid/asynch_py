@@ -34,6 +34,19 @@
 
 #include "processdata.h"
 
+/// Returns the H5 Type that match the Asynch type
+static hid_t Get_H5_Type(enum AsynchTypes type)
+{
+    static hid_t h5_types[ASYNCH_NUM_DATA_TYPES];
+    h5_types[0] = H5T_NATIVE_CHAR;
+    h5_types[1] = H5T_NATIVE_SHORT;
+    h5_types[2] = H5T_NATIVE_INT;
+    h5_types[3] = H5T_NATIVE_FLOAT;
+    h5_types[4] = H5T_NATIVE_DOUBLE;
+
+    return h5_types[type];
+}
+
 //Reads the results stored in temporary files and outputs them conveniently to a new file.
 //Use this for parallel implementations.
 //There could be problems if there is lots of data in the temporary files. Improve on this in the future.
@@ -580,19 +593,6 @@ int DumpTimeSerieCsvFile(Link* sys, GlobalVars* globals, unsigned int N, unsigne
         printf("\nResults written to file %s.\n", output_filename);
 
     return 0;
-}
-
-
-static hid_t Get_H5_Type(enum AsynchTypes type)
-{
-    static hid_t h5_types[ASYNCH_NUM_DATA_TYPES];
-    h5_types[0] = H5T_NATIVE_CHAR;
-    h5_types[1] = H5T_NATIVE_SHORT;
-    h5_types[2] = H5T_NATIVE_INT;
-    h5_types[3] = H5T_NATIVE_FLOAT;
-    h5_types[4] = H5T_NATIVE_DOUBLE;
-
-    return h5_types[type];
 }
 
 
@@ -1506,10 +1506,15 @@ int DumpStateText(Link* sys, unsigned int N, int* assignments, GlobalVars* globa
     return 0;
 }
 
+
 int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals, char* suffix, ConnData* conninfo)
 {
     unsigned int i;
     unsigned int res = 0;
+
+    const hsize_t chunk_size = 512;   // Chunk size, in number of table entries per chunk
+    const int compression = 5;      // Compression level, a value of 0 through 9.
+
     if (my_rank == 0)
     {
         // Creating the file
@@ -1553,30 +1558,55 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
         //Assume that every links have the same dimension
         unsigned int dim = sys[i].dim;
 
-        int *index = malloc(N * sizeof(unsigned int));
-        double *data = malloc(N * dim * sizeof(double));
+        size_t line_size = sizeof(unsigned int) + dim * sizeof(double);
+
+        //Create compound type
+        hid_t compound_id = H5Tcreate(H5T_COMPOUND, line_size);
+        herr_t status = H5Tinsert(compound_id, "link_id", 0, H5T_NATIVE_UINT);
+
+        size_t offset = sizeof(unsigned int);
+        for (unsigned int i = 0; i < dim; i++)
+        {
+            char name[10];
+            sprintf(name, "state_%d", i);
+
+            herr_t status = H5Tinsert(compound_id, name, offset, H5T_NATIVE_DOUBLE);
+            offset += sizeof(double);
+        }
+
+        // Create packet file
+        hid_t packet_file_id = H5PTcreate_fl(file_id, "snapshot", compound_id, chunk_size, compression);
+        if (packet_file_id < 0)
+        {
+            printf("Error: could not initialize h5 packet file %s.\n", dump_loc_filename);
+            return 2;
+        }
+        
+        char *data_storage = malloc(N * line_size);
 
         for (i = 0; i < N; i++)
         {
+            char *data = data_storage + i * line_size;
+
+            // Copy link id
+            memcpy(data, &sys[i].ID, sizeof(unsigned int));
+            data += sizeof(unsigned int);
+
+            // Copy states
             assert(sys[i].dim >= dim);
             if (assignments[i] != 0)
-                MPI_Recv(&data[i * dim], sys[i].dim, MPI_DOUBLE, assignments[i], i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(data, sys[i].dim, MPI_DOUBLE, assignments[i], i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             else
-                memcpy(&data[i * dim], sys[i].list->tail->y_approx.ve, sys[i].dim * sizeof(double));
-
-            index[i] = sys[i].ID;
+                memcpy(data, sys[i].list->tail->y_approx.ve, sys[i].dim * sizeof(double));
         }
-        hsize_t index_dims[1];
-        index_dims[0] = N;
-        H5LTmake_dataset_int(file_id, "/index", 1, index_dims, index);
 
-        hsize_t data_dims[2];
-        data_dims[0] = N;
-        data_dims[1] = dim;
-        H5LTmake_dataset_double(file_id, "/state", 2, data_dims, data);
+        // Append to the packet table
+        herr_t ret = H5PTappend(packet_file_id, N, data_storage);
 
         //Clean up
+        H5PTclose(packet_file_id);
         H5Fclose(file_id);
+        H5Tclose(compound_id);
     }
     else			//Sending data to proc 0
     {

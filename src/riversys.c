@@ -1400,12 +1400,19 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
             return 1;
         }
 
-        hsize_t dims[2];
-        H5LTget_dataset_info(file_id, "/state", dims, NULL, NULL);
-
-        if (dims[0] != N)
+        hid_t packet_file_id = H5PTopen(file_id, "/snapshot");
+        if (packet_file_id < 0)
         {
-            printf("Error: the number of links in %s differs from the number in the topology data. (Got %llu, expected %u)\n", globals->init_filename, dims[1], N);
+            printf("Error: could not initialize h5 packet file %s.\n", globals->init_filename);
+            return 2;
+        }
+
+        hsize_t num_packets;
+        H5PTget_num_packets(packet_file_id, &num_packets);
+
+        if (num_packets != N)
+        {
+            printf("Error: the number of links in %s differs from the number in the topology data. (Got %llu, expected %u)\n", globals->init_filename, num_packets, N);
             return 1;
         }
 
@@ -1423,19 +1430,26 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
         }
 
         //Broadcast the initial time
-        MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        //MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        int *index = malloc(dims[0] * sizeof(unsigned int));
-        double *data = malloc(dims[0] * dims[1] * sizeof(double));
+        //int *index = malloc(dims[0] * sizeof(unsigned int));
+        //double *data = malloc(dims[0] * dims[1] * sizeof(double));
 
-        H5LTread_dataset_int(file_id, "/index", index);
-        H5LTread_dataset_double(file_id, "/state", data);
+        //H5LTread_dataset_int(file_id, "/index", index);
+        //H5LTread_dataset_double(file_id, "/state", data);
+
+        size_t line_size = sizeof(unsigned int) + dim * sizeof(double);
+        char *buffer = malloc(line_size);
+
+        VEC y_0 = v_get(dim);
 
         //Read the .h5 file
         for (unsigned int i = 0; i < N; i++)
         {
+            H5PTget_next(packet_file_id, 1, buffer);
+
             //Send current location
-            unsigned int id = index[i];
+            unsigned int id = *((unsigned int *)buffer);
             unsigned int loc = find_link_by_idtoloc(id, id_to_loc, N);
             if (loc > N)
             {
@@ -1456,8 +1470,8 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
                 MPI_Recv(&dim, 1, MPI_UNSIGNED, assignments[loc], 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             //Read init data
-            VEC y_0 = v_get(dim);
-            memcpy(y_0.ve, &data[i * dim], dim * sizeof(double));
+            char *data = buffer + sizeof(unsigned int);
+            memcpy(y_0.ve, data, dim * sizeof(double));
 
             //Send data to assigned proc and getting proc
             if (assignments[loc] == my_rank || getting[loc])
@@ -1474,16 +1488,17 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
             if (!(getting[loc]))
             {
                 unsigned int j;
-                for (j = 0; j < np; j++)	if (who_needs[j] == 2)	break;
+                for (j = 0; j < np; j++)
+                    if (who_needs[j] == 2)
+                        break;
                 if (j < np)
                     MPI_Send(y_0.ve, y_0.dim, MPI_DOUBLE, (int)j, 2, MPI_COMM_WORLD);
             }
-
-            //Clean up
-            v_free(&y_0);
         }
 
         //Clean up
+        v_free(&y_0);
+        H5PTclose(packet_file_id);
         H5Fclose(file_id);
     }
     else
