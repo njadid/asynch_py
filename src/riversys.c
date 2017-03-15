@@ -1432,12 +1432,6 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
         //Broadcast the initial time
         //MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        //int *index = malloc(dims[0] * sizeof(unsigned int));
-        //double *data = malloc(dims[0] * dims[1] * sizeof(double));
-
-        //H5LTread_dataset_int(file_id, "/index", index);
-        //H5LTread_dataset_double(file_id, "/state", data);
-
         size_t line_size = sizeof(unsigned int) + dim * sizeof(double);
         char *buffer = malloc(line_size);
 
@@ -1497,14 +1491,15 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
         }
 
         //Clean up
+        free(buffer);
         v_free(&y_0);
         H5PTclose(packet_file_id);
         H5Fclose(file_id);
     }
     else
     {
-        //Get the initial time
-        MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        ////Get the initial time
+        //MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         for (unsigned int i = 0; i < N; i++)
         {
