@@ -54,7 +54,7 @@ Here is a typical global file taken from the examples folder:
   %DEM Parameters (0 = .prm, 1 = database)
   0 test.prm
 
-  %Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc, 3 = .h5)
+  %Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc, 4 = .h5)
   1 test.uini
 
   %Forcings (0 = none, 1 = .str, 2 = binary, 3 = database, 4 = .ustr,
@@ -134,7 +134,7 @@ Format:
   {begin datetime}
   {end datetime}
 
-The datetime are given in ``YYYY-MM-DD HH:MM`` format using the UTC timezone or in unix_time_ format.
+The begin and end datetimes are given in ``YYYY-MM-DD HH:MM`` format using the UTC timezone or in unix_time_ format.
 
 .. _unix_time: https://en.wikipedia.org/wiki/Unix_time
 
@@ -147,7 +147,7 @@ Format:
 
   {parameter on output filename flag}
 
-This is a boolean value (0 or 1) that indicates whether all output filenames should include the uniform in space and time parameters ``0`` indicates no, 1 indicates yes. This feature can be useful for keeping track of output files from multiple simulations.
+This is a boolean value (``0`` or ``1``) that indicates whether all output filenames should include the uniform in space and time parameters ``0`` indicates no, ``1`` indicates yes. This feature can be useful for keeping track of output files from multiple simulations.
 
 Solver Outputs
 ~~~~~~~~~~~~~~
@@ -306,8 +306,8 @@ Format:
 
 A forcing flag of ``4`` indicates a forcing that is uniform in space. The forcings are given by a uniform storm file (.ustr).
 
-GZipped Binary Files
-^^^^^^^^^^^^^^^^^^^^
+GZipped Binary
+^^^^^^^^^^^^^^
 
 Format:
 
@@ -330,8 +330,8 @@ Format:
 
 A forcing flag of ``7`` indicates a uniform in space forcing that recurs monthly. When the end of the calendar year is reached, the monthly forcing file (.mon) is read again from the beginning The beginning unix time is used to determine the month the simulation begins (for this forcing). If the total simulation time takes the simulation past the ending unix time, the forcing is assumed to be ``0.0`` for all locations and times beyond the ending unix time
 
-Grid Cell Files
-^^^^^^^^^^^^^^^
+Grid Cell
+^^^^^^^^^
 
 Format:
 
@@ -425,22 +425,24 @@ Format:
 
 ::
 
-  {snapshot flag} [.rec / .dbc / .h5 filename]
+  {snapshot flag} [time step of periodical snapshots] [.rec / .dbc / .h5 filename]
 
-This section specifies where snapshot information is produced. A snapshot is a record of every state at every link in the network. Snapshots are produced at the end of simulations. This is useful for beginning a new simulation where an old one ended. A snapshot flag of ``0`` indicates no snapshot is produced. A snapshot flag of ``1`` indicates the snapshot will be produced as a recovery (.rec) file with path and filename specified. A snapshot flag of ``2`` indicates the snapshot will be uploaded to the database specified by the database connectivity (.dbc) file. A snapshot flag of ``3`` indicates the snapshot will be produced as a HDF5 (.h5) file with path and filename specified. A snapshot flag of ``3`` indicates generates periodical snapshots. The first parameter is the interval between two snapshots. The second parameter is the output filename pattern. The timestamp given in the filename (10 digits) is used as the start timestamp and is incremented with the interval duration for every snapshots so that
+This section specifies where snapshot information is produced. A snapshot is a record of *every state* at *every link* in the network. Snapshots can be produced at the end of simulations or periodically. This is useful for beginning a new simulation where an old one ended. A snapshot flag of ``0`` indicates no snapshot is produced. A snapshot flag of ``1`` indicates the snapshot will be produced as a recovery (.rec) file with path and filename specified. A snapshot flag of ``2`` indicates the snapshot will be uploaded to the database specified by the database connectivity (.dbc) file.
+
+A snapshot flag of ``3`` indicates the snapshot will be produced as a HDF5 (.h5) file with path and filename specified. A snapshot flag of ``4`` generates periodical snapshots in which case an addition parameter gives the interval between two snapshots and the second parameter is the output basename. For example:
 
 ::
 
   %Snapshot information (0 = none, 1 = .rec, 2 = .dbc, 3 = .h5, 4 = periodical .h5)
-  4 60 filename_1480000000.h5
+  4 60 filename.h5
 
 generates
 
 ::
 
   filename_1480000000.h5
-  filename_1480000060.h5
-  filename_1480000120.h5
+  filename_1480003600.h5
+  filename_1480007200.h5
   ...
 
 Scratch Work Location
@@ -484,7 +486,7 @@ This section specifies error tolerances for the numerical integrators. A solver 
 Database Connection Files
 -------------------------
 
-Database connection files are ASCII text files with a .dbc extension which specify how to connect to a database, and the queries to pull/push data from/to the database. Although the format of database connection files is the same, the specific requirements of the queries varies with how the file is used For instance, queries for pulling link connectivity information is very different from queries for uploading peakflows to a database table.
+Database connection files are ASCII text files with a .dbc extension which specify how to connect to a database, and the queries to pull/push data from/to the database. Although the format of database connection files is the same, the specific requirements of the queries varies with how the file is used. For instance, queries for pulling link connectivity information is very different from queries for uploading peakflows to a database table.
 
 Format:
 
@@ -496,16 +498,19 @@ Format:
   [query 2]
   ...
 
-The first line of every database connection file specifies the information needed to make a connection. A user must have permission to read or write from the database at the given host; otherwise, queries sent to the database will fail The number of queries will vary depending upon how the database connection file is used. The appropriate number of queries and what they should return is documented in the remainder of :ref:`Input/Output Formats`. The number of queries may be zero.
+The first line of every database connection file specifies the information needed to make a connection. A user must have permission to read or write from the database at the given host; otherwise, queries sent to the database will fail. The number of queries will vary depending upon how the database connection file is used. The appropriate number of queries and what they should return is documented in the remainder of :ref:`Input/Output Formats`. The number of queries may be zero.
 
-Any queries listed *MUST* be ended with a semicolon (;). For some queries, further information outside the database connection file may be available, depending upon how the query is to be used. This additional information is explained in the appropriate section below for input formats. Such information includes link ids and unix times. To denote in a query where this information should be placed, use the symbol "%u" for integers and "%s" for names.
+Any queries listed **MUST** be ended with a semicolon (;). For some queries, further information outside the database connection file may be available, depending upon how the query is to be used. This additional information is explained in the appropriate section below for input formats. Such information includes link ids and unix times. To denote in a query where this information should be placed, use the symbol ``"%u"`` for integers and ``"%s"`` for names.
 
 Link Connectivity Input
 -----------------------
 
-Link connectivity information is used to specify how links in a network are connected Connectivity can be provided through either a river network file (.rvr) file or through a database table. When a river network file is used, every link in the file is used (i.e. no subnetworks) then pulling connectivity data from a database, a subset of the network can be used.
+Link connectivity information is used to specify how links in a network are connected. Topology can be provided through either a river network file (.rvr) file or through a database table. When a river network file is used, every link in the file is used (i.e. no subnetworks) then pulling connectivity data from a database, a subset of the network can be used.
 
 Regardless of the format, all link ids must be given in the same order in the link connectivity, link parameter, and initial state inputs.
+
+Rvr Files
+~~~~~~~~~
 
 River network files are ASCII text files with the following format:
 
@@ -519,17 +524,25 @@ River network files are ASCII text files with the following format:
 
 White space can be used freely throughout the file. The layout in the above specification is purely optional; the order of the information is what is important. The file begins with the total number of links in the file. Then each link id is specified, followed by the number of parents for the link and each of their ids. A link id can appear in a list of parent link ids at most once. If a link does not have parents, it must still appear in this file with a ``0`` for the number of parents.
 
+Topology Database Queries
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 If the connectivity is pulled from a database, a corresponding database connection file is used This file requires three queries:
 
--  Query to pull all link ids from a table
--  Inputs: none
--  Returned tuples: (link id)
--  Query to pull all link id, parent link id pairs
--  Inputs: none
--  Returned tuples: (link id, parent link id)
--  Query to pull all link id, parent link id pairs upstream from a given outlet link id
--  Inputs: outlet link id
--  Returned tuples: (link id, parent link id)
+1. Query to pull all link ids from a table
+
+  -  Inputs: none
+  -  Returned tuples: (link id)
+
+2. Query to pull all link id, parent link id pairs
+
+  -  Inputs: none
+  -  Returned tuples: (link id, parent link id)
+
+3. Query to pull all link id, parent link id pairs upstream from a given outlet link id
+
+  -  Inputs: outlet link id
+  -  Returned tuples: (link id, parent link id)
 
 The last two queries must return a tuple for each link id for each parent link. So a link with two parents should appear twice in the returned tuples, once for each parent link. The returned tuples must be grouped by the link id so all parent information appears consecutively.
 
@@ -540,6 +553,9 @@ Link parameter input specifies the parameters for the model that vary link to li
 
 Regardless of the format, all link ids must be given in the same order in the link connectivity, link parameter, and initial state inputs.
 
+Prm File
+~~~~~~~~
+
 A parameter file is an ASCII text file with the following format:
 
 ::
@@ -549,6 +565,9 @@ A parameter file is an ASCII text file with the following format:
   {link id 2} {parameter 1} {parameter 2} {parameter 3}
 
 White space can be used freely throughout the file. The layout in the above specification is purely optional; the order of the information is what is important. The file begins with the total number of links. Then each link id is specified, followed by the parameters for that link.
+
+Param Database Queries
+~~~~~~~~~~~~~~~~~~~~~~
 
 If the parameters are pulled from a database, a corresponding database connection file is used This file requires two queries:
 
@@ -567,6 +586,9 @@ Initial Values Input
 
 The link initial values input specifies the initial values for the states of the differential and algebraic model equations This information can be provided in several different formats: an initial value file (.ini), a uniform initial value file (.uini), a recovery file (.rec), and through a database table.
 
+Ini Files
+~~~~~~~~~
+
 An initial value file is an ASCII text file that lists the initial values for each link. The format is:
 
 ::
@@ -581,6 +603,9 @@ An initial value file is an ASCII text file that lists the initial values for ea
 
 The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial states must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors See :ref:`SetParamSizes`.
 
+Uini Files
+~~~~~~~~~~
+
 A uniform initial value file is similar to an initial value file, but the initial values, when required, are the same at every link The format is given by:
 
 ::
@@ -590,6 +615,9 @@ A uniform initial value file is similar to an initial value file, but the initia
   {initial value 1} {initial value 2}
 
 The model type is the number of the model to be used. This determines how many initial values are expected for the model. Initial values must be provided only for those states determined by differential equations, and only for those which require an initial condition. These are the states with index between ``diff_start`` and ``no_ini_start`` in the state vectors. See :ref:`SetParamSizes`. Notice that unlike an initial value file, no link ids are given, and only one set of initial values are given.
+
+Rec Files
+~~~~~~~~~
 
 A recovery file is an ASCII text file that lists the initial values for each link. The format is:
 
@@ -603,7 +631,12 @@ A recovery file is an ASCII text file that lists the initial values for each lin
   {link id 2}
   {initial value 1} {initial value 2}
 
-The format is identical to that of an initial value file, with one important exception The initial value of EVERY state must be provided at each link For models with ``diff_start`` set to 0and ``no_ini_start`` set to dim, a recovery file is identical to an initial value file See :ref:`SetParamSizes` Warning: For the initial values of algebraic equations, no checks on the input data are performed to ensure the solution is consistent.
+The format is identical to that of an initial value file, with one important exception The initial value of EVERY state must be provided at each link. For models with ``diff_start`` set to 0 and ``no_ini_start`` set to dim, a recovery file is identical to an initial value file. See :ref:`SetParamSizes`.
+
+.. warning:: For the initial values of algebraic equations, no checks on the input data are performed to ensure the solution is consistent.
+
+Ini Database Queries
+~~~~~~~~~~~~~~~~~~~~
 
 If the initial values are pulled from a database, a corresponding database connection file is used. This file requires one query:
 
@@ -613,6 +646,73 @@ If the initial values are pulled from a database, a corresponding database conne
   -  Returned tuples: (link id, initial value 1, initial value 2, )
 
 The query allows for one input to be used to obtain the needed information. This value could be, for example, an outlet link id or a unix time. Similar to recovery files, initial values must be provided for every link.
+
+Ini HDF5 Files
+~~~~~~~~~~~~~~
+
+H5 Ini files are H5 that contains a single resizable Packet Tables or PyTable `snapshot`. Two HDF5 tools can be used to get the structure of the snapshots, ``l5hs`` and ``h5dump``:
+
+.. code-block:: sh
+
+  >h5ls -v test_1483228800.h5
+  snapshot                 Dataset {11/Inf}
+      Location:  1:1024
+      Links:     1
+      Chunks:    {512} 14336 bytes
+      Storage:   308 logical bytes, 80 allocated bytes, 385.00% utilization
+      Filter-0:  deflate-1 OPT {5}
+      Type:      struct {
+                     "link_id"          +0    native unsigned int
+                     "state_0"          +4    native double
+                     "state_1"          +12   native double
+                     "state_2"          +20   native double
+                 } 28 bytes
+
+.. code-block:: sh
+
+  >h5dump -H test_1483228800.h5
+  HDF5 "test_1483228800.h5" {
+  GROUP "/" {
+     ATTRIBUTE "model" {
+        DATATYPE  H5T_STD_U16LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "unix_time" {
+        DATATYPE  H5T_STD_U32LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "version" {
+        DATATYPE  H5T_STRING {
+           STRSIZE 4;
+           STRPAD H5T_STR_NULLTERM;
+           CSET H5T_CSET_ASCII;
+           CTYPE H5T_C_S1;
+        }
+        DATASPACE  SCALAR
+     }
+     DATASET "snapshot" {
+        DATATYPE  H5T_COMPOUND {
+           H5T_STD_U32LE "link_id";
+           H5T_IEEE_F64LE "state_0";
+           H5T_IEEE_F64LE "state_1";
+           H5T_IEEE_F64LE "state_2";
+        }
+        DATASPACE  SIMPLE { ( 11 ) / ( H5S_UNLIMITED ) }
+     }
+  }
+  }
+
+Three global attributes are available :
+
++------------+--------------------------------------------------+
+| Name       | Description                                      |
++============+==================================================+
+| version    | The version of ASYNCH used to generate this file |
++------------+--------------------------------------------------+
+| model      | The model id used to generate this file          |
++------------+--------------------------------------------------+
+| issue_time | The unix time at the beginning of the time serie |
++------------+--------------------------------------------------+
 
 Forcing Inputs
 --------------
@@ -747,7 +847,12 @@ The last query is used to find an actual valid timestamp in the database table. 
 Dam Parameters Input
 --------------------
 
-Two formats currently exist for setting parameters at links with dams: dam parameter files (.dam) and discharge vs storage files (.qvs). The format of dam parameter files is similar to that of parameter files:
+Two formats currently exist for setting parameters at links with dams: dam parameter files (.dam) and discharge vs storage files (.qvs).
+
+Dam Files
+~~~~~~~~~
+
+The format of dam parameter files is similar to that of parameter files:
 
 ::
 
@@ -759,6 +864,9 @@ Two formats currently exist for setting parameters at links with dams: dam param
   ...
 
 The number of parameters needed for each link is model dependent and determined by the value dam params size. See :ref:`SetParamSizes`. For dam parameter files, only the links with dams must be listed here. Only links with id appearing in this file will have dams.
+
+QVS Files
+~~~~~~~~~
 
 Discharge vs storage files take a series of discharge values and a corresponding series of storage values to decide the relationship between two states. The format of these files is similar to storm files (see :ref:`Forcing Inputs`):
 
@@ -781,6 +889,9 @@ Time Series Output
 
 Three formats are supported for outputting time series calculations: data files (.dat), comma-separated values (.csv), and a database table. The particular time series calculated is set in the global file (see :ref:`Time Series Location`). The structure of each format is considerably different.
 
+Data Files
+~~~~~~~~~~
+
 Data files are in ASCII text format. These files are designed to be generic and flexible so as to be easily read by whatever data analysis program the user prefers. Data files are created with the format:
 
 ::
@@ -798,6 +909,9 @@ Data files are in ASCII text format. These files are designed to be generic and 
 
 The series for the links appear in a column The number of points can vary from link to link, depending upon the user's selection in the global file The number of output values determines how many values appear in each line of the time series.
 
+CSV Files
+~~~~~~~~~
+
 A CSV file is a typical format to make data easy to read in spreadsheet software. The structure of CSV files is:
 
 ::
@@ -810,6 +924,9 @@ A CSV file is a typical format to make data easy to read in spreadsheet software
 
 The series for the links appear in a row. Under link id 1, each requested series appears, followed by the series for link id 2, and so on.
 
+Out Database Queries
+~~~~~~~~~~~~~~~~~~~~
+
 A database connection file can be used to upload results into a database table This file requires only one query:
 
 1. Query to create a table for uploading data
@@ -819,10 +936,84 @@ A database connection file can be used to upload results into a database table T
 
 The query should create the table where the series information is to be stored ASYNCH does NOT remove any existing data from the table, or check if the table exists already.
 
+.. _out-hdf5-files:
+
+Out HDF5 Files
+~~~~~~~~~~~~~~
+
+H5 outputs files are the prefered output format as it is both compact and efficient. There are also easy to read with third party software, see :ref:`Reading the HDF5 outputs with Python` for example.
+
+H5 Output files are H5 that contains a single resizable Packet Tables or PyTable `outputs`. Two HDF5 tools can be used to get the strucutre of the outputs, ``l5hs`` and ``h5dump``:
+
+.. code-block:: sh
+
+  > l5hs -v outputs.h5
+  Opened "outputs.h5" with sec2 driver.
+  outputs                  Dataset {578/Inf}
+      Location:  1:1024
+      Links:     1
+      Chunks:    {512} 8192 bytes
+      Storage:   9248 logical bytes, 3455 allocated bytes, 267.67% utilization
+      Filter-0:  deflate-1 OPT {5}
+      Type:      struct {
+                     "Time"             +0    native double
+                     "LinkID"           +8    native int
+                     "State0"           +12   native float
+                 } 16 bytes
+
+.. code-block:: sh
+
+  >h5dump -H  outputs.h5
+  HDF5 "outputs.h5" {
+  GROUP "/" {
+     ATTRIBUTE "issue_time" {
+        DATATYPE  H5T_STD_U32LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "model" {
+        DATATYPE  H5T_STD_U16LE
+        DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
+     }
+     ATTRIBUTE "version" {
+        DATATYPE  H5T_STRING {
+           STRSIZE 4;
+           STRPAD H5T_STR_NULLTERM;
+           CSET H5T_CSET_ASCII;
+           CTYPE H5T_C_S1;
+        }
+        DATASPACE  SCALAR
+     }
+     DATASET "outputs" {
+        DATATYPE  H5T_COMPOUND {
+           H5T_IEEE_F64LE "Time";
+           H5T_STD_I32LE "LinkID";
+           H5T_IEEE_F32LE "State0";
+        }
+        DATASPACE  SIMPLE { ( 578 ) / ( H5S_UNLIMITED ) }
+     }
+  }
+  }
+
+Three global attributes are available :
+
++------------+--------------------------------------------------+
+| Name       | Description                                      |
++============+==================================================+
+| version    | The version of ASYNCH used to generate this file |
++------------+--------------------------------------------------+
+| model      | The model id used to generate this file          |
++------------+--------------------------------------------------+
+| issue_time | The unix time at the beginning of the time serie |
++------------+--------------------------------------------------+
+
+
 Peakflow Output
 ---------------
 
 Peakflow outputs can be created in two formats: peakflow files (.pea) and database tables.
+
+PEA Files
+~~~~~~~~~
 
 Peakflow files created with the "Classic" peakflow function take the structure:
 
@@ -836,7 +1027,10 @@ Peakflow files created with the "Classic" peakflow function take the structure:
 
 The time to peak is measured since the beginning of the simulation. The peakflow value for each link is the maximum value achieved over the simulation for the state with index ``0`` in the state vector. The area given is the parameter from the link parameters with index area idx. See :ref:`SetParamSizes`.
 
-Peakfow output may be written to a database table if a database connection file is specified. One query is required, and one additional query is optional:
+Peakflow Database Queries
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Peakflow output may be written to a database table if a database connection file is specified. One query is required, and one additional query is optional:
 
 1. Query to create a table for uploading data
 
@@ -855,6 +1049,9 @@ Link IDs for Time Series and Peakflows
 
 Link ids must be specified for time series output and peakflow outputs. This can be done in one of two formats: save files (.sav) and database tables. Each of these formats is effectively just a list of link ids.
 
+SAV Files
+~~~~~~~~~
+
 The structure of save files is:
 
 ::
@@ -866,6 +1063,9 @@ The structure of save files is:
 
 If a link id is specified in a save file, but is not present in the network, a warning will be issued, and the link id is ignored.
 
+Save Database Queries
+~~~~~~~~~~~~~~~~~~~~~
+
 For pulling links from a database table, only one query is required:
 
 1.  Query to pull link ids
@@ -876,7 +1076,7 @@ For pulling links from a database table, only one query is required:
 Snapshot Output
 ---------------
 
-Snapshot outputs can take two formats: recovery files and database tables. The format for recovery files is covered in :ref:`Initial Values Input` as an input.
+Snapshot outputs can take multiple formats: files and database tables. The format for recovery and hdf5 files is covered in :ref:`Initial Values Input` as an input.
 
 For using a database table, a database connection file is specified. The database connection file has three optional queries:
 
@@ -920,7 +1120,7 @@ Runge-Kutta Data files (.rkd) allow information about the underlying numerical m
   {RK Index for link id 2}
   ...
 
-An error tolerance is specified for every state at every link. The order of the links must match with the order given by the topology input, and number of states must agree with what the model expects
+An error tolerance is specified for every state at every link. The order of the links must match with the order given by the topology input, and number of states must agree with what the model expects.
 
 Temporary Files
 ---------------

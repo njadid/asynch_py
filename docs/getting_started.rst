@@ -3,9 +3,9 @@ Getting started
 
 In this section, we will give the steps and data needed for running basic simulations. This section is intended for getting a new user up and running quickly, and to provide links in this documentation for more information when needed.
 
-First, be sure to follow the steps in Section :ref:`Installation` for installing the ASYNCH solvers.
+If you are not using the `UoI HPC infrastructures <https://hpc.uiowa.edu/>`_, be sure to follow the steps in Section :ref:`Installation` for installing the ASYNCH solvers.
 
-.. tip:: For Iowa HPC Argon users.
+.. tip:: For Argon users.
     For those using Iowa HPC resources, downloading and compiling the source code is not necessary. But to be able to use the prebuilt executables, setting up your environment is necessary. The prefered way is to edit your ``~/.bash_profile``:
 
     .. code-block:: sh
@@ -21,7 +21,7 @@ First, be sure to follow the steps in Section :ref:`Installation` for installing
         module load hdf5/1.8.18_parallel_studio-2017.1
         module load openmpi/2.0.1_parallel_studio-2017.1
 
-.. tip:: For Iowa HPC Neon users.
+.. tip:: For Neon users.
     For those using Iowa HPC resources, downloading and compiling the source code is not necessary. But to be able to use the prebuilt executables, setting up your environment is necessary. The prefered way is to edit your ``~/.bash_profile``:
 
     .. code-block:: sh
@@ -33,9 +33,6 @@ First, be sure to follow the steps in Section :ref:`Installation` for installing
         # Load module OpenMPI and HDF5
         module load openmpi/intel-composer_xe_2015.3.187-1.8.8
         module load hdf5/1.8.17
-
-.. note:: For Iowa HPC users.
-  The user should not assume that the same versions are deployed on both clusters.
 
 The ASYNCH directory contains a folder called ``examples``, which contains several data files for starting sample simulations, as well as sample outputs for comparision. The ``examples`` directory should be copied to a location where the user has write access (for example, the home directory). On Neon or Argon, this can be done with
 
