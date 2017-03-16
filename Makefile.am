@@ -1,2 +1,4 @@
 SUBDIRS = src forecasters tests tools
 ACLOCAL_AMFLAGS = -I m4
+
+dist_doc_DATA = LICENSE README.md
