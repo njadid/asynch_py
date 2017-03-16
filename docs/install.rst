@@ -1,9 +1,7 @@
-.. _install:
-
 Installation
 ============
 
-This section provides a quick guide for compiling and running ASYNCH on a Unix based system, including Iowa's local HPC clusters Helium and Neon ASYNCH will not work as-is in a Windows environment.
+This section provides a quick guide for compiling and running ASYNCH on a Unix based system, including Iowa's local HPC clusters. Windows users can use the Visual Studio project in the ``ide\msvc`` folder.
 
 Requirements
 ------------
@@ -20,45 +18,48 @@ A brief description of each is provided below.
 C Compiler
 ~~~~~~~~~~
 
-ASYNCH has been successfully used and tested with the `GNU C compiler <https://gcc.gnu.org/>`__ gcc (version 4.1.2 and later). ASYNCH is compiled using the gnu99 standard. Using another compiler (such as Intel's compilers) is an option, but some minor tweaks to the compile standard and/or included libraries may be required.
+ASYNCH is written in ANSI C89 standard. ASYNCH has been successfully compiled and tested with the `GNU C compiler <https://gcc.gnu.org/>`__ gcc (version 4.6 and later), Microsoft Visual Studio 2015 and Intel C++ compiler. Using Intel's compiler is recommanded if available.
 
 GNU Make
 ~~~~~~~~
 
-`GNU Make <http://www.gnu.org/software/make/>`__ is a utility for directing the generation of binaries from source code. Make is available in most Linux repositories.
+`GNU Make <http://www.gnu.org/software/make/>`__ is a utility for directing the generation of binaries from source code. ``make`` is available in most Linux distro.
 
 MPI Implementation
 ~~~~~~~~~~~~~~~~~~
 
-The Message Passing Interface (MPI) is a standard for transferring data on parallel computers ASYNCH uses MPI for communication between processes to perform calculations in parallel ASYNCH has been successfully used and tested with `OpenMPI <http://www.open-mpi.org/>`__.
+The Message Passing Interface (MPI) is a standard for transferring data on parallel computers ASYNCH uses MPI for communication between processes to perform calculations in parallel ASYNCH has been successfully used and tested with ``OpenMPI``.
 
-From the OpenMPI webpage:
+From the `OpenMPI webpage <http://www.open-mpi.org/>`__ :
 
-The Open MPI Project is an open source Message Passing Interface implementation that is developed and maintained by a consortium of academic, research, and industry partners. OpenMPI is available on Iowa's HPC clusters In theory, ASYNCH should work properly with any other implementation adhering to the MPI standard.
+  The Open MPI Project is an open source Message Passing Interface implementation that is developed and maintained by a consortium of academic, research, and industry partners. OpenMPI is available on Iowa's HPC clusters In theory, ASYNCH should work properly with any other implementation adhering to the MPI standard.
 
 If installing an MPI implementation on a machine for ASYNCH, be sure to install the development packages of the MPI implementation In Linux repositories,these packages are usually denoted with a ``-dev`` or similar in the package name. If in doubt, try typing "mpirun" and "mpicc" in a terminal. Both of these should be present to run ASYNCH. If mpirun is not present, you have not installed the MPI binaries (meaning you probably haven't tried installing MPI at all). If mpicc is not present, then you are missing the development package.
-
-PostgreSQL Library
-~~~~~~~~~~~~~~~~~~
-
-``libpq`` is a library for communicating with a PostgreSQL database, created by the makers of PostgreSQL. The libpq website is http://www.postgresql.org/does/9.1/statie/libpq.html
-
-From the ``libpq`` webpage:
-
-libpq is the C application programmer's interface to PostgreSQL libpq is a set of library functions that allow client programs to pass queries to the PostgreSQL back-end server and to receive the results of these queries libpq MUST be installed to compile ASYNCH, even if the database features are not needed libpq is available on Iowa's HPC clusters
-
-If installing libpq on a machine for ASYNCH, be sure to install the development packages In Linux repositories, these packages are usually denoted by a "-dev" or similar in the package name
 
 HDF5 Library
 ~~~~~~~~~~~~
 
 ``HDF5`` is a format and library widely used for storing binary scientific data in an efficient and portable way.
 
-From ``HDF5`` webpage:
+From the `HDF5 webpage <https://support.hdfgroup.org/HDF5/>`__ :
 
-HDF5 is a data model, library, and file format for storing and managing data. It supports an unlimited variety of datatypes, and is designed for flexible and efficient I/O and for high volume and complex data. HDF5 is portable and is extensible, allowing applications to evolve in their use of HDF5. The HDF5 Technology suite includes tools and applications for managing, manipulating, viewing, and analyzing data in the HDF5 format.
+  HDF5 is a data model, library, and file format for storing and managing data. It supports an unlimited variety of datatypes, and is designed for filexible and efficient I/O and for high volume and complex data. HDF5 is portable and is extensible, allowing applications to evolve in their use of HDF5. The HDF5 Technology suite includes tools and applications for managing, manipulating, viewing, and analyzing data in the HDF5 format.
 
 For ASYNCH build, the 1.8.x branch is used.
+
+Optional Libraries
+------------------
+
+PostgreSQL Library
+~~~~~~~~~~~~~~~~~~
+
+``libpq`` is a library for communicating with a PostgreSQL database, created by the makers of PostgreSQL.
+
+From the `libpq webpage <http://www.postgresql.org/does/9.1/statie/libpq.html>`__ :
+
+  libpq is the C application programmer's interface to PostgreSQL. libpq is a set of library functions that allow client programs to pass queries to the PostgreSQL back-end server and to receive the results of these queries.
+
+libpq can be ommitted while running ``./configure`` with ``--without-postgresql``. If you want to use libpq on a machine for ASYNCH, be sure to install the PostgreSQL development packages. In Linux repositories, these packages are usually denoted by a "-dev" or similar in the package name.
 
 Optional Software
 -----------------
@@ -72,57 +73,33 @@ Some additional software is available that may be useful, depending upon what th
 Git
 ~~~
 
-Git is a distributed revision control system Although not needed for running ASYNCH, the source code repository does require Git for access Git is in most Linux repositories GitHub ofers information about usage
+Git is a distributed revision control system. Although not needed for running ASYNCH, the source code repository does require Git for access. Git is in most Linux repositories. GitHub offers `guides about its usage <https://guides.github.com/activities/hello-world/>`__.
 
 dos2unix
 ~~~~~~~~
 
-This is a useful utility if editing input text fles for ASYNCH from a Windows machine Unix and Windows use a slightly diferent format for text documents. Although a fle may look the same under both a Linux and Windows text editor, subtle diferences can still exist In general, editing a text fle from Linux on a Windows machine will convert the fle to the Windows format To change the format to Unix, use the utility dos2unix If a fle is already under Unix format, this utility will not modify the fle Using a text fle in Windows format with ASYNCH will result in errors This process can be slow, depending upon the size of the text fles involved As such, ASYNCH does not automatically check the format of input text fles dox2unix can be found in most Linux repositories
+This is a useful utility if editing input text files for ASYNCH from a Windows machine. Unix and Windows use a slightly different format for text documents. Although a file may look the same under both a Linux and Windows text editor, subtle diferences can still exist. In general, editing a text file from Linux on a Windows machine will convert the file to the Windows format. To change the format to Unix, use the utility dos2unix. If a file is already under Unix format, this utility will not modify the file Using a text file in Windows format with ASYNCH will result in errors. This process can be slow, depending upon the size of the text files involved As such, ASYNCH does not automatically check the format of input text files. dox2unix can be found in most Linux repositories.
 
-NoMachine NX
-~~~~~~~~~~~~
+FastX 2
+~~~~~~~
 
-NoMachine NX is a remote descktop that allows users to graphically login to a Linux system from a Windows, Linux, or Mac machine. This can be useful for users wishing to access an Iowa HPC resource, though this is not the only way Information about using and obtaining NoMachine NX for Iowa HPC resources can be found at `Helium Cluster Overview a Quick Start Guide <https://www.iets.uiowa.edu/eonfluenee/display/ICTSit/Helium+Cluster+Overview+and+Quiek+Start+Guide>`__.
+FastX is a program for connecting to the HPC systems with a GUI desktop environment. It is similar to No Machine connections but is newer and a little more robust when using Duo 2 factor authentication. This can be useful for users wishing to access an Iowa HPC resource, though this is not the only way. Information about using and obtaining FastX for Iowa HPC resources can be found at `FastX connections <https://wiki.uiowa.edu/display/hpcdocs/FastX+connections#FastXconnections-fastx2>`__.
 
 Source Code, Compiling, and Running ASYNCH
 ------------------------------------------
 
-Note: Users of Iowa's HPC resources should NOT need to download and compile source code on Helium and Neon.
-
-The ASYNCH source code is available in a repository hosted by GitHub Downloading the code from the repository requires the use of Git See Section 2 2 1 The source code can also be downloaded directly from GitHub as a zip file.
-
-Once the source code is downloaded (and extracted from the zip fle, if needed), go to the directory where you downloaded the ASYNCH source code The ASYNCH library can be compiled with make ASYNCHLIB will create the library libs/libasynch.so in the ASYNCH directory, which contains the C interface routines. Using the command make ASYNCHLIB PY will compile the source code and create the library libs/libasynch py.so in the ASYNCH directory, which contains the Python interface routines See Section 9 2 for a list and description of these routines. Typing "make ASYNCH" will compile the basic simulation program If using your own computer, modifcations to the makefile may be necessary depending upon the location and names of the programs and libraries installed from Section 2 1.
+The ASYNCH source code is available in a repository hosted by GitHub. Downloading on of the release version the code from the repository requires the use of Git See `Git`_. The source code can also be downloaded directly from GitHub as a zip file.
 
 If the source code is ever updated, you may want to run ``make clean`` before recompiling. This removes all binaries and object files of the old version. Once compiled, ASYNCH can be run with the command:
 
 .. code-block:: sh
 
-  mpirun -np <number of processes> <path>/asynch < gbl flename>
-
-Iowa HPC Clusters
------------------
-
-Currently, the University of Iowa has two HPC clusters available: Neon and Argon. ASYNCH is already compiled on these clusters and is available to anyone with access to IFC shared resources. All required software should be available. The build system included with the source code should work without modification on these clusters.
-
-However, these clusters do use third party software through modules. The module for OpenMPI and HDF5 must be loaded once per login session to run ASYNCH. On Neon, use the command:
-
-.. code-block:: sh
-
-  module load openmpi/intel-composer_xe_2015.3.187-1.8.8
-  module load hdf5/1.8.17
-
-These load OpenMPI version 1.8.8 for use with the Intel compiler as well as the HDF5 library. Instead of loading these modules manually, the commands can be added to the end of the file ``.bash_profile`` in the user's home directory. Note that Helium and Neon each have a separate ``.bash_profile`` file. In addition, if using the Python interface functions on Helium, the appropriate Python module must be loaded. This can be done with a call to
-
-.. code-block:: sh
-
-  module load python27
-
-This can also be added to the ``.bash_profile`` file to automate the loading process.
-
-Binaries for ASYNCH are located in ``/Dedicated/IFC/.neon/bin`` on Neon and in ``/Dedicated/IFC/.argon/bin`` on Argon. Libraries for using ASYNCH with custom designed software are located in the directory ``/Dedicated/IFC/.<cluster>/lib``.
+  mpirun -np <number of processes> <path>/asynch < gbl filename>
 
 Updating the package
---------------------
+~~~~~~~~~~~~~~~~~~~~
+
+This operation is only necessary if you cloned the git repository. If you are using a release source tarball, you can skip to the next step.
 
 .. code-block:: sh
 
@@ -130,7 +107,7 @@ Updating the package
   make dist
 
 Installing the package
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 These are the generic instruction for an out of source build (prefered method):
 
@@ -144,28 +121,56 @@ These are the generic instruction for an out of source build (prefered method):
 
 .. note:: Newer version of gcc requires to add ``-Wno-format-security`` so the configure script should be invoked with ``../configure CFLAGS="-DNDEBUG -Wno-format-security"``.
 
-Installing the package on NEON
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Iowa HPC Clusters
+-----------------
 
-First, ``git clone`` the repository or extract ``tar xzf`` a release packages. To install the software for the IFC group, load the following modules:
+Currently, the executable used on Neon and Argon ar maintained by yours truly. Users of Iowa's HPC resources should NOT need to download and compile source code on Neon and Argon. Binaries for ASYNCH are located in ``/Dedicated/IFC/.neon/bin`` on Neon and in ``/Dedicated/IFC/.argon/bin`` on Argon. Libraries for linking `libasynch` with your own software are located in the directory ``/Dedicated/IFC/.<cluster>/lib``. As of the compilation of derived work, all required software should be available. The build system included with the source code should work without modification on these clusters.
+
+Setting up the environment on ARGON
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These clusters do use third party software through modules. The module for OpenMPI and HDF5 must be loaded once per login session to run ASYNCH. Refers to the :ref:`Getting Started` section for more information. For Argon:
 
 .. code-block:: sh
 
-  module load openmpi/intel-composer_xe_2015.3.187-1.8.8
-  module load hdf5/1.8.17
+    # User specific environment and startup programs for Argon
+
+    export PATH=$PATH:$HOME/.local/bin:/Dedicated/IFC/.argon/bin
+
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/Dedicated/IFC/.argon/lib
+
+    # Load module OpenMPI and HDF5
+    module load zlib/1.2.11_parallel_studio-2017.1
+    module load hdf5/1.8.18_parallel_studio-2017.1
+    module load openmpi/2.0.1_parallel_studio-2017.1
+
+These load OpenMPI version 1.8.8 for use with the Intel compiler as well as the HDF5 1.8.18 library. Instead of loading these modules manually, the commands can be added to the end of the file ``.bash_profile`` in the user's home directory. Note that Neon and Argon each have a seperate $HOME hence ``.bash_profile`` file. In addition, if using the Python interface functions on Argon, the appropriate Python module must be loaded. This can be done with a call to:
+
+.. code-block:: sh
+
+  module load python27
+
+This can also be added to the ``.bash_profile`` file to automate the loading process.
+
+Installing the package on ARGON
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, ``git clone`` the repository or ``tar xf`` a release package.
 
 Then run the classic GNU build tool chain:
 
 .. code-block:: sh
 
   mkdir build && cd build
-  ../configure --prefix=/Dedicated/IFC/.neon CFLAGS="-O2 -DNDEBUG" CHECK_CFLAGS=-I/Dedicated/IFC/.local/include CHECK_LIBS=/Dedicated/IFC/.local/lib/libcheck.a
+  ../configure --prefix=/Dedicated/IFC/.argon CFLAGS="-O3 -march=core-avx2 -DNDEBUG" CHECK_CFLAGS=-I/Dedicated/IFC/.local/include CHECK_LIBS=/Dedicated/IFC/.local/lib/libcheck.a
   make
   make check
   make install
 
 Updating the package
 --------------------
+
+Whenever the ``autoconf`` or ``automake`` files are modified, the build system needs to be update:
 
 .. code-block:: sh
 

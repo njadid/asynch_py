@@ -47,7 +47,7 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
     unsigned int **loc_to_children = NULL;
     unsigned int *loc_to_children_array = NULL;
     unsigned int curr_loc;
-
+    
     if (globals->rvr_flag == 0)	//Read topo data from file
     {
         if (my_rank == 0)
@@ -70,7 +70,8 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
             link_ids = (unsigned int*)malloc(*N * sizeof(unsigned int));
             loc_to_children_array = (unsigned int*)calloc(*N*max_children, sizeof(unsigned int));
             loc_to_children = (unsigned int**)malloc(*N * sizeof(unsigned int*));	//This holds the ID of the children
-            for (i = 0; i < *N; i++)	loc_to_children[i] = &(loc_to_children_array[i*max_children]);
+            for (i = 0; i < *N; i++)	
+                loc_to_children[i] = &(loc_to_children_array[i*max_children]);
             num_parents = (unsigned int*)malloc(*N * sizeof(unsigned int));
 
             for (i = 0; i < *N; i++)
@@ -140,7 +141,7 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
                 *N = PQntuples(mainres);
 
                 //Get the list of link ids
-                link_ids = (unsigned int*)malloc(*N * sizeof(unsigned int));
+                link_ids = (unsigned int*) malloc(*N * sizeof(unsigned int));
                 for (i = 0; i < *N; i++)
                     link_ids[i] = atoi(PQgetvalue(mainres, i, 0));
                 PQclear(mainres);
@@ -248,7 +249,7 @@ Link* Create_River_Network(GlobalVars* globals, unsigned int* N, unsigned int***
         }
 
 #else //HAVE_POSTGRESQL
-
+        
         if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 
@@ -562,14 +563,14 @@ int Partition_Network(Link* system, unsigned int N, GlobalVars* GlobalVars, unsi
     unsigned int i, j;
     Link *current, *prev;//**upstream_order = (Link**) malloc(N*sizeof(Link*));
 
-                         /*
-                         //Order the links by upstream area
-                         for(i=0;i<N;i++)
-                         upstream_order[i] = system[i];
-                         merge_sort(upstream_order,N,globals->area_idx);
-                         */
+/*
+    //Order the links by upstream area
+    for(i=0;i<N;i++)
+        upstream_order[i] = system[i];
+    merge_sort(upstream_order,N,globals->area_idx);
+*/
 
-                         //Perform a DFS to sort the leaves
+    //Perform a DFS to sort the leaves
     Link** stack = malloc(N * sizeof(Link*)); //Holds the index in system
     int stack_size = 0;
 
@@ -670,7 +671,7 @@ int Build_RKData(Link* system, char rk_filename[], unsigned int N, unsigned int*
     for (i = 1; i < *nummethods; i++)
     {
         globals->max_localorder = (globals->max_localorder < (*AllMethods)[i]->localorder) ? (*AllMethods)[i]->localorder : globals->max_localorder;
-        globals->max_s = (globals->max_s >(*AllMethods)[i]->s) ? globals->max_s : (*AllMethods)[i]->s;
+        globals->max_s = (globals->max_s > (*AllMethods)[i]->s) ? globals->max_s : (*AllMethods)[i]->s;
         //!!!! Note: Use a +1 for Radau solver? !!!!
     }
 
@@ -1399,14 +1400,24 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
             return 1;
         }
 
-        hsize_t dims[2];
-        H5LTget_dataset_info(file_id, "/state", dims, NULL, NULL);
-
-        if (dims[0] != N)
+        hid_t packet_file_id = H5PTopen(file_id, "/snapshot");
+        if (packet_file_id < 0)
         {
-            printf("Error: the number of links in %s differs from the number in the topology data. (Got %llu, expected %u)\n", globals->init_filename, dims[1], N);
+            printf("Error: could not initialize h5 packet file %s.\n", globals->init_filename);
+            return 2;
+        }
+
+        hsize_t num_packets;
+        H5PTget_num_packets(packet_file_id, &num_packets);
+
+        if (num_packets != N)
+        {
+            printf("Error: the number of links in %s differs from the number in the topology data. (Got %llu, expected %u)\n", globals->init_filename, num_packets, N);
             return 1;
         }
+
+        //Assume that every links have the same dimension
+        unsigned int dim = system[0].dim;
 
         //Read model type, init time
         unsigned short type;
@@ -1419,20 +1430,20 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
         }
 
         //Broadcast the initial time
-        MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        //MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        int *index = malloc(dims[0] * sizeof(unsigned int));
-        double *data = malloc(dims[0] * dims[1] * sizeof(double));
+        size_t line_size = sizeof(unsigned int) + dim * sizeof(double);
+        char *buffer = malloc(line_size);
 
-        herr_t ret;
-        ret = H5LTread_dataset_int(file_id, "/index", index);
-        ret = H5LTread_dataset_double(file_id, "/state", data);
+        VEC y_0 = v_get(dim);
 
         //Read the .h5 file
         for (unsigned int i = 0; i < N; i++)
         {
+            H5PTget_next(packet_file_id, 1, buffer);
+
             //Send current location
-            unsigned int id = index[i];
+            unsigned int id = *((unsigned int *)buffer);
             unsigned int loc = find_link_by_idtoloc(id, id_to_loc, N);
             if (loc > N)
             {
@@ -1453,8 +1464,8 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
                 MPI_Recv(&dim, 1, MPI_UNSIGNED, assignments[loc], 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
             //Read init data
-            VEC y_0 = v_get(dim);
-            memcpy(y_0.ve, &data[i * dims[1]], dims[1] * sizeof(double));
+            char *data = buffer + sizeof(unsigned int);
+            memcpy(y_0.ve, data, dim * sizeof(double));
 
             //Send data to assigned proc and getting proc
             if (assignments[loc] == my_rank || getting[loc])
@@ -1471,22 +1482,24 @@ static int Load_Initial_Conditions_H5(Link* system, unsigned int N, int* assignm
             if (!(getting[loc]))
             {
                 unsigned int j;
-                for (j = 0; j < np; j++)	if (who_needs[j] == 2)	break;
+                for (j = 0; j < np; j++)
+                    if (who_needs[j] == 2)
+                        break;
                 if (j < np)
                     MPI_Send(y_0.ve, y_0.dim, MPI_DOUBLE, (int)j, 2, MPI_COMM_WORLD);
             }
-
-            //Clean up
-            v_free(&y_0);
         }
 
         //Clean up
+        free(buffer);
+        v_free(&y_0);
+        H5PTclose(packet_file_id);
         H5Fclose(file_id);
     }
     else
     {
-        //Get the initial time
-        MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        ////Get the initial time
+        //MPI_Bcast(&(globals->t_0), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         for (unsigned int i = 0; i < N; i++)
         {
@@ -1560,20 +1573,6 @@ int Load_Initial_Conditions(Link* system, unsigned int N, int* assignments, shor
     default:
         printf("Error: invalid intial condition file type.\n");
         res = -1;
-    }
-
-    //TODO Check intial conditions
-    for (unsigned int i = 0; i < N; i++)
-    {
-        if (system[i].list)
-        {
-            VEC y = system[i].list->head->y_approx;
-            if (y.ve[0] < 0.0 || y.ve[1] < 0.0 || y.ve[2] < 0.0 || y.ve[3] < 0.0)
-            {
-                printf("ERROR: Invalid initial conditions");
-                exit(EXIT_FAILURE);
-            }
-        }
     }
 
     return res;
@@ -2004,7 +2003,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             if (forcings[l].flag == 9)	//Download some extra data if the first_file is not on a timestamp with a forcing
                 forcings[l].next_timestamp = forcings[l].good_timestamp;	//!!!! Could probably do something similar for flag 3 !!!!
 
-                                                                            //Allocate space
+            //Allocate space
             for (i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
@@ -2201,7 +2200,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
         forcings[globals->res_forcing_idx].GetNextForcing(system, N, my_sys, my_N, assignments, globals, &forcings[globals->res_forcing_idx], db_connections, id_to_loc, globals->res_forcing_idx);
         forcings[globals->res_forcing_idx].iteration = start_iteration;	//Keep this the same
 
-                                                                        //Setup init condition at links with forcing
+        //Setup init condition at links with forcing
         Exchange_InitState_At_Forced(system, N, assignments, getting, res_list, res_size, id_to_loc, globals);
     }
 
@@ -2593,8 +2592,8 @@ int Load_Dams(Link* system, unsigned int N, unsigned int* my_sys, unsigned int m
 
 #else //HAVE_POSTGRESQL
 
-        if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+     if (my_rank == 0)	printf("Error: Asynch was build without PostgreSQL support.\n");
+     MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 
 #endif //HAVE_POSTGRESQL
     }
@@ -2681,7 +2680,7 @@ int CalculateInitialStepSizes(Link* system, unsigned int* my_sys, unsigned int m
 //Reads the link ids for saving data.
 //Sets in GlobalVars: save_list, save_size, peaksave_list, peaksave_size.
 //Also sets: my_save_size.
-int BuildSaveLists(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, unsigned int* assignments, unsigned int** id_to_loc, GlobalVars* globals, unsigned int** save_list, unsigned int* save_size, unsigned int* my_save_size, unsigned int** peaksave_list, unsigned int* peaksave_size, unsigned int* my_peaksave_size, ConnData* db_connections)
+int BuildSaveLists(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, int* assignments, unsigned int** id_to_loc, GlobalVars* globals, unsigned int** save_list, unsigned int* save_size, unsigned int* my_save_size, unsigned int** peaksave_list, unsigned int* peaksave_size, unsigned int* my_peaksave_size, ConnData* db_connections)
 {
     unsigned int j, k;
     Link* current;
@@ -2773,7 +2772,7 @@ int BuildSaveLists(Link* system, unsigned int N, unsigned int* my_sys, unsigned 
 }
 
 //Finalizes the system for calculations. Basically, lots of small miscellaneous initializations are made.
-int FinalizeSystem(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, unsigned int* assignments, short int* getting, unsigned int** id_to_loc, TransData* my_data, GlobalVars* globals, ConnData* db_connections, TempStorage** workspace)
+int FinalizeSystem(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, int* assignments, short int* getting, unsigned int** id_to_loc, TransData* my_data, GlobalVars* globals, ConnData* db_connections, TempStorage** workspace)
 {
     unsigned int i, j;
     int ii;
@@ -2893,6 +2892,10 @@ int FinalizeSystem(Link* system, unsigned int N, unsigned int* my_sys, unsigned 
 // *********************************************************************************************
 
 
+#if defined(_MSC_VER)
+#   define timegm _mkgmtime
+#endif
+
 
 //Reads in the data from a .gbl file. All data will be global data for the entire river system.
 //char globalfilename[]: String with the filename of the .gbl file.
@@ -2936,10 +2939,56 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     globals->rain_filename = NULL;
 
-    //Grab the type and maxtime
+    //Grab the model uid
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
-    valsread = sscanf(line_buffer, "%hu %lf", &(globals->type), &(globals->maxtime));
-    if (ReadLineError(valsread, 2, "type and maxtime"))	return NULL;
+    valsread = sscanf(line_buffer, "%hu", &(globals->type));
+    if (ReadLineError(valsread, 1, "model type"))	return NULL;
+
+    //Grab the begin and end time
+    struct tm begin_tm;
+    memset(&begin_tm, 0, sizeof(struct tm));
+    
+    ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
+    valsread = sscanf(line_buffer, "%d-%d-%d %d:%d", &begin_tm.tm_year, &begin_tm.tm_mon, &begin_tm.tm_mday, &begin_tm.tm_hour, &begin_tm.tm_min);
+    if (valsread == 5) 
+    {
+        begin_tm.tm_year = begin_tm.tm_year - 1900;
+        begin_tm.tm_mon = begin_tm.tm_mon - 1;
+        globals->begin_time = timegm(&begin_tm);
+    }
+    else
+    {
+        int begin_time;
+        valsread = sscanf(line_buffer, "%d", &begin_time);
+        if (ReadLineError(valsread, 1, "begin YYYY-MM-DD HH:MM || unix_time"))	return NULL;
+        globals->begin_time = begin_time;
+    }
+        
+    struct tm end_tm;
+    memset(&end_tm, 0, sizeof(struct tm));
+
+    ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
+    valsread = sscanf(line_buffer, "%d-%d-%d %d:%d", &end_tm.tm_year, &end_tm.tm_mon, &end_tm.tm_mday, &end_tm.tm_hour, &end_tm.tm_min);
+    if (valsread == 5)
+    {
+        end_tm.tm_year = end_tm.tm_year - 1900;
+        end_tm.tm_mon = end_tm.tm_mon - 1;
+        globals->end_time = timegm(&end_tm);
+    }
+    else
+    {
+        int end_time;
+        valsread = sscanf(line_buffer, "%d", &end_time);
+        if (ReadLineError(valsread, 1, "end YYYY-MM-DD HH:MM || unix_time"))	return NULL;
+        globals->end_time = end_time;
+    }
+
+    globals->maxtime = (double)(globals->end_time - globals->begin_time) / 60.0;
+    if (globals->maxtime <= 0.0)
+    {
+        printf("Error: Simulation period invalid (begin >= end)\n");
+        return NULL;
+    }
 
     //Grab the output filename info
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
@@ -2948,10 +2997,10 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     //Grab components to print
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
-    valsread = sscanf(line_buffer, "%u", &(globals->num_print));
+    valsread = sscanf(line_buffer, "%u", &(globals->num_outputs));
     if (ReadLineError(valsread, 1, "number of indices to print"))	return NULL;
-    globals->output_names = (char**)malloc(globals->num_print * sizeof(char*));
-    for (i = 0; i < globals->num_print; i++)
+    globals->output_names = (char**)malloc(globals->num_outputs * sizeof(char*));
+    for (i = 0; i < globals->num_outputs; i++)
     {
         globals->output_names[i] = (char*)malloc(ASYNCH_MAX_SYMBOL_LENGTH * sizeof(char));
         ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
@@ -2986,17 +3035,14 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
 
     //Find the states needed for printing
     globals->num_states_for_printing = 0;
-    globals->print_indices = (unsigned int*)calloc(globals->num_print, sizeof(unsigned int));
-    globals->outputs_i = (OutputIntCallback **)calloc(globals->num_print, sizeof(OutputIntCallback*));
-    globals->outputs_d = (OutputDoubleCallback **)calloc(globals->num_print, sizeof(OutputDoubleCallback*));
-    globals->output_types = (enum AsynchTypes*)malloc(globals->num_print * sizeof(enum AsynchTypes));
-    globals->output_sizes = (short int*)malloc(globals->num_print * sizeof(short int));
-    globals->output_specifiers = (char**)malloc(globals->num_print * sizeof(char*));
-    for (i = 0; i < globals->num_print; i++)
-    {
-        globals->output_specifiers[i] = (char*)malloc(16 * sizeof(char));
-        SetOutputFunctions(globals->output_names[i], globals->output_specifiers[i], globals->print_indices, &(globals->num_states_for_printing), &(globals->output_sizes[i]), &(globals->output_types[i]), &(globals->outputs_i[i]), &(globals->outputs_d[i]));
-    }
+    globals->print_indices = calloc(globals->num_outputs, sizeof(unsigned int));
+    globals->outputs = calloc(globals->num_outputs, sizeof(OutputCallback));
+    globals->output_types = malloc(globals->num_outputs * sizeof(enum AsynchTypes));
+    globals->output_sizes = malloc(globals->num_outputs * sizeof(short int));
+    globals->output_specifiers = malloc(globals->num_outputs * sizeof(char*));
+    for (i = 0; i < globals->num_outputs; i++)
+        SetDefaultOutputFunctions(globals->output_names[i], &(globals->output_specifiers[i]), globals->print_indices, &(globals->num_states_for_printing), &(globals->output_sizes[i]), &(globals->output_types[i]), &(globals->outputs[i]));
+
     globals->print_indices = (unsigned int*)realloc(globals->print_indices, globals->num_states_for_printing * sizeof(unsigned int));
 
     //Grab the stored steps limits
@@ -3222,15 +3268,15 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         globals->res_forcing_idx = -1;
     }
 
-    //Grab where to write the hydrographs
+    //Grab where to write the timeseries
     ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
     valsread = sscanf(line_buffer, "%hu", &(globals->hydros_loc_flag));
-    if (ReadLineError(valsread, 1, "hydrographs location"))	return NULL;
+    if (ReadLineError(valsread, 1, "timeseries location"))	return NULL;
 
     globals->hydros_loc_filename = NULL;
     globals->hydro_table = NULL;
 
-    if (globals->hydros_loc_flag == 1 || globals->hydros_loc_flag == 2 || globals->hydros_loc_flag == 4)
+    if (globals->hydros_loc_flag == 1 || globals->hydros_loc_flag == 2 || globals->hydros_loc_flag == 4 || globals->hydros_loc_flag == 5)
     {
         globals->hydros_loc_filename = (char*)malloc(ASYNCH_MAX_PATH_LENGTH * sizeof(char));
         valsread = sscanf(line_buffer, "%*u %lf %s", &(globals->print_time), globals->hydros_loc_filename);
@@ -3238,11 +3284,13 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         if (globals->hydros_loc_flag == 1 && !CheckFilenameExtension(globals->hydros_loc_filename, ".dat"))	return NULL;
         if (globals->hydros_loc_flag == 2 && !CheckFilenameExtension(globals->hydros_loc_filename, ".csv"))	return NULL;
         if (globals->hydros_loc_flag == 4 && !CheckFilenameExtension(globals->hydros_loc_filename, ".rad"))	return NULL;
+        if (globals->hydros_loc_flag == 5 && !CheckFilenameExtension(globals->hydros_loc_filename, ".h5"))	return NULL;
         //globals->output_flag = (globals->hydros_loc_flag == 1) ? 0 : 1;
 
         if (globals->hydros_loc_flag == 1)	RemoveSuffix(globals->hydros_loc_filename, ".dat");
         else if (globals->hydros_loc_flag == 2)	RemoveSuffix(globals->hydros_loc_filename, ".csv");
         else if (globals->hydros_loc_flag == 4)	RemoveSuffix(globals->hydros_loc_filename, ".rad");
+        else if (globals->hydros_loc_flag == 5)	RemoveSuffix(globals->hydros_loc_filename, ".h5");
     }
     else if (globals->hydros_loc_flag == 3)
     {
@@ -3362,6 +3410,11 @@ GlobalVars* Read_Global_Data(char globalfilename[], ErrorData** errors, Forcing*
         if (ReadLineError(valsread, 2, "snapshot time and filename"))	return NULL;
         if (!CheckFilenameExtension(globals->dump_loc_filename, ".h5"))
             return NULL;
+
+        //Strip the extension
+        char *ext = strrchr(globals->dump_loc_filename, '.');
+        unsigned int filename_len = (unsigned int)(ext - globals->dump_loc_filename);
+        globals->dump_loc_filename[filename_len] = '\0';
     }
 
     //Grab folder locations
@@ -3744,7 +3797,6 @@ int CheckWinFormat(FILE* file)
 //Returns 2 if filename is just a path (the path variable is still set).
 int FindPath(char* filename, char* path)
 {
-    size_t i;
     size_t len = strlen(filename);
     char holder;
 
@@ -3760,7 +3812,7 @@ int FindPath(char* filename, char* path)
         return 2;
     }
 
-    for (i = len - 2; i >= 0; i--)
+    for (int i = (int)(len - 2); i >= 0; i--)
     {
         if (filename[i] == '/')
         {
@@ -3781,7 +3833,7 @@ int FindPath(char* filename, char* path)
 //Returns 1 if fullpath is just a path (the filename variable is set to empty).
 int FindFilename(char* fullpath, char* filename)
 {
-    size_t i;
+    int i;
     size_t len = strlen(fullpath);
 
     if (len == 0 || fullpath[len - 1] == '/')
@@ -3790,7 +3842,7 @@ int FindFilename(char* fullpath, char* filename)
         return 1;
     }
 
-    for (i = len - 2; i >= 0; i--)
+    for (i = (int)(len - 2); i >= 0; i--)
     {
         if (fullpath[i] == '/')
             break;
@@ -3800,3 +3852,4 @@ int FindFilename(char* fullpath, char* filename)
     sprintf(filename, "%s", &(fullpath[i]));
     return 0;
 }
+

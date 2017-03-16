@@ -22,7 +22,11 @@
 extern int np;
 extern int my_rank;
 
-int Process_Data(Link* sys, GlobalVars* GlobalVars, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out, ConnData* conninfo, FILE** my_tempfile);
+int DumpTimeSerieFile(Link* sys, GlobalVars* GlobalVars, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out, ConnData* conninfo, FILE** my_tempfile);
+
+int DumpTimeSerieDatFile(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out);
+int DumpTimeSerieCsvFile(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out);
+int DumpTimeSerieH5File(Link* sys, GlobalVars* globals, unsigned int N, unsigned int* save_list, unsigned int save_size, unsigned int my_save_size, unsigned int** id_to_loc, int* assignments, char* additional_temp, char* additional_out);
 
 #if defined(HAVE_POSTGRESQL)
 void PrepareDatabaseTable(GlobalVars* GlobalVars, ConnData* conninfo);

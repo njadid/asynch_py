@@ -3,7 +3,7 @@ Custom Models
 
 An extendible collection of models is built-in ASYNCH. The evaluation of the differential and algebraic equations occurs in the source code *problems.c*, while the definition of the models (i.e. number of parameters, precalculations, etc.) is set in *definetype.c*. New models can be added here by modifying those two source files, plus adding needed function declarations to *problems.h*.
 
-Every built in model is given a unique id known as the *model type*. This nonnegative integer value is used to identify the model throughout the initialization process. The model type is specified in the global file used to initialize ASYNCH. User defined models are possible, which can be created outside ASYNCH’s built-in collection of models. See Section [sec: custom models].
+Every built in model is given a unique id known as the *model type*. This nonnegative integer value is used to identify the model throughout the initialization process. The model type is specified in the global file used to initialize ASYNCH. User defined models are possible, which can be created outside ASYNCH’s built-in collection of models.
 
 Model Definition
 ----------------
@@ -124,7 +124,7 @@ Before exiting, all entries in params from index *disk_params* up to (but not in
 ReadInitData
 ~~~~~~~~~~~~
 
-This routine sets any initial conditions which are *not* determined through the *Initial Conditions* section of the global file (.gbl) (Section [sec: initial states]). Generally, this is to set the initial conditions for unknowns in models determined by algebraic equations, or those ODEs which have hardcoded initial conditions. The *ReadInitData* routine sets the initial conditions link by link. The following information is available in this routine:
+This routine sets any initial conditions which are *not* determined through the *Initial Conditions* section of the global file (.gbl) (Section :ref:`Initial States`). Generally, this is to set the initial conditions for unknowns in models determined by algebraic equations, or those ODEs which have hardcoded initial conditions. The *ReadInitData* routine sets the initial conditions link by link. The following information is available in this routine:
 
 +---------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Name          | Description                                                                                                                                                                                                                                                                                      |
@@ -163,41 +163,11 @@ Every model must have a set of differential equations. The equations defined in 
   &\vdots \\
   \frac{d y_{dim}}{dt} &= f_{dim}(...)
 
-where :math:`s` is *diff\_start*. Note that the index of the first state determined by a differential equation is *diff\_start* (or :math:`s` here). Thus, these states should appear after any states determined through algebraic equations in state and equation-value vectors. When the differential equation routine is called, the rate of change of each of the state variables :math:`y_i` is the expected output. Thus, this routine should evaluate all of the functions on the right of the equations. Examples of differential equations used for ASYNCH can be found in Section [sec: example models].
+where :math:`s` is *diff\_start*. Note that the index of the first state determined by a differential equation is *diff\_start* (or :math:`s` here). Thus, these states should appear after any states determined through algebraic equations in state and equation-value vectors. When the differential equation routine is called, the rate of change of each of the state variables :math:`y_i` is the expected output. Thus, this routine should evaluate all of the functions on the right of the equations. Examples of differential equations used for ASYNCH can be found in Section :ref:`Built-in Models`.
 
-The routine for the differential equations returns void. The definition of this routine takes the following arguments (in this order):
+.. doxygentypedef:: DifferentialFunc
 
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Arguments                     | Description                                                                                                                                                                                                                                                                                       |
-+===============================+===================================================================================================================================================================================================================================================================================================+
-| double t                      | The current time (typically measured in minutes).                                                                                                                                                                                                                                                 |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| VEC* y_i                      | The vector of the current states of the system at this link. Only states defined by a differential equation are available. This means the indices from *diff_start* and beyond are available. States defined by algebraic equations must be calculated, if needed for the differential equations. |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| VEC** y_p                     | The array of vectors of the states of the system of each parent link. Only states defined by a differential equation are available. States defined by algebraic equations must be calculated. Further, only those states listed in *dense_indices* (defined in *SetParamSizes*) are available.    |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| unsigned short int numparents | The number of parents to this link.                                                                                                                                                                                                                                                               |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| VEC* global_params            | The vector of parameters constant in both space and time.                                                                                                                                                                                                                                         |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| double* forcing_values        | The array of current forcing values.                                                                                                                                                                                                                                                              |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| QVSData* qvs                  | The table of discharge vs storage relationships. This is only available if a dam is present at this link, and the *dam_flag* is set to 2.                                                                                                                                                         |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| VEC* params                   | The vector of parameters for this link.                                                                                                                                                                                                                                                           |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| IVEC* iparams                 | The vector of integer parameters for this link.                                                                                                                                                                                                                                                   |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| int state                     | The current discontinuity state of the states.                                                                                                                                                                                                                                                    |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| unsigned int** upstream       | The array of upstream links from each parent of this link. This will be removed in a future version.                                                                                                                                                                                              |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| unsigned int* numupstream     | The number of upstream links to each parent of this link. This will be removed in a future version.                                                                                                                                                                                               |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| VEC* ans                      | The vector of function evaluations. Each entry of *ans* from *diff_start* (and including *diff_start*) should be set by this routine.                                                                                                                                                             |
-+-------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-
-It is worth noting that only states from the parent links are available in this routine. Dependence upon further upstream links breaks the underlying tree structure.
+It is worth noting that only states from the upstream links are available in this routine. Dependence upon further upstream links breaks the underlying tree structure.
 
 Algebraic Equations
 ~~~~~~~~~~~~~~~~~~~
@@ -211,69 +181,28 @@ Some models may have a set of algebraic equations. The equations defined in this
   &\vdots \\
   y_{s-1} &= g_{s-1}(...)
 
-where :math:`s` is *diff\_start*. Note that the index of the first state determined by an algebraic equation is 0. Thus, these states should appear before any states determined through differential equations in state and equation-value vectors. When this routine is called, the expected output is the evaluation of the right side function. Support for algebraic equations is limited to explicit equations of the state variables. This means none of the states :math:`y_0`, ..., :math:`y_{s-1}` are available for use in this routine. Only the states defined through differential equations are available (:math:`y_s`, ..., :math:`y_{dim}`). Examples of models with algebraic equations can be found in Section [sec: example models].
+where :math:`s` is *diff\_start*. Note that the index of the first state determined by an algebraic equation is 0. Thus, these states should appear before any states determined through differential equations in state and equation-value vectors. When this routine is called, the expected output is the evaluation of the right side function. Support for algebraic equations is limited to explicit equations of the state variables. This means none of the states :math:`y_0`, ..., :math:`y_{s-1}` are available for use in this routine. Only the states defined through differential equations are available (:math:`y_s`, ..., :math:`y_{dim}`). Examples of models with algebraic equations can be found in Section :ref:`Built-in Models`.
 
-The routine for the algebraic equations returns void. The definition of this routine takes the following arguments (in this order):
-
-VEC\* y
-The vector of current states. Only the states with index greater than or equal to *diff\_start* are available for use.
-
-VEC\* global\_params
-The vector of parameters constant in both space and time.
-
-VEC\* params
-The vector of parameters for this link.
-
-QVSData\* qvs
-The table of discharge vs storage relationships. This is only available if a dam is present at this link, and the *dam\_flag* is set to 2.
-
-int state
-The current discontinuity state of the states.
-
-VEC\* ans
-The vector of function evaluations. Each entry of *ans* from 0 to *diff\_start* (exclusive) should be set by this routine.
+.. doxygentypedef:: AlgebraicFunc
 
 It is worth noting that only states from this link are available in this routine.
 
 State Check
 ~~~~~~~~~~~
 
-Some models may include discontinuities in the states of the system. This routine determines in which discontinuity state the system currently is. The return value is the integer representing the current discontinuity state. The definition of this routine takes the following arguments (in this order):
+Some models may include discontinuities in the states of the system. This routine determines in which discontinuity state the system currently is. The return value is the integer representing the current discontinuity state.
 
-VEC\* y
-The vector of current states. Only the states with index greater than or equal to *diff\_start* are available for use.
-
-VEC\* global\_params
-The vector of parameters constant in both space and time.
-
-VEC\* params
-The vector of parameters for this link.
-
-QVSData\* qvs
-The table of discharge vs storage relationships. This is only available if a dam is present at this link, and only if *dam\_flag* is 2.
-
-unsigned int dam
-The dam flag for this link. If 1, a dam is present at this link. If 0, no dam is present.
+.. doxygentypedef:: CheckStateFunc
 
 System Consistency
 ~~~~~~~~~~~~~~~~~~
 
 For many models, the equations describing the differential and algebraic system states come with built-in constraints. Common examples include non-negative values or maximum state values. These constraints may not necessarily be satisfied due to numerical errors. A routine for system consistency is called by the integrator to guarantee these constraints are satisfied.
 
-**Warning: the solutions to the algebraic and differential equations MUST support these constraints. For instance, an equation with an exponential decaying solution has a minimum value for the solution. However, such an equation has no limit on the maximum value of its solution. Thus, a consistency routine can be created to impose the minimum value, but not a maximum value.**
+.. doxygentypedef:: CheckConsistencyFunc
 
-The routine for system consistency is requires the following arguments (in this order):
+.. note::
 
-VEC\* y
-The vector of current states. Only the states with index greater than or equal to *diff\_start* are available for use.
-
-VEC\* params
-The vector of parameters for this link.
-
-VEC\* global\_params
-The vector of parameters constant in both space and time.
+  The solutions to the algebraic and differential equations MUST support these constraints. For instance, an equation with an exponential decaying solution has a minimum value for the solution. However, such an equation has no limit on the maximum value of its solution. Thus, a consistency routine can be created to impose the minimum value, but not a maximum value.
 
 The values of states derived through algebraic equations are not available in the consistency routine. This is done for efficiency, as the algebraic states may not be needed to check consistency.
-
-Custom Model
-------------

@@ -12,34 +12,9 @@
 #include <mpi.h>
 #endif 
 
-//#include "comm.h"
-//#include "riversys.h"
-//#include "processdata.h"
-//#include "structs.h"
-//#include "solvers.h"
-//#include "io.h"
 #include "structs_fwd.h"
 #include "data_types.h"
 #include "mathmethods.h"
-
-
-//#define ASYNCH_MAX_DB_CONNECTIONS 20
-
-//// Forward definitions
-//typedef struct ErrorData ErrorData;
-//typedef struct GlobalVars GlobalVars;
-//typedef struct Link Link;
-//typedef struct RKMethod RKMethod;
-//typedef struct TransData TransData;
-//typedef struct TempStorage TempStorage;
-//typedef struct ConnData ConnData;
-//typedef struct QVSData QVSData;
-//typedef struct Forcing Forcing;
-//typedef struct AsynchSolver AsynchSolver;
-
-//typedef struct VEC VEC;
-//typedef struct MAT MAT;
-
 
 //Callback signatures
 
@@ -65,33 +40,83 @@ typedef int (OutputIntCallback)(unsigned int id, double t, VEC y_i, VEC global_p
 /// \return Returns the data to be written as output.
 typedef double (OutputDoubleCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
 
+
+/// 
+///
+/// \param t The current time.
+/// \param y The current state vector at time *t* for the link.
+/// \param global_params The vector of parameters uniform amongst all links.
+/// \param params The vector of parameters for the link.
+/// \param state : The current state of the state vector.
+/// \param user: User defined data.
+/// \return Returns the data to be written as output.
+typedef float (OutputFloatCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
+
+
+/// Output formating callback 
+typedef union OutputCallback {
+    OutputIntCallback *out_int;         //!< The callback for an integer
+    OutputDoubleCallback *out_double;   //!< The callback for a double
+    OutputFloatCallback *out_float;     //!< The callback for a float
+} OutputCallback;
+
+
 typedef void (PeakflowOutputCallback)(unsigned int, double, VEC, VEC, VEC, double, unsigned int, void*, char*);
 
 //Function signatures
 
-/// These are the right-hand side functions for the ODEs.
+/// These are the right-hand side functions for the differential equations.
 ///
-/// \param t The current time
-/// \param y_i The approximate value of the solution to the ODEs at the current link at time t
-/// \param y_p y_p[j] has the approximate values for the immediately upstream link j to the current link at time t
+/// \param t The current time (typically measured in minutes).
+/// \param y_i The vector of the current states of the system at this link. Only states defined by a differential equation are available. This means the indices from diff_start and beyond are available. States defined by algebraic equations must be calculated, if needed for the differential equations.
+/// \param y_p The array of vectors of the states of the system of each upstream (parent) link. Only states defined by a differential equation are available. States defined by algebraic equations must be calculated. Further, only those states listed in dense_indices (defined in SetParamSizes) are available.
 /// \param num_parents The number of upstream links (parents) to link i
-/// \param global_params The global parameters
-/// \param forcings The rain fall values for link i
-/// \param params The parameters for link i
-/// \param state The current state of the system
-/// \param user A pointer to user specified data
-/// \param ans (set by method, assumed that space is allocated): The value returned by the right-hand side function
-typedef void (DifferentialFunc)(double t, VEC y_i, VEC* y_p, unsigned short int num_parents, VEC global_params, double* forcings, QVSData*, VEC params, int state, void* user, VEC ans);                    //!< Right-hand side function for ODE                                            
-typedef void (AlgebraicFunc)(VEC, VEC, VEC, QVSData*, int, void*, VEC);                                                                  //!< Function for algebraic variables
-typedef int (CheckStateFunc)(VEC, VEC, VEC, QVSData*, unsigned int);                                                                     //!< Function to check what "state" the state variables are in (for discontinuities)
+/// \param global_params The vector of parameters constant in both space and time.
+/// \param forcings The array of current forcing values.
+/// \param qvs The table of discharge vs storage relationships. This is only available if a dam is present at this link, and the dam_flag is set to 2.
+/// \param params The vector of parameters for link i.
+/// \param state The current discontinuity state of the states.
+/// \param user A pointer to user specified data.
+/// \param ans The vector of function evaluations. Each entry of ans from diff_start (and including diff_start) should be set by this routine.
+typedef void (DifferentialFunc)(double t, VEC y_i, VEC* y_p, unsigned short int num_parents, VEC global_params, double* forcings, QVSData* qvs, VEC params, int state, void* user, VEC ans);
+
+/// These are the right-hand side functions for the algebraic equations.
+///
+/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
+/// \param global_params The vector of parameters constant in both space and time.
+/// \param params The vector of parameters for this link.
+/// \param qvs The table of discharge vs storage relationships.This is only available if a dam is present at this link, and the *dam\_flag* is set to 2.
+/// \param state The current discontinuity state of the states.
+/// \param user A pointer to user specified data.
+/// \param ans The vector of function evaluations.Each entry of *ans* from 0 to *diff\_start* (exclusive)should be set by this routine.
+typedef void (AlgebraicFunc)(VEC y, VEC global_params, VEC params, QVSData* qvs, int state, void* user, VEC ans);
+
+/// This routine determines in which discontinuity state the system currently is.
+///
+/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
+/// \param global_params The vector of parameters constant in both space and time.
+/// \param params The vector of parameters for this link.
+/// \param qvs The table of discharge vs storage relationships.This is only available if a dam is present at this link, and only if *dam\_flag* is 2.
+/// \param dam The dam flag for this link.If 1, a dam is present at this link.If 0, no dam is present.
+typedef int (CheckStateFunc)(VEC y, VEC global_params, VEC params, QVSData* qvs, unsigned int dam);
+
+
 typedef void (JacobianFunc)(double, VEC, VEC*, unsigned short int, VEC, double*, VEC, MAT*);                                                    //!< Jacobian of right-hand side function
 typedef int (RKSolverFunc)(Link*, GlobalVars*, int*, bool, FILE*, ConnData*, Forcing*, TempStorage*);   //!< RK solver to use
-typedef void (CheckConsistencyFunc)(VEC y, VEC, VEC);                                                                                           //!< Function to check state variables
+
+/// This routine is called by the integrator to guarantee these constraints are satisfied.
+///
+/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
+/// \param params The vector of parameters for this link.
+/// \param global_params The vector of parameters constant in both space and time.
+typedef void (CheckConsistencyFunc)(VEC y, VEC, VEC);
 
 // Custom models signatures
 typedef void (SetParamSizesFunc)(GlobalVars*, void*);
 typedef void (ConvertFunc)(VEC, unsigned int, void*);
 typedef void (RoutinesFunc)(Link*, unsigned int, unsigned int, unsigned short int, void*);
+
+/// This routine allows computations that are static in time and independent of state to be performed.
 typedef void (PrecalculationsFunc)(Link*, VEC, VEC, unsigned int, unsigned int, unsigned short int, unsigned int, void*);
 typedef int (InitializeEqsFunc)(VEC, VEC, QVSData*, unsigned short int, VEC, unsigned int, unsigned int, unsigned int, void*, void*);
 typedef int* (PartitionFunc)(Link*, unsigned int, Link**, unsigned int, unsigned int**, unsigned int*, TransData*, short int*);
@@ -341,6 +366,21 @@ int Asynch_Set_Output_Int(AsynchSolver* asynch, char* name, OutputIntCallback* c
 /// \see Asynch_Set_Output_Int
 int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallback* callback, unsigned int* used_states, unsigned int num_states);
 
+/// This routine sets a custom output time series. A function is required that will be called every time
+/// output data is to be written for a link. The function set in this routine should have the
+/// specification
+/// Asynch_Set_Output_Double must also be given an array *used_states*. This array contains the indices of
+/// the states in the state vectors which are needed by the user specified routine *callback*. All states
+/// listed in this array are guaranteed to be available for the routine *callback*.
+///
+/// \param asynch A pointer to a AsynchSolver object to use.
+/// \param name Name of the custom time series.
+/// \param callback Routine to call when writing data for the custom output.
+/// \param  used_states Array of the all indices in the state vector used by *callback*.
+/// \param num_states Numver of indiciced in used_states.
+/// \see Asynch_Set_Output_Int
+int Asynch_Set_Output_Float(AsynchSolver* asynch, char* name, OutputFloatCallback* callback, unsigned int* used_states, unsigned int num_states);
+
 /// This routine sets the filename of the output peakflow file. If a database connection is used, then
 /// no changes are made.
 ///
@@ -567,6 +607,7 @@ void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, VEC* states
 ///
 /// \param asynch A pointer to a AsynchSolver object to use.
 void Asynch_Reset_Peakflow_Data(AsynchSolver* asynch);
+
 int Asynch_Set_Forcing_State(AsynchSolver* asynch, unsigned int idx, double t_0, unsigned int first_file, unsigned int last_file);
 
 /// This routine gets the filename of the output peakflow file. If a database connection is used, then
@@ -585,6 +626,7 @@ int Asynch_Get_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname);
 /// \param peakflowname Name to set the peakflow output filename.
 /// \return 0 if the filename was set successfully. 1 otherwise.
 int Asynch_Set_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname);
+
 unsigned int Asynch_Get_Local_LinkID(AsynchSolver* asynch, unsigned int location);
 
 int Asynch_Set_Init_Timestamp(AsynchSolver* asynch, unsigned int unix_time);

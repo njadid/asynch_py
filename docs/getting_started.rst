@@ -3,9 +3,9 @@ Getting started
 
 In this section, we will give the steps and data needed for running basic simulations. This section is intended for getting a new user up and running quickly, and to provide links in this documentation for more information when needed.
 
-First, be sure to follow the steps in Section :ref:`install` for installing the ASYNCH solvers.
+If you are not using the `UoI HPC infrastructures <https://hpc.uiowa.edu/>`_, be sure to follow the steps in Section :ref:`Installation` for installing the ASYNCH solvers.
 
-.. tip:: For Iowa HPC Argon users.
+.. tip:: For Argon users.
     For those using Iowa HPC resources, downloading and compiling the source code is not necessary. But to be able to use the prebuilt executables, setting up your environment is necessary. The prefered way is to edit your ``~/.bash_profile``:
 
     .. code-block:: sh
@@ -20,8 +20,8 @@ First, be sure to follow the steps in Section :ref:`install` for installing the 
         module load zlib/1.2.11_parallel_studio-2017.1
         module load hdf5/1.8.18_parallel_studio-2017.1
         module load openmpi/2.0.1_parallel_studio-2017.1
-        
-.. tip:: For Iowa HPC Neon users.
+
+.. tip:: For Neon users.
     For those using Iowa HPC resources, downloading and compiling the source code is not necessary. But to be able to use the prebuilt executables, setting up your environment is necessary. The prefered way is to edit your ``~/.bash_profile``:
 
     .. code-block:: sh
@@ -34,21 +34,17 @@ First, be sure to follow the steps in Section :ref:`install` for installing the 
         module load openmpi/intel-composer_xe_2015.3.187-1.8.8
         module load hdf5/1.8.17
 
-.. note:: For Iowa HPC users.
-
-  The user should not assume that the same versions are deployed on both clusters.
-
 The ASYNCH directory contains a folder called ``examples``, which contains several data files for starting sample simulations, as well as sample outputs for comparision. The ``examples`` directory should be copied to a location where the user has write access (for example, the home directory). On Neon or Argon, this can be done with
 
 .. code-block:: sh
 
   cp -r /Dedicated/IFC/asynch/examples/ ~/
 
-For the first example, we will produce output for a small basin with 11 links using a hydrological model with constant runoff. The global file to setup this simulation is ``Global190.gbl``. This uses the model given in Section :ref:`constant-runoff-model`. If using your own machine, the simulation can be run with the command
+For the first example, we will produce output for a small basin with 11 links using a hydrological model with constant runoff. The global file to setup this simulation is ``test.gbl``. This uses the model given in Section :ref:`Constant Runoff Hydrological Model`. If using your own machine, the simulation can be run with the command
 
 .. code-block:: sh
 
-  mpirun -np 1 <bin path>/asynch Global190 gbl
+  mpirun -np 1 <bin path>/asynch test.gbl
 
 As calculations are performed, you will see output produced to the terminal window. If using Neon or Argon (or any system using the Sun Grid Engine), the submit script test.sh can be used to run the simulation. Use the command
 
@@ -73,7 +69,7 @@ The simulations performed will use only 1 MPI process. To increase this number, 
 
 .. code-block:: sh
 
-  mpirun -np 2 <ASYNCH directory>/ASYNCH Global190 gbl
+  mpirun -np 2 <ASYNCH directory>/asynch test.gbl
 
 or modify ``test.sh`` to use more processes. This can be done by modifying the environment
 
@@ -83,4 +79,16 @@ or modify ``test.sh`` to use more processes. This can be done by modifying the e
 
 to use 2 processes instead of 1. Also be sure to modify the last line with mpirun so MPI looks for 2 processes. When using more than 1 process, your results may difer slightly from those in ``examples/results``. In fact, the results may vary slightly from simulation to simulation, even if nothing changed in the global file. This is a result from the asynchronous communication used by ASYNCH for MPI processes and is an expected behavior.
 
-As a second example, try the same procedure as before using the global file ``Global254.gbl``. If using an Iowa HPC resource, the submit script ``clearcreek.sh`` can be used. The model for this simulation is the toplayer hydrological model using the Clear Creek river basin See Section :ref:`top-layer-model`. Results for the output discharge and basefow are given in Figure 3. This basin is larger than in the previous simulation as it contains about 6,000 links. This is a good example to experiment with the number of processes used. A time series of the channel discharge and basefow at the outlet are given in Figure 3.
+.. _figure-2:
+
+.. figure:: figures/test.png
+
+  Output from the sample simulation.
+
+As a second example, try the same procedure as before using the global file ``clearcreek.gbl``. If using an Iowa HPC resource, the submit script ``clearcreek.sh`` can be used. The model for this simulation is the toplayer hydrological model using the Clear Creek river basin See Section :ref:`Top Layer Hydrological Model`. Results for the output discharge and basefow are given in :ref:`figure-3`. This basin is larger than in the previous simulation as it contains about 6,000 links. This is a good example to experiment with the number of processes used.
+
+.. _figure-3:
+
+.. figure:: figures/clearcreek.png
+
+  Output from the toplayer model sample simulation.

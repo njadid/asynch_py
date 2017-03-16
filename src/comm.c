@@ -465,7 +465,7 @@ void Transfer_Data_Finish(TransData* my_data,Link* sys,int* assignments,GlobalVa
 }
 
 
-void Exchange_InitState_At_Forced(Link* system,unsigned int N,unsigned int* assignments,short int* getting,unsigned int* res_list,unsigned int res_size,unsigned int** id_to_loc,GlobalVars* GlobalVars)
+void Exchange_InitState_At_Forced(Link* system,unsigned int N,int* assignments,short int* getting,unsigned int* res_list,unsigned int res_size,unsigned int** id_to_loc,GlobalVars* GlobalVars)
 {
 	unsigned int j,loc;
 
