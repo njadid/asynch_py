@@ -12,6 +12,8 @@ Breaking Changes
 
 The global file structure has changed. The time of the simulation is now given in absolute time, see :ref:`Simulation period`.
 
+The snapshots in HDF5 format has changed, see :ref:`Ini HDF5 Files`.
+
 New Features
 ~~~~~~~~~~~~
 
