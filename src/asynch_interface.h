@@ -171,6 +171,13 @@ void Asynch_Parse_GBL(AsynchSolver* asynch, char* filename);
 /// \param asynch A pointer to a AsynchSolver object to use.
 void Asynch_Load_Network(AsynchSolver* asynch);
 
+/// This routine save the network tolpolgy as a graphviz .dot file.
+///
+/// \pre This routine must be called after *Asynch_Load_Network*.
+/// \param asynch A pointer to a AsynchSolver object to use.
+/// \param filename The path to the output .dot file.
+void Asynch_Save_Network_Dot(const AsynchSolver * const asynch, const char *filename);
+
 /// This routine assigns the Links of the *asynchsolver* object to the MPI processes.
 ///
 /// \pre This routine must be called after *Asynch_Load_Network*.

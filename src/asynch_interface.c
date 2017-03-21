@@ -142,6 +142,23 @@ void Asynch_Load_Network(AsynchSolver* asynch)
     MPI_Barrier(asynch->comm);
 }
 
+void Asynch_Save_Network_Dot(const AsynchSolver * const asynch, const char *filename)
+{
+    FILE *dot_file = fopen(filename, "w");
+    fprintf(dot_file, "digraph river{\n");
+
+    for (unsigned int i = 0; i < asynch->N; i++)
+    {
+        for (unsigned int j = 0; j < asynch->sys[i].num_parents; j++)
+            fprintf(dot_file, "%d -> %d;\n", asynch->sys[i].parents[j]->ID, asynch->sys[i].ID);
+    }
+
+
+    fprintf(dot_file, "}\n");
+    fclose(dot_file);
+}
+
+
 //If load_all == 1, then the parameters for every link are available on every proc.
 //If load_all == 0, then the parameters are only available for links assigned to this proc.
 void Asynch_Load_Network_Parameters(AsynchSolver* asynch, short int load_all)
