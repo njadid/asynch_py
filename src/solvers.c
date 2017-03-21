@@ -244,8 +244,9 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                             if ((current->current_iterations >= globals->iter_limit) && (current->last_t > child->last_t))
                                 child->h = min(child->h, current->last_t - child->last_t);
 
-                            //if(child->h + child->last_t > current->last_t)
-                            //    child->h *= .999;
+                            // TODO improve on this
+                            if(child->h + child->last_t > current->last_t)
+                                child->h *= .999;
 
                             assert(child->h > 0.0);
 
@@ -266,8 +267,9 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                             if (current->parents[i]->current_iterations >= globals->iter_limit)
                                 current->h = min(current->h, current->parents[i]->last_t - current->last_t);
 
-                            //if(current->h + current->last_t > current->parents[i]->last_t)
-                            //    current->h *= .999;
+                            // TODO improve on this
+                            if(current->h + current->last_t > current->parents[i]->last_t)
+                                current->h *= .999;
                         }
 
                         parentsval = 0;
@@ -325,7 +327,3 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
     //Cleanup
     free(done);
 }
-
-
-
-
