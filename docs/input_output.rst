@@ -227,7 +227,7 @@ Format:
 
 ::
 
-  {initial state flag} {.ini, .uini, .rec, or .dbc filename} [unix time]
+  {initial state flag} {.ini, .uini, .rec, .dbc or .h5 filename} [unix time]
 
 This section specifies the initial state of the model. The values for the initial state flag can be ``0``, ``1``, ``2``, ``3`` or ``4`` corresponding, respectively, to a ini, uini, rec, dbc, h5 file. The unix time argument is used for database connections only. This value is available in the query of the database connection file and can be used for selecting values from tables.
 
