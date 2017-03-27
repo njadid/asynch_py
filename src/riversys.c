@@ -1582,15 +1582,12 @@ int Load_Initial_Conditions(Link* system, unsigned int N, int* assignments, shor
 //Loads the forcing data specified in the global file.
 int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned int my_N, int* assignments, short int* getting, unsigned int* res_list, unsigned int res_size, unsigned int** id_to_loc, GlobalVars* globals, Forcing* forcings, ConnData* db_connections)
 {
-    unsigned int i, j, l, m, limit, id, loc;
-    FILE* forcingfile = NULL;
-    double *buffer = NULL, univ_forcing_change_time[ASYNCH_MAX_NUM_FORCINGS];
-    Link* current;
+    double *buffer = NULL;
 
     //Reserve space for forcing data
-    for (i = 0; i < my_N; i++)
+    for (unsigned int i = 0; i < my_N; i++)
     {
-        current = &system[my_sys[i]];
+        Link* current = &system[my_sys[i]];
         current->forcing_buff = (ForcingData**)malloc(globals->num_forcings * sizeof(ForcingData*));
         current->forcing_values = (double*)calloc(globals->num_forcings, sizeof(double));
         current->forcing_change_times = (double*)calloc(globals->num_forcings, sizeof(double));
@@ -1598,7 +1595,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
     }
 
     //Setup forcings. Read uniform forcing data and open .str files. Also initialize rainfall from database.
-    for (l = 0; l < globals->num_forcings; l++)
+    for (unsigned int l = 0; l < globals->num_forcings; l++)
     {
         forcings[l].maxtime = globals->t_0;
         forcings[l].iteration = 0;
@@ -1612,7 +1609,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             forcings[l].GetNextForcing = &NextForcingOther;
 
             //Setup buffers at each link
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                 {
@@ -1624,6 +1621,9 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
         }
         else if (forcings[l].flag == 1)	//Storm file
         {
+            unsigned int limit;
+            FILE* forcingfile = NULL;
+
             //Set routines
             forcings[l].GetPasses = &PassesOther;
             forcings[l].GetNextForcing = &NextForcingOther;
@@ -1643,7 +1643,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                     fclose(forcingfile);
                     return 1;
                 }
-
+                
                 fscanf(forcingfile, "%u", &limit);
                 if (limit != N && (!(globals->res_flag) || l != globals->res_forcing_idx))
                 {
@@ -1656,16 +1656,19 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             MPI_Bcast(&limit, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
             //Setup buffers at each link
-            for (i = 0; i < limit; i++)
+            for (unsigned int i = 0; i < limit; i++)
             {
+                unsigned int loc, m;
+
                 if (my_rank == 0)
                 {
                     //Get location
+                    unsigned int id;
                     fscanf(forcingfile, "%i", &id);
                     loc = find_link_by_idtoloc(id, id_to_loc, N);
                     if (loc >= N)
                     {
-                        printf("Error: forcing data provided for link id %u in forcing %u, but link id is not in the network.\n", m, l);
+                        printf("Error: forcing data provided for link id %u in forcing %u, but link id is not in the network.\n", id, l);
                         return 1;
                     }
 
@@ -1673,6 +1676,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                     fscanf(forcingfile, "%i", &m);
                     m++;		//Increase this by one to add a "ceiling" term
                     buffer = (double*)realloc(buffer, 2 * m * sizeof(double));
+                    unsigned int j;
                     for (j = 0; j < m - 1; j++)
                         fscanf(forcingfile, "%lf %lf", &(buffer[2 * j]), &(buffer[2 * j + 1]));
                     buffer[2 * j] = globals->maxtime + 3.0;
@@ -1704,10 +1708,11 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                         system[loc].forcing_buff[l] = (ForcingData*)malloc(sizeof(ForcingData));
                         system[loc].forcing_buff[l]->data = (double**)malloc(m * sizeof(double*));
                         system[loc].forcing_buff[l]->nrows = m;
-                        for (j = 0; j < m; j++)	system[loc].forcing_buff[l]->data[j] = (double*)malloc(2 * sizeof(double));
+                        for (unsigned int j = 0; j < m; j++)
+                            system[loc].forcing_buff[l]->data[j] = (double*)malloc(2 * sizeof(double));
 
                         //Read in the storm data for this link
-                        for (j = 0; j < m; j++)
+                        for (unsigned int j = 0; j < m; j++)
                         {
                             system[loc].forcing_buff[l]->data[j][0] = buffer[2 * j];
                             system[loc].forcing_buff[l]->data[j][1] = buffer[2 * j + 1];
@@ -1716,6 +1721,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                         double rainfall_buffer = system[loc].forcing_buff[l]->data[0][1];
                         system[loc].forcing_values[l] = rainfall_buffer;
                         system[loc].forcing_indices[l] = 0;
+                        unsigned int j;
                         for (j = 1; j < system[loc].forcing_buff[l]->nrows; j++)
                         {
                             if (fabs(system[loc].forcing_buff[l]->data[j][1] - rainfall_buffer) > 1e-8)
@@ -1732,12 +1738,13 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                     }
                     else	//No reservoir here
                     {
-                        m = 2;	//Init value (assumed 0.0)
+                        unsigned int m = 2;	//Init value (assumed 0.0)
 
                         system[loc].forcing_buff[l] = (ForcingData*)malloc(sizeof(ForcingData));
                         system[loc].forcing_buff[l]->data = (double**)malloc(m * sizeof(double*));
                         system[loc].forcing_buff[l]->nrows = m;
-                        for (j = 0; j < m; j++)	system[loc].forcing_buff[l]->data[j] = (double*)malloc(2 * sizeof(double));
+                        for (unsigned int j = 0; j < m; j++)
+                            system[loc].forcing_buff[l]->data[j] = (double*)malloc(2 * sizeof(double));
 
                         system[loc].forcing_buff[l]->data[0][0] = globals->t_0;
                         system[loc].forcing_buff[l]->data[0][1] = 0.0;
@@ -1747,6 +1754,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                         double rainfall_buffer = system[loc].forcing_buff[l]->data[0][1];
                         system[loc].forcing_values[l] = rainfall_buffer;
                         system[loc].forcing_indices[l] = 0;
+                        unsigned int j;
                         for (j = 1; j < system[loc].forcing_buff[l]->nrows; j++)
                         {
                             if (fabs(system[loc].forcing_buff[l]->data[j][1] - rainfall_buffer) > 1e-8)
@@ -1764,16 +1772,17 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             //Allocate space for links without a reservoir
             if (globals->res_flag && l == globals->res_forcing_idx)
             {
-                for (i = 0; i < N; i++)
+                for (unsigned int i = 0; i < N; i++)
                 {
                     if (assignments[i] == my_rank && !(system[i].forcing_buff[l]))
                     {
-                        m = 2;	//Init value (assumed 0.0)
+                        unsigned int m = 2;	//Init value (assumed 0.0)
 
                         system[i].forcing_buff[l] = (ForcingData*)malloc(sizeof(ForcingData));
                         system[i].forcing_buff[l]->data = (double**)malloc(m * sizeof(double*));
                         system[i].forcing_buff[l]->nrows = m;
-                        for (j = 0; j < m; j++)	system[i].forcing_buff[l]->data[j] = (double*)malloc(2 * sizeof(double));
+                        for (unsigned int j = 0; j < m; j++)
+                            system[i].forcing_buff[l]->data[j] = (double*)malloc(2 * sizeof(double));
 
                         system[i].forcing_buff[l]->data[0][0] = globals->t_0;
                         system[i].forcing_buff[l]->data[0][1] = 0.0;
@@ -1783,6 +1792,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                         double rainfall_buffer = system[i].forcing_buff[l]->data[0][1];
                         system[i].forcing_values[l] = rainfall_buffer;
                         system[i].forcing_indices[l] = 0;
+                        unsigned int j;
                         for (j = 1; j < system[i].forcing_buff[l]->nrows; j++)
                         {
                             if (fabs(system[i].forcing_buff[l]->data[j][1] - rainfall_buffer) > 1e-8)
@@ -1798,7 +1808,8 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             }
 
             //Clean up
-            if (forcingfile)	fclose(forcingfile);
+            if (forcingfile)	
+                fclose(forcingfile);
         }
         else if (forcings[l].flag == 2)	//Binary files
         {
@@ -1808,7 +1819,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
 
             //Setup buffers at each link
             //!!!! This should really be improved... !!!!
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                     system[i].forcing_buff[l] = NULL;
@@ -1822,7 +1833,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
 
             //Setup buffers at each link
             //!!!! This should really be improved... !!!!
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                     system[i].forcing_buff[l] = NULL;
@@ -1836,7 +1847,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
 
             //Setup buffers at each link
             //!!!! This should really be improved... !!!!
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                     system[i].forcing_buff[l] = NULL;
@@ -1845,17 +1856,18 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             //Read the index file
             if (my_rank == 0)
             {
-                forcingfile = fopen(forcings[l].filename, "r");
+                FILE* forcingfile = fopen(forcings[l].filename, "r");
                 if (!forcingfile)
                 {
                     printf("Error: forcing file %s not found.\n", forcings[l].filename);
                     return 1;
                 }
 
-                char* tempspace1 = (char*)malloc(1024 * sizeof(char));
-                char* tempspace2 = (char*)malloc(1024 * sizeof(char));
-                forcings[l].lookup_filename = (char*)malloc(1024 * sizeof(char));
-                forcings[l].fileident = (char*)malloc(1024 * sizeof(char));
+                char tempspace1[ASYNCH_MAX_PATH_LENGTH];
+                char tempspace2[ASYNCH_MAX_PATH_LENGTH];
+
+                forcings[l].lookup_filename = malloc(ASYNCH_MAX_PATH_LENGTH * sizeof(char));
+                forcings[l].fileident = malloc(ASYNCH_MAX_PATH_LENGTH * sizeof(char));
                 FindPath(forcings[l].filename, forcings[l].fileident);
                 unsigned int length = (unsigned int)strlen(forcings[l].fileident);
                 strcpy(forcings[l].lookup_filename, forcings[l].fileident);
@@ -1863,16 +1875,9 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                 fscanf(forcingfile, "%lf %lf %u %s %s", &(forcings[l].file_time), &(forcings[l].factor), &(forcings[l].num_cells), tempspace1, tempspace2);
                 fclose(forcingfile);
 
-                //Add path from index file?
-                if (tempspace1[0] == '/')	//Use absolute path
-                    strcpy(forcings[l].fileident, tempspace1);
-                else		//Relative path
-                    strcpy(&(forcings[l].fileident[i]), tempspace1);
-                if (tempspace2[0] == '/')	//Use absolute path
-                    strcpy(forcings[l].lookup_filename, tempspace2);
-                else		//Relative path
-                    strcpy(&(forcings[l].lookup_filename[i]), tempspace2);
-
+                strcpy(forcings[l].fileident, tempspace1);
+                strcpy(forcings[l].lookup_filename, tempspace2);
+                
                 //Process the lookup file
                 forcingfile = fopen(forcings[l].lookup_filename, "r");
                 if (!forcingfile)
@@ -1880,31 +1885,35 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                     printf("Error: lookup file %s not found.\n", forcings[l].lookup_filename);
                     return 1;
                 }
-                forcings[l].grid_to_linkid = (unsigned int**)malloc(forcings[l].num_cells * sizeof(unsigned int*));
-                forcings[l].num_links_in_grid = (unsigned int*)calloc(forcings[l].num_cells, sizeof(unsigned int));
+                forcings[l].grid_to_linkid = malloc(forcings[l].num_cells * sizeof(unsigned int*));
+                forcings[l].num_links_in_grid = calloc(forcings[l].num_cells, sizeof(unsigned int));
 
                 while (!feof(forcingfile))	//Count the number of links in each grid cell
                 {
-                    if (!fscanf(forcingfile, "%*u %u", &j))	break;
+                    unsigned int j;
+                    if (!fscanf(forcingfile, "%*u %u", &j))
+                        break;
                     (forcings[l].num_links_in_grid[j])++;
                 }
 
                 rewind(forcingfile);
-                for (i = 0; i < forcings[l].num_cells; i++)
-                    forcings[l].grid_to_linkid[i] = (unsigned int*)malloc(forcings[l].num_links_in_grid[i] * sizeof(unsigned int));
-                unsigned int* counters = (unsigned int*)calloc(forcings[l].num_cells, sizeof(unsigned int));
+                for (unsigned int i = 0; i < forcings[l].num_cells; i++)
+                    forcings[l].grid_to_linkid[i] = malloc(forcings[l].num_links_in_grid[i] * sizeof(unsigned int));
+                unsigned int* counters = calloc(forcings[l].num_cells, sizeof(unsigned int));
 
                 while (!feof(forcingfile))	//Read in the link ids
                 {
-                    if (!fscanf(forcingfile, "%u %u", &id, &j))	break;
+                    unsigned int id, j;
+                    if (!fscanf(forcingfile, "%u %u", &id, &j))
+                        break;
                     forcings[l].grid_to_linkid[j][counters[j]++] = id;
                 }
 
                 fclose(forcingfile);
                 free(counters);
-                free(tempspace1);
 
                 //Check if a grid cell file actually exists
+                unsigned int i;
                 for (i = forcings[l].first_file; i < forcings[l].last_file; i++)
                 {
                     sprintf(tempspace2, "%s%u", forcings[l].fileident, i);
@@ -1917,8 +1926,6 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                 }
                 if (i == forcings[l].last_file)
                     printf("Warning: No forcing files found at %s for forcing %u. Be sure this is the correct directory.\n", forcings[l].fileident, l);
-
-                free(tempspace2);
             }
 
             //Broadcast data
@@ -1933,10 +1940,10 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             MPI_Bcast(forcings[l].num_links_in_grid, forcings[l].num_cells, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
             if (my_rank != 0)
             {
-                for (i = 0; i < forcings[l].num_cells; i++)
+                for (unsigned int i = 0; i < forcings[l].num_cells; i++)
                     forcings[l].grid_to_linkid[i] = (unsigned int*)malloc(forcings[l].num_links_in_grid[i] * sizeof(unsigned int));
             }
-            for (i = 0; i < forcings[l].num_cells; i++)
+            for (unsigned int i = 0; i < forcings[l].num_cells; i++)
                 MPI_Bcast(forcings[l].grid_to_linkid[i], forcings[l].num_links_in_grid[i], MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
             forcings[l].received = (char*)malloc(forcings[l].num_cells * sizeof(char));
@@ -1944,10 +1951,10 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
 
             //Remove from grid_to_linkid all links not on this proc
             unsigned int drop;
-            for (i = 0; i < forcings[l].num_cells; i++)
+            for (unsigned int i = 0; i < forcings[l].num_cells; i++)
             {
                 drop = 0;
-                for (j = 0; j < forcings[l].num_links_in_grid[i]; j++)
+                for (unsigned int j = 0; j < forcings[l].num_links_in_grid[i]; j++)
                 {
                     if (assignments[forcings[l].grid_to_linkid[i][j]] != my_rank)
                         drop++;
@@ -2004,28 +2011,30 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                 forcings[l].next_timestamp = forcings[l].good_timestamp;	//!!!! Could probably do something similar for flag 3 !!!!
 
             //Allocate space
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                 {
                     if (!(globals->res_flag) || !(l == globals->res_forcing_idx) || system[i].res)
                     {
-                        m = forcings[l].increment + 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
+                        unsigned int m = forcings[l].increment + 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
                         system[i].forcing_buff[l] = (ForcingData*)malloc(sizeof(ForcingData));
                         system[i].forcing_buff[l]->data = (double**)malloc(m * sizeof(double*));
                         system[i].forcing_buff[l]->nrows = m;
-                        for (j = 0; j < m; j++)	system[i].forcing_buff[l]->data[j] = (double*)calloc(2, sizeof(double));
+                        for (unsigned int j = 0; j < m; j++)
+                            system[i].forcing_buff[l]->data[j] = (double*)calloc(2, sizeof(double));
                         system[i].forcing_buff[l]->data[0][0] = globals->t_0;
                         system[i].forcing_values[l] = 0.0;
                         system[i].forcing_change_times[l] = fabs(globals->t_0 + globals->maxtime) + 10.0;	//Just pick something away from t_0, and positive
                     }
                     else	//Reservoir, so allocate only a little memory
                     {
-                        m = 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
+                        unsigned int m = 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
                         system[i].forcing_buff[l] = (ForcingData*)malloc(sizeof(ForcingData));
                         system[i].forcing_buff[l]->data = (double**)malloc(m * sizeof(double*));
                         system[i].forcing_buff[l]->nrows = m;
-                        for (j = 0; j < m; j++)	system[i].forcing_buff[l]->data[j] = (double*)calloc(2, sizeof(double));
+                        for (unsigned int j = 0; j < m; j++)	
+                            system[i].forcing_buff[l]->data[j] = (double*)calloc(2, sizeof(double));
                         system[i].forcing_buff[l]->data[0][0] = globals->t_0;
                         system[i].forcing_values[l] = 0.0;
                         system[i].forcing_change_times[l] = fabs(globals->t_0 + globals->maxtime) + 10.0;	//Just pick something away from t_0, and positive
@@ -2043,6 +2052,9 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
         }
         else if (forcings[l].flag == 4)	//.ustr
         {
+            unsigned int m;
+            double univ_forcing_change_time[ASYNCH_MAX_NUM_FORCINGS];
+
             //Set routines
             forcings[l].GetPasses = &PassesOther;
             forcings[l].GetNextForcing = &NextForcingOther;
@@ -2050,7 +2062,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             //Read uniform data
             if (my_rank == 0)
             {
-                forcingfile = fopen(forcings[l].filename, "r");
+                FILE* forcingfile = fopen(forcings[l].filename, "r");
                 if (!forcingfile)
                 {
                     printf("[%i]: Error: cannot open uniform forcing file %s.\n", my_rank, forcings[l].filename);
@@ -2069,6 +2081,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                 buffer = (double*)realloc(buffer, 2 * m * sizeof(double));
 
                 //Read the data
+                unsigned int j;
                 for (j = 0; j < m - 1; j++)
                     fscanf(forcingfile, "%lf %lf", &(buffer[2 * j]), &(buffer[2 * j + 1]));
                 buffer[2 * j] = globals->maxtime + 3.0;
@@ -2086,15 +2099,17 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             forcings[l].GlobalForcing = (ForcingData*)malloc(sizeof(ForcingData));
             forcings[l].GlobalForcing->data = (double**)malloc(m * sizeof(double*));
             forcings[l].GlobalForcing->nrows = m;
-            for (j = 0; j < m; j++)	forcings[l].GlobalForcing->data[j] = (double*)malloc(2 * sizeof(double));
+            for (unsigned int j = 0; j < m; j++)	
+                forcings[l].GlobalForcing->data[j] = (double*)malloc(2 * sizeof(double));
 
-            for (j = 0; j < m; j++)
+            for (unsigned int j = 0; j < m; j++)
             {
                 forcings[l].GlobalForcing->data[j][0] = buffer[2 * j];
                 forcings[l].GlobalForcing->data[j][1] = buffer[2 * j + 1];
             }
 
             double rainfall_buffer = forcings[l].GlobalForcing->data[0][1];
+            unsigned int j;
             for (j = 1; j < forcings[l].GlobalForcing->nrows; j++)
             {
                 if (rainfall_buffer != forcings[l].GlobalForcing->data[j][1])
@@ -2107,7 +2122,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                 univ_forcing_change_time[l] = forcings[l].GlobalForcing->data[j - 1][0];
 
             //Load the links
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                 {
@@ -2120,6 +2135,8 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
         }
         else if (forcings[l].flag == 7)	//monthly recurring files
         {
+            double univ_forcing_change_time[ASYNCH_MAX_NUM_FORCINGS];
+
             //Set routines
             forcings[l].GetPasses = &PassesRecurring;
             forcings[l].GetNextForcing = &NextForcingRecurring;
@@ -2130,7 +2147,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             //Read monthly file
             if (my_rank == 0)
             {
-                forcingfile = fopen(forcings[l].filename, "r");
+                FILE* forcingfile = fopen(forcings[l].filename, "r");
                 if (!forcingfile)
                 {
                     printf("Error: cannot open uniform forcing file %s.\n", forcings[l].filename);
@@ -2144,7 +2161,8 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
                 }
 
                 //Read the data
-                for (j = 0; j < num_months; j++)	fscanf(forcingfile, "%lf", &(buffer[j]));
+                for (unsigned int j = 0; j < num_months; j++)
+                    fscanf(forcingfile, "%lf", &(buffer[j]));
 
                 fclose(forcingfile);
             }
@@ -2155,8 +2173,10 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             forcings[l].GlobalForcing = (ForcingData*)malloc(sizeof(ForcingData));
             forcings[l].GlobalForcing->data = (double**)malloc((num_months + 1) * sizeof(double*));
             forcings[l].GlobalForcing->nrows = num_months + 1;
-            for (j = 0; j < num_months + 1; j++)	forcings[l].GlobalForcing->data[j] = (double*)malloc(2 * sizeof(double));
-            for (j = 0; j < num_months; j++)	forcings[l].GlobalForcing->data[j][1] = buffer[j];
+            for (unsigned int j = 0; j < num_months + 1; j++)
+                forcings[l].GlobalForcing->data[j] = (double*)malloc(2 * sizeof(double));
+            for (unsigned int j = 0; j < num_months; j++)
+                forcings[l].GlobalForcing->data[j][1] = buffer[j];
             forcings[l].GlobalForcing->data[num_months][1] = -1.0;
 
             //Find the starting month, and use the next month for the change time
@@ -2172,7 +2192,7 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
             univ_forcing_change_time[l] = difftime(next_month, forcings[l].first_file) / 60.0;
 
             //Load the links
-            for (i = 0; i < N; i++)
+            for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
                 {
@@ -2205,7 +2225,9 @@ int Load_Forcings(Link* system, unsigned int N, unsigned int* my_sys, unsigned i
     }
 
     //Clean up
-    if (buffer)	free(buffer);
+    if (buffer)
+        free(buffer);
+
     return 0;
 }
 
@@ -3629,7 +3651,7 @@ int Create_SAV_Data(char filename[], Link* sys, unsigned int N, unsigned int** s
         if (my_rank == 0)
         {
             ConnectPGDB(conninfo);
-            sprintf(conninfo->query, conninfo->queries[0]);
+            sprintf(conninfo->query, "%s", conninfo->queries[0]);
             res = PQexec(conninfo->conn, conninfo->query);
             error = CheckResError(res, "locating links with sensors");
 

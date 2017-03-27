@@ -1,7 +1,7 @@
-AC_INIT([asynch], [1.2.0], [samuel-debionne@uiowa.edu])
+AC_INIT([asynch], [1.2.1], [samuel-debionne@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([tar-ustar foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 
 # Check for programms
 AX_PROG_CC_MPI([], [], [AC_MSG_FAILURE([MPI compiler requested, but couldn't find MPI.])] )

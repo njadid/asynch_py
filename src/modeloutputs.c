@@ -155,7 +155,7 @@ bool AreOutputsSet(GlobalVars* GlobalVars)
             if (!(GlobalVars->outputs[i].out_float))	return false;
             break;
         default:
-            printf("[%i]: Error: Bad output type (%hi) encountered while checking if outputs set.\n", my_rank, GlobalVars->output_types[i]);
+            printf("[%i]: Error: Bad output type (%d) encountered while checking if outputs set.\n", my_rank, GlobalVars->output_types[i]);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }

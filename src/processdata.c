@@ -1530,7 +1530,7 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
         else
         { 
             unix_time = (unsigned int)globals->end_time;
-            snprintf(dump_loc_filename, ASYNCH_MAX_PATH_LENGTH, "%s.h5", globals->dump_loc_filename);
+            snprintf(dump_loc_filename, ASYNCH_MAX_PATH_LENGTH, "%s", globals->dump_loc_filename);
         }
 
         hid_t file_id = H5Fcreate(dump_loc_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);

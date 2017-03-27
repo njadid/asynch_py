@@ -43,7 +43,7 @@ int Create_Rain_Data_Par(Link* sys,unsigned int N,unsigned int my_N,GlobalVars* 
 	Link* current;
 	float forcing_buffer;
 	unsigned int holder;
-	char filename[128];
+	char filename[ASYNCH_MAX_PATH_LENGTH];
 	FILE* stormdata = NULL;
 	unsigned int numfiles = last - first + 1;
 
@@ -175,7 +175,7 @@ int Create_Rain_Data_GZ(Link* sys,unsigned int N,unsigned int my_N,GlobalVars* G
 	Link* current;
 	float rainfall_buffer;
 	unsigned int holder;
-	char filename[128];
+	char filename[ASYNCH_MAX_PATH_LENGTH];
 	FILE* stormdata = NULL;
 	unsigned int numfiles = last - first + 1;
 	FILE* compfile = NULL;
@@ -347,7 +347,7 @@ int Create_Rain_Data_Grid(Link* sys,unsigned int N,unsigned int my_N,GlobalVars*
 	unsigned int i,j,curr_idx,k,holder,endianness,cell;
 	short unsigned int intensity;
 	Link* current;
-	char filename[128];
+	char filename[ASYNCH_MAX_PATH_LENGTH];
 	float forcing_buffer;
 	FILE* stormdata = NULL;
 	unsigned int numfiles = last - first + 1;

@@ -142,6 +142,23 @@ void Asynch_Load_Network(AsynchSolver* asynch)
     MPI_Barrier(asynch->comm);
 }
 
+void Asynch_Save_Network_Dot(const AsynchSolver * const asynch, const char *filename)
+{
+    FILE *dot_file = fopen(filename, "w");
+    fprintf(dot_file, "digraph river{\n");
+
+    for (unsigned int i = 0; i < asynch->N; i++)
+    {
+        for (unsigned int j = 0; j < asynch->sys[i].num_parents; j++)
+            fprintf(dot_file, "%d -> %d;\n", asynch->sys[i].parents[j]->ID, asynch->sys[i].ID);
+    }
+
+
+    fprintf(dot_file, "}\n");
+    fclose(dot_file);
+}
+
+
 //If load_all == 1, then the parameters for every link are available on every proc.
 //If load_all == 0, then the parameters are only available for links assigned to this proc.
 void Asynch_Load_Network_Parameters(AsynchSolver* asynch, short int load_all)
@@ -722,7 +739,7 @@ int Asynch_Set_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname)
         if (l > 3 && peakflowname[l - 4] == '.' && peakflowname[l - 3] == 'p' && peakflowname[l - 2] == 'e' && peakflowname[l - 1] == 'a')
         {
             peakflowname[l - 4] = '\0';
-            sprintf(asynch->globals->peaks_loc_filename, peakflowname);
+            sprintf(asynch->globals->peaks_loc_filename, "%s", peakflowname);
             peakflowname[l - 4] = '.';
             return 0;
         }
@@ -736,7 +753,7 @@ int Asynch_Get_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname)
 {
     if (asynch->globals->peaks_loc_filename)
     {
-        sprintf(peakflowname, asynch->globals->peaks_loc_filename);
+        sprintf(peakflowname, "%s", asynch->globals->peaks_loc_filename);
         return 0;
     }
     else
