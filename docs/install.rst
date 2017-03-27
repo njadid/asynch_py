@@ -34,7 +34,7 @@ From the `OpenMPI webpage <http://www.open-mpi.org/>`__ :
 
   The Open MPI Project is an open source Message Passing Interface implementation that is developed and maintained by a consortium of academic, research, and industry partners. OpenMPI is available on Iowa's HPC clusters In theory, ASYNCH should work properly with any other implementation adhering to the MPI standard.
 
-If installing an MPI implementation on a machine for ASYNCH, be sure to install the development packages of the MPI implementation In Linux repositories,these packages are usually denoted with a ``-dev`` or similar in the package name. If in doubt, try typing "mpirun" and "mpicc" in a terminal. Both of these should be present to run ASYNCH. If mpirun is not present, you have not installed the MPI binaries (meaning you probably haven't tried installing MPI at all). If mpicc is not present, then you are missing the development package.
+If installing an MPI implementation on a machine for ASYNCH, be sure to install the development packages of the MPI implementation. In Linux repositories, these packages are usually denoted with a ``-dev`` or similar in the package name. If in doubt, try typing "mpirun" and "mpicc" in a terminal. Both of these should be present to run ASYNCH. If mpirun is not present, you have not installed the MPI binaries (meaning you probably haven't tried installing MPI at all). If mpicc is not present, then you are missing the development package.
 
 HDF5 Library
 ~~~~~~~~~~~~

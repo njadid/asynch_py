@@ -227,7 +227,7 @@ Format:
 
 ::
 
-  {initial state flag} {.ini, .uini, .rec, or .dbc filename} [unix time]
+  {initial state flag} {.ini, .uini, .rec, .dbc or .h5 filename} [unix time]
 
 This section specifies the initial state of the model. The values for the initial state flag can be ``0``, ``1``, ``2``, ``3`` or ``4`` corresponding, respectively, to a ini, uini, rec, dbc, h5 file. The unix time argument is used for database connections only. This value is available in the query of the database connection file and can be used for selecting values from tables.
 
@@ -779,6 +779,9 @@ Gzipped Binary Storm Files
 
 Gzipped binary storm files (.gz) are also supported. The format of these files is identical to that of the binary storm files, as they are simply gzipped binary storm files. The files are uncompressed before use, making this format slower than the regular binary storm files.
 
+Grid Cell Files
+~~~~~~~~~~~~~~~
+
 Grid cell files group link ids together, and specify forcing values for each group (referred to as a cell). Although similar to binary files, this format requires two accompanying text files: an index file and a lookup file.
 
 The index file specifies meta data for the grid cell data. The format for this ASCII file is:
@@ -801,9 +804,6 @@ The lookup file specifies which link ids are located in each cell. The format fo
   {link id 2} {cell id 2}
 
 The cell ids are indexed starting from 0, and the cell index cannot be larger than the number of cells specified in the accompanying index file.
-
-Grid Cell Files
-~~~~~~~~~~~~~~~
 
 The grid cell files are binary files. Each gives forcing values for each cell at a moment of time. If a cell is omitted from a file, then the forcing value is assumed to be 0. The filename for each grid cell file begins with the same prefix, followed by an integer. This integer indicated the order in which the grid cell files should be used. Although the number on these files should be consecutive, a missing file indicates all cells take a forcing value of 0. The format of the binary grid cell files is:
 
