@@ -739,7 +739,7 @@ int Asynch_Set_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname)
         if (l > 3 && peakflowname[l - 4] == '.' && peakflowname[l - 3] == 'p' && peakflowname[l - 2] == 'e' && peakflowname[l - 1] == 'a')
         {
             peakflowname[l - 4] = '\0';
-            sprintf(asynch->globals->peaks_loc_filename, peakflowname);
+            sprintf(asynch->globals->peaks_loc_filename, "%s", peakflowname);
             peakflowname[l - 4] = '.';
             return 0;
         }
@@ -753,7 +753,7 @@ int Asynch_Get_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname)
 {
     if (asynch->globals->peaks_loc_filename)
     {
-        sprintf(peakflowname, asynch->globals->peaks_loc_filename);
+        sprintf(peakflowname, "%s", asynch->globals->peaks_loc_filename);
         return 0;
     }
     else

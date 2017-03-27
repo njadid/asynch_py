@@ -3651,7 +3651,7 @@ int Create_SAV_Data(char filename[], Link* sys, unsigned int N, unsigned int** s
         if (my_rank == 0)
         {
             ConnectPGDB(conninfo);
-            sprintf(conninfo->query, conninfo->queries[0]);
+            sprintf(conninfo->query, "%s", conninfo->queries[0]);
             res = PQexec(conninfo->conn, conninfo->query);
             error = CheckResError(res, "locating links with sensors");
 
