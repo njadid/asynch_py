@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     if (my_rank == 0)	printf("Partitioning network...\n");
     Asynch_Partition_Network(asynch);
     if (my_rank == 0)	printf("Loading parameters...\n");
-    Asynch_Load_Network_Parameters(asynch, 0);
+    Asynch_Load_Network_Parameters(asynch);
     if (my_rank == 0)	printf("Reading dam and reservoir data...\n");
     Asynch_Load_Dams(asynch);
     if (my_rank == 0)	printf("Setting up numerical error data...\n");
@@ -149,9 +149,9 @@ int main(int argc, char* argv[])
     for (i = 0; i < N; i++)
     {
         if (asynch->assignments[i] == my_rank || asynch->getting[i] == 1)
-            backup[i] = v_get(asynch->sys[i].dim);
+            backup[i] = v_init(asynch->sys[i].dim);
         else
-            backup[i] = v_get(0);
+            backup[i] = v_init(0);
     }
 
     if (my_rank == 0)
@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
     if (my_rank == 0)
     {
         printf("%i: The answer at ID %i at time %.12f is\n", my_rank, asynch->sys[asynch->my_sys[0]].ID, asynch->sys[asynch->my_sys[0]].last_t);
-        Print_Vector(asynch->sys[asynch->my_sys[0]].list->tail->y_approx);
+        //Print_Vector(asynch->sys[asynch->my_sys[0]].list->tail->y_approx);
         printf("Total time for calculations: %f\n", difftime(stop, start));
     }
 

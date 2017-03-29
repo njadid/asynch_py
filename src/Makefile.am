@@ -1,11 +1,43 @@
 noinst_LIBRARIES = libasynch.a
-libasynch_a_SOURCES = rkmethods.c problems.c mathmethods.c riversys.c sort.c comm.c system.c processdata.c partition.c definetype.c misc.c rainfall.c solvers.c io.c forcings.c compression.c date_manip.c asynch_interface.c modeloutputs.c data_types.c
+libasynch_a_SOURCES = \
+  advance.c \
+  asynch_interface.c \
+  blas.c \
+  comm.c \
+  compression.c \
+  config_gbl.c \
+  data_types.c \
+  date_manip.c \
+  db.c \
+  forcings.c forcings_io.c \
+  io.c \
+  misc.c \
+  outputs.c \
+  partition.c \
+  processdata.c \
+  riversys.c \
+  rksteppers.c \
+  sort.c \
+  system.c \
+  models/check_consistency.c \
+  models/check_state.c \
+  models/definitions.c \
+  models/equations.c \
+  solvers/dopri5_dense.c \
+  solvers/lagrange.c \
+  solvers/radau.c \
+  solvers/rk3_2_dense.c \
+  solvers/rk4_3_dense.c \
+  steppers/explicit.c \
+  steppers/explicit_index1.c \
+  steppers/explicit_index1_dam.c \
+  steppers/forced.c
 
 bin_PROGRAMS = asynch
 asynch_SOURCES = optparse.c asynchdist.c
 asynch_LDADD = libasynch.a $(HDF5_LIBS) $(POSTGRESQL_LIBS)
 asynch_LDFLAGS = $(HDF5_LDFLAGS) $(POSTGRESQL_LDFLAGS)
 
-include_HEADERS = rkmethods.h problems.h mathmethods.h riversys.h sort.h comm.h system.h processdata.h partition.h definetype.h misc.h rainfall.h solvers.h io.h forcings.h compression.h date_manip.h asynch_interface.h modeloutputs.h data_types.h structs.h structs_fwd.h optparse.h libpq_fwd.h
+include_HEADERS = structs.h structs_fwd.h asynch_interface.h
 
 AM_CFLAGS = $(HDF5_CPPFLAGS) $(POSTGRESQL_CPPFLAGS)

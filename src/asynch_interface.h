@@ -1,4 +1,4 @@
-#ifndef ASYNCH_INTERFACE_H
+#if !defined(ASYNCH_INTERFACE_H)
 #define ASYNCH_INTERFACE_H
 
 #if _MSC_VER > 1000
@@ -12,45 +12,39 @@
 #include <mpi.h>
 #endif 
 
-#include "structs_fwd.h"
-#include "data_types.h"
-#include "mathmethods.h"
+#include <structs_fwd.h>
+#include <data_types.h>
+
+#include <models/model.h>
 
 //Callback signatures
 
 /// 
 ///
+/// \param id The link id.
 /// \param t The current time.
 /// \param y The current state vector at time *t* for the link.
-/// \param global_params The vector of parameters uniform amongst all links.
-/// \param params The vector of parameters for the link.
-/// \param state : The current state of the state vector.
-/// \param user: User defined data.
+/// \param num_dof: Number of degree of freedom.
 /// \return Returns the data to be written as output.
-typedef int (OutputIntCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
+typedef int (OutputIntCallback)(unsigned int id, double t, double *y, unsigned int num_dof);
 
 /// 
 ///
+/// \param id The link id.
 /// \param t The current time.
 /// \param y The current state vector at time *t* for the link.
-/// \param global_params The vector of parameters uniform amongst all links.
-/// \param params The vector of parameters for the link.
-/// \param state : The current state of the state vector.
-/// \param user: User defined data.
+/// \param num_dof: Number of degree of freedom.
 /// \return Returns the data to be written as output.
-typedef double (OutputDoubleCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
-
+typedef double (OutputDoubleCallback)(unsigned int id, double t, double *y, unsigned int num_dof);
 
 /// 
 ///
+/// \param id The link id.
 /// \param t The current time.
 /// \param y The current state vector at time *t* for the link.
-/// \param global_params The vector of parameters uniform amongst all links.
-/// \param params The vector of parameters for the link.
-/// \param state : The current state of the state vector.
-/// \param user: User defined data.
+/// \param num_dof: Number of degree of freedom.
 /// \return Returns the data to be written as output.
-typedef float (OutputFloatCallback)(unsigned int id, double t, VEC y_i, VEC global_params, VEC params, int state, void* user);
+typedef float (OutputFloatCallback)(unsigned int id, double t, double *y, unsigned int num_dof);
 
 
 /// Output formating callback 
@@ -61,65 +55,7 @@ typedef union OutputCallback {
 } OutputCallback;
 
 
-typedef void (PeakflowOutputCallback)(unsigned int, double, VEC, VEC, VEC, double, unsigned int, void*, char*);
-
-//Function signatures
-
-/// These are the right-hand side functions for the differential equations.
-///
-/// \param t The current time (typically measured in minutes).
-/// \param y_i The vector of the current states of the system at this link. Only states defined by a differential equation are available. This means the indices from diff_start and beyond are available. States defined by algebraic equations must be calculated, if needed for the differential equations.
-/// \param y_p The array of vectors of the states of the system of each upstream (parent) link. Only states defined by a differential equation are available. States defined by algebraic equations must be calculated. Further, only those states listed in dense_indices (defined in SetParamSizes) are available.
-/// \param num_parents The number of upstream links (parents) to link i
-/// \param global_params The vector of parameters constant in both space and time.
-/// \param forcings The array of current forcing values.
-/// \param qvs The table of discharge vs storage relationships. This is only available if a dam is present at this link, and the dam_flag is set to 2.
-/// \param params The vector of parameters for link i.
-/// \param state The current discontinuity state of the states.
-/// \param user A pointer to user specified data.
-/// \param ans The vector of function evaluations. Each entry of ans from diff_start (and including diff_start) should be set by this routine.
-typedef void (DifferentialFunc)(double t, VEC y_i, VEC* y_p, unsigned short int num_parents, VEC global_params, double* forcings, QVSData* qvs, VEC params, int state, void* user, VEC ans);
-
-/// These are the right-hand side functions for the algebraic equations.
-///
-/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
-/// \param global_params The vector of parameters constant in both space and time.
-/// \param params The vector of parameters for this link.
-/// \param qvs The table of discharge vs storage relationships.This is only available if a dam is present at this link, and the *dam\_flag* is set to 2.
-/// \param state The current discontinuity state of the states.
-/// \param user A pointer to user specified data.
-/// \param ans The vector of function evaluations.Each entry of *ans* from 0 to *diff\_start* (exclusive)should be set by this routine.
-typedef void (AlgebraicFunc)(VEC y, VEC global_params, VEC params, QVSData* qvs, int state, void* user, VEC ans);
-
-/// This routine determines in which discontinuity state the system currently is.
-///
-/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
-/// \param global_params The vector of parameters constant in both space and time.
-/// \param params The vector of parameters for this link.
-/// \param qvs The table of discharge vs storage relationships.This is only available if a dam is present at this link, and only if *dam\_flag* is 2.
-/// \param dam The dam flag for this link.If 1, a dam is present at this link.If 0, no dam is present.
-typedef int (CheckStateFunc)(VEC y, VEC global_params, VEC params, QVSData* qvs, unsigned int dam);
-
-
-typedef void (JacobianFunc)(double, VEC, VEC*, unsigned short int, VEC, double*, VEC, MAT*);                                                    //!< Jacobian of right-hand side function
-typedef int (RKSolverFunc)(Link*, GlobalVars*, int*, bool, FILE*, ConnData*, Forcing*, TempStorage*);   //!< RK solver to use
-
-/// This routine is called by the integrator to guarantee these constraints are satisfied.
-///
-/// \param y The vector of current states.Only the states with index greater than or equal to *diff\_start* are available for use.
-/// \param params The vector of parameters for this link.
-/// \param global_params The vector of parameters constant in both space and time.
-typedef void (CheckConsistencyFunc)(VEC y, VEC, VEC);
-
-// Custom models signatures
-typedef void (SetParamSizesFunc)(GlobalVars*, void*);
-typedef void (ConvertFunc)(VEC, unsigned int, void*);
-typedef void (RoutinesFunc)(Link*, unsigned int, unsigned int, unsigned short int, void*);
-
-/// This routine allows computations that are static in time and independent of state to be performed.
-typedef void (PrecalculationsFunc)(Link*, VEC, VEC, unsigned int, unsigned int, unsigned short int, unsigned int, void*);
-typedef int (InitializeEqsFunc)(VEC, VEC, QVSData*, unsigned short int, VEC, unsigned int, unsigned int, unsigned int, void*, void*);
-typedef int* (PartitionFunc)(Link*, unsigned int, Link**, unsigned int, unsigned int**, unsigned int*, TransData*, short int*);
+typedef void (PeakflowOutputCallback)(unsigned int ID, double peak_time, double *peak_value, double *params, double *global_params, double conversion, unsigned int area_idx, void* user, char* buffer);
 
 //Constructor / Destructor related routings
 
@@ -143,14 +79,12 @@ void Asynch_Free(AsynchSolver* asynch);
 //Customization related routings
 
 int Asynch_Custom_Model(
-    AsynchSolver* asynch,
-    SetParamSizesFunc *set_param_sizes,
-    ConvertFunc *convert,
-    RoutinesFunc *routines,
-    PrecalculationsFunc *precalculations,
-    InitializeEqsFunc *initialize_eqs);
+    AsynchSolver *asynch,
+    AsynchModel *model);
 
-int Asynch_Custom_Partitioning(AsynchSolver* asynch, PartitionFunc *partition);
+int Asynch_Custom_Partitioning(
+    AsynchSolver *asynch,
+    PartitionFunc *partition);
 
 //Routines to intialize network and model
 
@@ -189,10 +123,9 @@ void Asynch_Partition_Network(AsynchSolver* asynch);
 /// 
 /// \pre This routine can be called before *Asynch_Partition_Network* only if *load_all* is set to true.
 /// \param asynch A pointer to a AsynchSolver object to use.
-/// \param load_all  Setting load_all to false causes the MPI processes to only store parameters for Links assigned to them.
-void Asynch_Load_Network_Parameters(AsynchSolver* asynch, short int load_all);
+void Asynch_Load_Network_Parameters(AsynchSolver* asynch);
 
-/// This routine processes the dam inputs for the AsynchSolver object as set in the global file read by
+/// This routine processes the is_dam inputs for the AsynchSolver object as set in the global file read by
 // *Asynch_Parse_GBL*.
 /// 
 /// \pre This routine should be called after *Asynch_Partition_Network* and *Asynch_Load_Network_Parameters* have been called.
@@ -511,7 +444,7 @@ Link* Asynch_Get_Links(AsynchSolver* asynch);
 ///
 /// \param asynch A pointer to a AsynchSolver object to use.
 /// \return Number of links assigned to the current MPI process
-unsigned short Asynch_Get_Num_Links_Proc(AsynchSolver* asynch);
+unsigned int Asynch_Get_Num_Links_Proc(AsynchSolver* asynch);
 
 Link* Asynch_Get_Links_Proc(AsynchSolver* asynch);
 
@@ -606,7 +539,7 @@ void Asynch_Set_Init_File(AsynchSolver* asynch, char* filename);
 /// \param asynch A pointer to a AsynchSolver object to use.
 /// \param unix_time The timestamp to set at each link.
 /// \param states The vector of the current state of each link.
-void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, VEC* states);
+void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, double* states);
 
 
 /// This routine clears all peakflow data for each link. The time to peak is set to the current local
@@ -662,8 +595,7 @@ unsigned int Asynch_Get_Size_Global_Parameters(AsynchSolver* asynch);
 /// 
 /// \param asynch A pointer to a AsynchSolver object to use.
 /// \param params Vector of global parameter values to retrieve.
-/// \return Vector of the global parameters.
-void Asynch_Get_Global_Parameters(AsynchSolver* asynch, VEC params);
+void Asynch_Get_Global_Parameters(AsynchSolver* asynch, double *params);
 
 /// This routine sets the values of the global parameters. The number of global parameters may be
 /// different from the number previously stored by Asynch. However, if the new global parameters should
@@ -676,9 +608,6 @@ void Asynch_Get_Global_Parameters(AsynchSolver* asynch, VEC params);
 /// \param params Vector of global parameter values to set.
 /// \param num_params The number of global parameters in params.
 /// \return Returns 1 if an error occurred, 0 otherwise.
-int Asynch_Set_Global_Parameters(AsynchSolver* asynch, VEC params, unsigned int num_params);
+int Asynch_Set_Global_Parameters(AsynchSolver* asynch, double *params, unsigned int num_params);
 
-
-
-#endif
-
+#endif //!defined(ASYNCH_INTERFACE_H)

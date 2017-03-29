@@ -86,7 +86,8 @@ int main(int argc, char* argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     //Command line options
-    bool debug = false;
+    bool stdout_nobuf = false;
+    bool debug = false;    
     bool help = false;
     bool version = false;
 
@@ -94,7 +95,8 @@ int main(int argc, char* argv[])
     struct optparse options;
     optparse_init(&options, argv);
     struct optparse_long longopts[] = {
-        { "debug", 'd', OPTPARSE_NONE },
+        { "stdout-nobuf", 'b', OPTPARSE_NONE },
+        { "debug", 'd', OPTPARSE_NONE },        
         { "help", 'h', OPTPARSE_NONE },
         { "version", 'v', OPTPARSE_NONE },
         { 0 }
@@ -102,6 +104,9 @@ int main(int argc, char* argv[])
     int option;
     while ((option = optparse_long(&options, longopts, NULL)) != -1) {
         switch (option) {
+        case 'b':
+            stdout_nobuf = true;
+            break;
         case 'd':
             debug = true;
             break;
@@ -136,6 +141,10 @@ int main(int argc, char* argv[])
         print_err("Command line parameter required:  A universal variable file (.gbl).\n");
         exit(EXIT_FAILURE);
     }
+
+    if (stdout_nobuf)
+        //Disable stdout buffering
+        setvbuf(stdout, NULL, _IONBF, 0);
 
     if (debug)
     {
@@ -172,7 +181,7 @@ int main(int argc, char* argv[])
     print_out("Partitioning network...\n");
     Asynch_Partition_Network(asynch);
     print_out("Loading parameters...\n");
-    Asynch_Load_Network_Parameters(asynch, 0);
+    Asynch_Load_Network_Parameters(asynch);
     print_out("Reading dam and reservoir data...\n");
     Asynch_Load_Dams(asynch);
     print_out("Setting up numerical error data...\n");

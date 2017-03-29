@@ -7,42 +7,22 @@
 
 #include <stdbool.h>
 
-#include "mathmethods.h"
-#include "structs.h"
-#include "problems.h"
-#include "riversys.h"
-#include "sort.h"
-//#include "cblas.h"
-//#include "clapack.h"
-#include "definetype.h"
-
-extern int my_rank;
-extern int np;
-
-double InitialStepSize(double t,Link* link_i,GlobalVars* GlobalVars,TempStorage* workspace);
-//void BackupParent(Link* currentp,double time,VEC* backup,UnivVars* GlobalVars);
-
-//RKSolver methods
-//int ExplicitRKSolverLinear(Link* link_i,UnivVars* GlobalVars,int* assignments,FILE* outputfile,TempStorage* workspace);
-int ExplicitRKSolver(Link* link_i,GlobalVars* GlobalVars,int* assignments,bool print_flag,FILE* outputfile,ConnData* conninfo,Forcing* forcings,TempStorage* workspace);
-int ExplicitRKIndex1SolverDam(Link* link_i,GlobalVars* GlobalVars,int* assignments,bool print_flag,FILE* outputfile,ConnData* conninfo,Forcing* forcings,TempStorage* workspace);
-int ExplicitRKIndex1Solver(Link* link_i,GlobalVars* GlobalVars,int* assignments,bool print_flag,FILE* outputfile,ConnData* conninfo,Forcing* forcings,TempStorage* workspace);
-int ExplicitRKSolverDiscont(Link* link_i,GlobalVars* GlobalVars,int* assignments,bool print_flag,FILE* outputfile,ConnData* conninfo,Forcing* forcings,TempStorage* workspace);
-
-//Forced solution methods
-int ForcedSolutionSolver(Link* link_i,GlobalVars* GlobalVars,int* assignments,bool print_flag,FILE* outputfile,ConnData* conninfo,Forcing* forcings,TempStorage* workspace);
+#include <structs.h>
 
 //RK methods data
-RKMethod* RKDense3_2();
-void RKDense3_2_b(double theta,VEC b);
-void RKDense3_2_bderiv(double theta,VEC b);
-RKMethod* TheRKDense4_3();
-void TheRKDense4_3_b(double theta,VEC b);
-RKMethod* DOPRI5_dense();
-void DOPRI5_b(double theta,VEC b);
-void DOPRI5_bderiv(double theta,VEC b);
-RKMethod* RadauIIA3_dense();
-void RadauIIA3_b(double theta,VEC b);
+void RKDense3_2(RKMethod* method);
+//void RKDense3_2_b(double theta, double *b);
+//void RKDense3_2_bderiv(double theta, double *b);
+
+void TheRKDense4_3(RKMethod* method);
+//void TheRKDense4_3_b(double theta, double *b);
+
+void DOPRI5_dense(RKMethod* method);
+//void DOPRI5_b(double theta, double *b);
+//void DOPRI5_bderiv(double theta, double *b);
+
+void RadauIIA3_dense(RKMethod* method);
+//void RadauIIA3_b(double theta, double *b);
 
 #endif
 

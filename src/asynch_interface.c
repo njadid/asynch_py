@@ -18,21 +18,26 @@
 #if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
+#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
 #endif
 
-#include "structs.h"
-#include "comm.h"
-#include "riversys.h"
-#include "processdata.h"
-#include "solvers.h"
-#include "io.h"
-#include "data_types.h"
+#include <structs.h>
+#include <config_gbl.h>
+#include <db.h>
+#include <comm.h>
+#include <riversys.h>
+#include <processdata.h>
+#include <outputs.h>
+#include <advance.h>
+#include <io.h>
+#include <data_types.h>
+#include <forcings.h>
+#include <blas.h>
 
-#include "asynch_interface.h"
-
+#include <asynch_interface.h>
 
 //Initializes the asynch solver object.
 AsynchSolver* Asynch_Init(MPI_Comm comm)
@@ -43,29 +48,32 @@ AsynchSolver* Asynch_Init(MPI_Comm comm)
     int init_flag;
 
     res = malloc(sizeof(AsynchSolver));
-    memset(res, 0, sizeof(AsynchSolver));
-
-    res->comm = comm;
-    if (comm != MPI_COMM_WORLD)	printf("Warning: asynchsolver object my not work fully with in a comm other than MPI_COMM_WORLD.\n");
-
-    //Initialize MPI stuff
-    MPI_Initialized(&init_flag);
-    if (!init_flag)
+    if (res)
     {
-        printf("Error: MPI must be initialized prior to Asynch_Init.\n");
-        MPI_Abort(MPI_COMM_WORLD, 0);
+        memset(res, 0, sizeof(AsynchSolver));
+
+        res->comm = comm;
+        if (comm != MPI_COMM_WORLD)	printf("Warning: asynchsolver object my not work fully with in a comm other than MPI_COMM_WORLD.\n");
+
+        //Initialize MPI stuff
+        MPI_Initialized(&init_flag);
+        if (!init_flag)
+        {
+            printf("Error: MPI must be initialized prior to Asynch_Init.\n");
+            MPI_Abort(MPI_COMM_WORLD, 0);
+        }
+
+        MPI_Comm_rank(comm, &(res->my_rank));
+        MPI_Comm_size(comm, &(res->np));
+
+        //Sets the global variables
+        np = res->np;
+        my_rank = res->my_rank;
+
+        //Initialize asynchsolver members
+        for (i = 0; i < ASYNCH_MAX_DB_CONNECTIONS - ASYNCH_DB_LOC_FORCING_START; i++)
+             Forcing_Init(&res->forcings[i]);
     }
-
-    MPI_Comm_rank(comm, &(res->my_rank));
-    MPI_Comm_size(comm, &(res->np));
-
-    //Sets the global variables
-    np = res->np;
-    my_rank = res->my_rank;
-
-    //Initialize asynchsolver members
-    for (i = 0; i < ASYNCH_MAX_DB_CONNECTIONS - ASYNCH_DB_LOC_FORCING_START; i++)
-         Forcing_Init(&res->forcings[i]);
 
     return res;
 }
@@ -74,23 +82,15 @@ AsynchSolver* Asynch_Init(MPI_Comm comm)
 //Return 1 if there is an error, 0 if everything is ok
 int Asynch_Custom_Model(
     AsynchSolver* asynch,
-    SetParamSizesFunc *set_param_sizes,
-    ConvertFunc *convert,
-    RoutinesFunc *routines,
-    PrecalculationsFunc *precalculations,
-    InitializeEqsFunc *initialize_eqs)
+    AsynchModel *model)
 {
-    if (!(asynch->custom_model))
+    if (!(asynch->model))
     {
-        asynch->custom_model = (Model*)malloc(sizeof(Model));
-        asynch->custom_model->partition = NULL;
+        asynch->model = (AsynchModel*) malloc(sizeof(AsynchModel));
+        asynch->model->partition = NULL;
     }
 
-    asynch->custom_model->set_param_sizes = set_param_sizes;
-    asynch->custom_model->convert = convert;
-    asynch->custom_model->routines = routines;
-    asynch->custom_model->precalculations = precalculations;
-    asynch->custom_model->initialize_eqs = initialize_eqs;
+    asynch->model = model;
 
     return 0;
 }
@@ -98,13 +98,13 @@ int Asynch_Custom_Model(
 //Sets a routine to use for partitioning.
 int Asynch_Custom_Partitioning(AsynchSolver* asynch, PartitionFunc *partition)
 {
-    if (!(asynch->custom_model))
+    if (!(asynch->model))
     {
-        asynch->custom_model = (Model*)malloc(sizeof(Model));
-        memset(asynch->custom_model, 0, sizeof(Model));
+        asynch->model = (AsynchModel*) malloc(sizeof(AsynchModel));
+        memset(asynch->model, 0, sizeof(AsynchModel));
     }
 
-    asynch->custom_model->partition = partition;
+    asynch->model->partition = partition;
 
     return 0;
 }
@@ -116,7 +116,7 @@ int Asynch_Custom_Partitioning(AsynchSolver* asynch, PartitionFunc *partition)
 void Asynch_Parse_GBL(AsynchSolver* asynch, char* filename)
 {
     //Read in .gbl file
-    asynch->globals = Read_Global_Data(filename, &(asynch->errors_tol), asynch->forcings, asynch->db_connections, asynch->rkdfilename, asynch->custom_model, asynch->ExternalInterface);
+    asynch->globals = Read_Global_Data(filename, &(asynch->errors_tol), asynch->forcings, asynch->db_connections, asynch->rkdfilename, asynch->model, asynch->ExternalInterface);
     if (!asynch->globals)
     {
         if (my_rank == 0)
@@ -136,7 +136,7 @@ void Asynch_Load_Network(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    asynch->sys = Create_River_Network(asynch->globals, &(asynch->N), &(asynch->id_to_loc), asynch->db_connections);
+    Create_River_Network(asynch->globals, &asynch->sys, &asynch->N, &asynch->id_to_loc, asynch->db_connections);
     if (!asynch->sys)	MPI_Abort(asynch->comm, 1);
     asynch->setup_topo = 1;
     MPI_Barrier(asynch->comm);
@@ -161,32 +161,6 @@ void Asynch_Save_Network_Dot(const AsynchSolver * const asynch, const char *file
 
 //If load_all == 1, then the parameters for every link are available on every proc.
 //If load_all == 0, then the parameters are only available for links assigned to this proc.
-void Asynch_Load_Network_Parameters(AsynchSolver* asynch, short int load_all)
-{
-    int i;
-    if (!asynch->setup_topo)
-    {
-        if (my_rank == 0)
-            printf("Error: Topology data must be read before loading the link parameters.\n");
-        else
-            ASYNCH_SLEEP(1);
-        MPI_Abort(asynch->comm, 1);
-    }
-    if (!asynch->setup_partition && !load_all)
-    {
-        if (my_rank == 0)
-            printf("Error: Paritioning must be done before reading link parameters.\n");
-        else
-            ASYNCH_SLEEP(1);
-        MPI_Abort(asynch->comm, 1);
-    }
-
-    i = Load_Local_Parameters(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->globals, asynch->db_connections, load_all, asynch->custom_model, asynch->ExternalInterface);
-    if (i)	MPI_Abort(asynch->comm, 1);
-    asynch->setup_params = 1;
-    MPI_Barrier(asynch->comm);
-}
-
 void Asynch_Partition_Network(AsynchSolver* asynch)
 {
     int i;
@@ -199,15 +173,40 @@ void Asynch_Partition_Network(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    i = Partition_Network(asynch->sys, asynch->N, asynch->globals, &(asynch->my_sys), &(asynch->my_N), &(asynch->assignments), &(asynch->my_data), &(asynch->getting), asynch->custom_model);
+    i = Partition_Network(asynch->sys, asynch->N, asynch->globals, &(asynch->my_sys), &(asynch->my_N), &(asynch->assignments), &(asynch->my_data), &(asynch->getting), asynch->model);
     if (i)	MPI_Abort(asynch->comm, 1);
     asynch->setup_partition = 1;
     MPI_Barrier(asynch->comm);
 }
 
+void Asynch_Load_Network_Parameters(AsynchSolver* asynch)
+{
+    if (!asynch->setup_topo)
+    {
+        if (my_rank == 0)
+            printf("Error: Topology data must be read before loading the link parameters.\n");
+        else
+            ASYNCH_SLEEP(1);
+        MPI_Abort(asynch->comm, 1);
+    }
+    if (!asynch->setup_partition)
+    {
+        if (my_rank == 0)
+            printf("Error: Paritioning must be done before reading link parameters.\n");
+        else
+            ASYNCH_SLEEP(1);
+        MPI_Abort(asynch->comm, 1);
+    }
+
+    int ret = Load_Local_Parameters(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->globals, asynch->db_connections, asynch->model, asynch->ExternalInterface);
+    if (ret)
+        MPI_Abort(asynch->comm, 1);
+    asynch->setup_params = 1;
+    MPI_Barrier(asynch->comm);
+}
+
 void Asynch_Load_Numerical_Error_Data(AsynchSolver* asynch)
 {
-    int i;
     if (!asynch->setup_partition)
     {
         if (my_rank == 0)
@@ -217,15 +216,15 @@ void Asynch_Load_Numerical_Error_Data(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    i = Build_RKData(asynch->sys, asynch->rkdfilename, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->globals, asynch->errors_tol, &(asynch->AllMethods), &(asynch->nummethods));
-    if (i)	MPI_Abort(asynch->comm, 1);
+    int ret = Build_RKData(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->rkdfilename, asynch->assignments, asynch->getting, asynch->globals, &asynch->errors_tol, &asynch->rk_methods, &asynch->num_methods);
+    if (ret)
+        MPI_Abort(asynch->comm, 1);
     asynch->setup_rkdata = 1;
     MPI_Barrier(asynch->comm);
 }
 
 void Asynch_Initialize_Model(AsynchSolver* asynch)
 {
-    int i;
     if (!asynch->setup_partition)
     {
         if (my_rank == 0)
@@ -250,15 +249,15 @@ void Asynch_Initialize_Model(AsynchSolver* asynch)
             ASYNCH_SLEEP(1);
         MPI_Abort(asynch->comm, 1);
     }
-    i = Initialize_Model(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->globals, asynch->custom_model, asynch->ExternalInterface);
-    if (i)	MPI_Abort(asynch->comm, 1);
+    int ret = Initialize_Model(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->globals, asynch->model, asynch->ExternalInterface);
+    if (ret)
+        MPI_Abort(asynch->comm, 1);
     asynch->setup_initmodel = 1;
     MPI_Barrier(asynch->comm);
 }
 
 void Asynch_Load_Initial_Conditions(AsynchSolver* asynch)
 {
-    int i;
     if (!asynch->setup_partition)
     {
         if (my_rank == 0)
@@ -284,15 +283,15 @@ void Asynch_Load_Initial_Conditions(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    i = Load_Initial_Conditions(asynch->sys, asynch->N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->globals, asynch->db_connections, asynch->custom_model, asynch->ExternalInterface);
-    if (i)	MPI_Abort(asynch->comm, 1);
+    int ret = Load_Initial_Conditions(asynch->sys, asynch->N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->globals, asynch->db_connections, asynch->model, asynch->ExternalInterface);
+    if (ret)
+        MPI_Abort(asynch->comm, 1);
     asynch->setup_initconds = 1;
     MPI_Barrier(asynch->comm);
 }
 
 void Asynch_Load_Forcings(AsynchSolver* asynch)
 {
-    int i;
     if (!asynch->setup_partition)
     {
         if (my_rank == 0)
@@ -302,15 +301,15 @@ void Asynch_Load_Forcings(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    i = Load_Forcings(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->res_list, asynch->res_size, asynch->id_to_loc, asynch->globals, asynch->forcings, asynch->db_connections);
-    if (i)	MPI_Abort(asynch->comm, 1);
+    int ret = Load_Forcings(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->res_list, asynch->res_size, asynch->id_to_loc, asynch->globals, asynch->forcings, asynch->db_connections);
+    if (ret)
+        MPI_Abort(asynch->comm, 1);
     asynch->setup_forcings = 1;
     MPI_Barrier(asynch->comm);
 }
 
 void Asynch_Load_Dams(AsynchSolver* asynch)
 {
-    int i;
     if (!asynch->setup_partition)
     {
         if (my_rank == 0)
@@ -320,8 +319,9 @@ void Asynch_Load_Dams(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    i = Load_Dams(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->globals, asynch->errors_tol, asynch->db_connections, &(asynch->res_list), &(asynch->res_size), &(asynch->my_res_size));
-    if (i)	MPI_Abort(asynch->comm, 1);
+    int ret = Load_Dams(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->globals, &asynch->errors_tol, asynch->db_connections, &asynch->res_list, &asynch->res_size, &asynch->my_res_size);
+    if (ret)
+        MPI_Abort(asynch->comm, 1);
     asynch->setup_dams = 1;
     MPI_Barrier(asynch->comm);
 }
@@ -338,7 +338,7 @@ void Asynch_Calculate_Step_Sizes(AsynchSolver* asynch)
         MPI_Abort(asynch->comm, 1);
     }
 
-    i = CalculateInitialStepSizes(asynch->sys, asynch->my_sys, asynch->my_N, asynch->globals, asynch->workspace, 1);
+    i = CalculateInitialStepSizes(asynch->my_sys, asynch->my_N, asynch->globals, &asynch->workspace, 1);
     if (i)	MPI_Abort(asynch->comm, 1);
     asynch->setup_stepsizes = 1;
     MPI_Barrier(asynch->comm);
@@ -419,7 +419,7 @@ void Asynch_Finalize_Network(AsynchSolver* asynch)
         }
     }
 
-    i = FinalizeSystem(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->my_data, asynch->globals, asynch->db_connections, &(asynch->workspace));
+    i = FinalizeSystem(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->assignments, asynch->getting, asynch->id_to_loc, asynch->my_data, asynch->globals, asynch->db_connections, &asynch->workspace);
     if (i)	MPI_Abort(asynch->comm, 1);
     asynch->setup_finalized = 1;
     MPI_Barrier(asynch->comm);
@@ -434,9 +434,7 @@ void Asynch_Free(AsynchSolver* asynch)
     TransData_Free(asynch->my_data);
     for (i = 0; i < ASYNCH_MAX_DB_CONNECTIONS; i++)
         ConnData_Free(&asynch->db_connections[i]);
-    Destroy_ErrorData(asynch->errors_tol);
-    Destroy_Workspace(asynch->workspace, asynch->globals->max_s, asynch->globals->max_parents);
-    free(asynch->workspace);
+    Destroy_Workspace(&asynch->workspace, asynch->globals->max_rk_stages, asynch->globals->max_parents);
     free(asynch->getting);
     
     if (asynch->outputfile)
@@ -451,20 +449,18 @@ void Asynch_Free(AsynchSolver* asynch)
     free(asynch->sys);
     free(asynch->my_sys);
     free(asynch->assignments);
-    for (i = 0; i < asynch->nummethods; i++)	Destroy_RKMethod(asynch->AllMethods[i]);
-    free(asynch->AllMethods);
+    for (i = 0; i < asynch->num_methods; i++)
+        Destroy_RKMethod(&asynch->rk_methods[i]);
     if (asynch->save_list)
         free(asynch->save_list);
     if (asynch->peaksave_list)
         free(asynch->peaksave_list);
     if (asynch->res_list)
         free(asynch->res_list);
-    for (i = 0; i < asynch->N; i++)
-        free(asynch->id_to_loc[i]);
     free(asynch->id_to_loc);
     Destroy_UnivVars(asynch->globals);
-    if (asynch->custom_model)
-        free(asynch->custom_model);
+    //if (asynch->model)
+    //    free(asynch->model);
     free(asynch);
 }
 
@@ -477,7 +473,7 @@ void Asynch_Advance(AsynchSolver* asynch, bool print_flag)
     }
 
     Advance(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->globals, asynch->assignments, asynch->getting, asynch->res_list, asynch->res_size,
-        asynch->id_to_loc, asynch->workspace, asynch->forcings, asynch->db_connections, asynch->my_data, print_flag, asynch->outputfile);
+        asynch->id_to_loc, &asynch->workspace, asynch->forcings, asynch->db_connections, asynch->my_data, print_flag, asynch->outputfile);
 }
 
 
@@ -492,12 +488,12 @@ int Asynch_Take_System_Snapshot(AsynchSolver* asynch, char* preface)
 
 unsigned short Asynch_Get_Model_Type(AsynchSolver* asynch)
 {
-    return asynch->globals->type;
+    return asynch->globals->model_uid;
 }
 
 void Asynch_Set_Model_Type(AsynchSolver* asynch, unsigned short type)
 {
-    asynch->globals->type = type;
+    asynch->globals->model_uid = type;
 }
 
 unsigned short Asynch_Get_Num_Links(AsynchSolver* asynch)
@@ -514,7 +510,7 @@ Link* Asynch_Get_Links(AsynchSolver* asynch)
     return asynch->sys;
 }
 
-unsigned short Asynch_Get_Num_Links_Proc(AsynchSolver* asynch)
+unsigned int Asynch_Get_Num_Links_Proc(AsynchSolver* asynch)
 {
     if (!asynch)
         return 0;
@@ -646,10 +642,10 @@ void Asynch_Prepare_Temp_Files(AsynchSolver* asynch)
     //Check that all outputs are set
     for (i = 0; i < asynch->globals->num_outputs; i++)
     {
-        if (asynch->globals->output_types[i] == ASYNCH_BAD_TYPE)
+        if (asynch->globals->outputs[i].type == ASYNCH_BAD_TYPE)
         {
             if (my_rank == 0)
-                printf("Error: Time series output %s is not defined.\n", asynch->globals->output_names[i]);
+                printf("Error: Time series output %s is not defined.\n", asynch->globals->outputs[i].name);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
@@ -664,8 +660,8 @@ void Asynch_Prepare_Temp_Files(AsynchSolver* asynch)
 //Returns 0 if ok, 1 if no temp file is open.
 int Asynch_Write_Current_Step(AsynchSolver* asynch)
 {
-    Link *sys = asynch->sys, *current;
-    unsigned int i, N = asynch->N, loc, save_size = asynch->save_size;
+    Link *sys = asynch->sys;
+    unsigned int N = asynch->N, save_size = asynch->save_size;
     int *assignments = asynch->assignments;
     double time_diff;
 
@@ -675,19 +671,19 @@ int Asynch_Write_Current_Step(AsynchSolver* asynch)
         return 1;
     }
 
-    for (i = 0; i < save_size; i++)
+    for (unsigned int i = 0; i < save_size; i++)
     {
-        loc = find_link_by_idtoloc(asynch->save_list[i], asynch->id_to_loc, N);
-        current = &sys[loc];
+        unsigned int loc = find_link_by_idtoloc(asynch->save_list[i], asynch->id_to_loc, N);
+        Link *current = &sys[loc];
         if (assignments[loc] == my_rank)
         {
             time_diff = fabs(current->next_save - current->last_t);
             if (time_diff / current->next_save < 1e-12 || ((fabs(current->next_save) < 1e-12) ? (time_diff < 1e-12) : 0))
             {
                 //WriteStep(current->last_t,current->list->head->y_approx,asynch->globals,current->params,current->state,asynch->outputfile,current->output_user,&(current->pos));
-                WriteStep(asynch->outputfile, current->ID, current->last_t, current->list->head->y_approx, asynch->globals, current->params, current->state, current->output_user, &(current->pos_offset));	//!!!! Should be tail? !!!!
+                WriteStep(asynch->globals->outputs, asynch->globals->num_outputs, asynch->outputfile, current->ID, current->last_t, current->my->list.head->y_approx, current->dim, &(current->pos_offset));	//!!!! Should be tail? !!!!
                 current->next_save += current->print_time;
-                (current->disk_iterations)++;
+                current->disk_iterations++;
             }
         }
     }
@@ -781,7 +777,7 @@ int Asynch_Upload_Hydrographs_Database(asynchsolver* asynch)
 
 int Asynch_Set_Temp_Files(AsynchSolver* asynch, double set_time, void* set_value, unsigned int output_idx)
 {
-    return SetTempFiles(set_time, set_value, asynch->globals->output_types[output_idx], output_idx, asynch->sys, asynch->N, asynch->outputfile, asynch->globals, asynch->my_save_size, asynch->id_to_loc);
+    return SetTempFiles(set_time, set_value, asynch->globals->outputs[output_idx].type, output_idx, asynch->sys, asynch->N, asynch->outputfile, asynch->globals, asynch->my_save_size, asynch->id_to_loc);
     //return SetTempFiles(set_time,asynch->sys,asynch->N,asynch->outputfile,asynch->globals,asynch->my_save_size,asynch->id_to_loc);
 }
 
@@ -792,19 +788,17 @@ int Asynch_Reset_Temp_Files(AsynchSolver* asynch, double set_time)
 
 int Asynch_Set_Output_Int(AsynchSolver* asynch, char* name, OutputIntCallback* callback, unsigned int* used_states, unsigned int num_states)
 {
-    Link *sys = asynch->sys, *current;
-    unsigned int *my_sys = asynch->my_sys, my_N = asynch->my_N;
-    unsigned int i, j, idx, loc, num_to_add, *states_to_add = NULL;
+    Link *sys = asynch->sys, **my_sys = asynch->my_sys;
+    unsigned int my_N = asynch->my_N;
+    unsigned int *states_to_add = NULL;
     GlobalVars* GlobalVars = asynch->globals;
 
     //Find index
-    for (i = 0; i < asynch->globals->num_outputs; i++)
+    unsigned int i;
+    for ( i = 0; i < asynch->globals->num_outputs; i++)
     {
-        if (strcmp(name, asynch->globals->output_names[i]) == 0)
-        {
-            idx = i;
+        if (strcmp(name, asynch->globals->outputs[i].name) == 0)
             break;
-        }
     }
 
     if (i == asynch->globals->num_outputs)
@@ -814,23 +808,24 @@ int Asynch_Set_Output_Int(AsynchSolver* asynch, char* name, OutputIntCallback* c
     }
 
     //Add new output
-    asynch->globals->output_types[idx] = ASYNCH_INT;
-    asynch->globals->outputs[idx].out_int = callback;
+    Output *out = &asynch->globals->outputs[i];
+    out->type = ASYNCH_INT;
+    out->callback.out_int = callback;
 
-    asynch->globals->output_sizes[idx] = GetByteSize(ASYNCH_INT);
-    asynch->globals->output_specifiers[idx] = GetSpecifier(ASYNCH_INT);
+    out->size = GetByteSize(ASYNCH_INT);
+    out->specifier = GetSpecifier(ASYNCH_INT);
 
     //Check if anything should be added to the dense_indices from used_states
-    for (loc = 0; loc < my_N; loc++)
+    for (unsigned int loc = 0; loc < my_N; loc++)
     {
-        current = &sys[my_sys[loc]];
-        num_to_add = 0;
+        Link *current = my_sys[loc];
+        unsigned int num_to_add = 0;
         states_to_add = (unsigned int*)realloc(states_to_add, num_states * sizeof(unsigned int));
-        for (i = 0; i < num_states; i++)
+        for (unsigned int i = 0; i < num_states; i++)
         {
             if (used_states[i] > current->dim)
                 continue;	//State is not present at this link
-            for (j = 0; j < current->num_dense; j++)
+            for (unsigned int j = 0; j < current->num_dense; j++)
             {
                 if (used_states[i] == current->dense_indices[j])
                 {
@@ -858,19 +853,17 @@ int Asynch_Set_Output_Int(AsynchSolver* asynch, char* name, OutputIntCallback* c
 
 int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallback* callback, unsigned int* used_states, unsigned int num_states)
 {
-    Link *sys = asynch->sys, *current;
-    unsigned int *my_sys = asynch->my_sys, my_N = asynch->my_N;
-    unsigned int i, j, idx, loc, num_to_add, *states_to_add = NULL;
+    Link *sys = asynch->sys, **my_sys = asynch->my_sys;
+    unsigned int my_N = asynch->my_N;
+    unsigned int *states_to_add = NULL;
     GlobalVars* GlobalVars = asynch->globals;
 
     //Find index
+    unsigned int i;
     for (i = 0; i < asynch->globals->num_outputs; i++)
     {
-        if (strcmp(name, asynch->globals->output_names[i]) == 0)
-        {
-            idx = i;
+        if (strcmp(name, asynch->globals->outputs[i].name) == 0)
             break;
-        }
     }
 
     if (i == asynch->globals->num_outputs)
@@ -880,23 +873,24 @@ int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallb
     }
 
     //Add new output
-    asynch->globals->output_types[idx] = ASYNCH_DOUBLE;
-    asynch->globals->outputs[idx].out_double = callback;
+    Output *out = &asynch->globals->outputs[i];
+    out->type = ASYNCH_DOUBLE;
+    out->callback.out_double = callback;
 
-    asynch->globals->output_sizes[idx] = GetByteSize(ASYNCH_DOUBLE);
-    asynch->globals->output_specifiers[idx] = GetSpecifier(ASYNCH_DOUBLE);
+    out->size = GetByteSize(ASYNCH_DOUBLE);
+    out->specifier = GetSpecifier(ASYNCH_DOUBLE);
 
     //Check if anything should be added to the dense_indices from used_states
-    for (loc = 0; loc < my_N; loc++)
+    for (unsigned int loc = 0; loc < my_N; loc++)
     {
-        current = &sys[my_sys[loc]];
-        num_to_add = 0;
+        Link *current = my_sys[loc];
+        unsigned int num_to_add = 0;
         states_to_add = (unsigned int*)realloc(states_to_add, num_states * sizeof(unsigned int));
         for (i = 0; i < num_states; i++)
         {
             if (used_states[i] > current->dim)
                 continue;	//State is not present at this link
-            for (j = 0; j < current->num_dense; j++)
+            for (unsigned int j = 0; j < current->num_dense; j++)
             {
                 if (used_states[i] == current->dense_indices[j])
                 {
@@ -924,19 +918,17 @@ int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallb
 
 int Asynch_Set_Output_Float(AsynchSolver* asynch, char* name, OutputFloatCallback* callback, unsigned int* used_states, unsigned int num_states)
 {
-    Link *sys = asynch->sys, *current;
-    unsigned int *my_sys = asynch->my_sys, my_N = asynch->my_N;
-    unsigned int i, j, idx, loc, num_to_add, *states_to_add = NULL;
+    Link **my_sys = asynch->my_sys;
+    unsigned int my_N = asynch->my_N;
+    unsigned int *states_to_add = NULL;
     GlobalVars* GlobalVars = asynch->globals;
 
     //Find index
+    unsigned int i;
     for (i = 0; i < asynch->globals->num_outputs; i++)
     {
-        if (strcmp(name, asynch->globals->output_names[i]) == 0)
-        {
-            idx = i;
+        if (strcmp(name, asynch->globals->outputs[i].name) == 0)
             break;
-        }
     }
 
     if (i == asynch->globals->num_outputs)
@@ -946,23 +938,24 @@ int Asynch_Set_Output_Float(AsynchSolver* asynch, char* name, OutputFloatCallbac
     }
 
     //Add new output
-    asynch->globals->output_types[idx] = ASYNCH_FLOAT;
-    asynch->globals->outputs[idx].out_float = callback;
+    Output *out = &asynch->globals->outputs[i];
+    out->type = ASYNCH_FLOAT;
+    out->callback.out_float = callback;
 
-    asynch->globals->output_sizes[idx] = GetByteSize(ASYNCH_FLOAT);
-    asynch->globals->output_specifiers[idx] = GetSpecifier(ASYNCH_FLOAT);
+    out->size = GetByteSize(ASYNCH_FLOAT);
+    out->specifier = GetSpecifier(ASYNCH_FLOAT);
 
     //Check if anything should be added to the dense_indices from used_states
-    for (loc = 0; loc < my_N; loc++)
+    for (unsigned int loc = 0; loc < my_N; loc++)
     {
-        current = &sys[my_sys[loc]];
-        num_to_add = 0;
+        Link *current = my_sys[loc];
+        unsigned int num_to_add = 0;
         states_to_add = (unsigned int*)realloc(states_to_add, num_states * sizeof(unsigned int));
         for (i = 0; i < num_states; i++)
         {
             if (used_states[i] > current->dim)
                 continue;	//State is not present at this link
-            for (j = 0; j < current->num_dense; j++)
+            for (unsigned int j = 0; j < current->num_dense; j++)
             {
                 if (used_states[i] == current->dense_indices[j])
                 {
@@ -1008,7 +1001,7 @@ int Asynch_Set_Peakflow_Output(AsynchSolver* asynch, char* name, PeakflowOutputC
 //Returns the link id of the link at my_sys[location]
 unsigned int Asynch_Get_Local_LinkID(AsynchSolver* asynch, unsigned int location)
 {
-    return asynch->sys[asynch->my_sys[location]].ID;
+    return asynch->my_sys[location]->ID;
 }
 
 
@@ -1043,9 +1036,9 @@ int Asynch_Check_Output(AsynchSolver* asynch, char* name)
 
     for (i = 0; i < asynch->globals->num_outputs; i++)
     {
-        if (strcmp(name, asynch->globals->output_names[i]) == 0)
+        if (strcmp(name, asynch->globals->outputs[i].name) == 0)
         {
-            if (asynch->globals->output_types[i] == ASYNCH_BAD_TYPE)	return 0;
+            if (asynch->globals->outputs[i].type == ASYNCH_BAD_TYPE)	return 0;
             else								return 1;
         }
     }
@@ -1096,37 +1089,37 @@ int Asynch_Activate_Forcing(AsynchSolver* asynch, unsigned int idx)
             current = asynch->sys[asynch->my_sys[i]];
     printf("rainfall buffer  t = %e\n",current->last_t);
     printf("*********\n");
-    for(l=0;l<current->forcing_buff[idx]->n_times;l++)
+    for(l=0;l<current->forcing_data[idx]->n_times;l++)
     {
-    printf("%e %e\n",current->forcing_buff[idx]->rainfall[l][0],current->forcing_buff[idx]->rainfall[l][1]);
+    printf("%e %e\n",current->forcing_data[idx]->rainfall[l].time,current->forcing_data[idx]->rainfall[l].value);
     getchar();
     }
     printf("*********\n");
 
             //Find the right index in rainfall
-            for(l=0;l<current->forcing_buff[idx]->n_times;l++)
+            for(l=0;l<current->forcing_data[idx]->n_times;l++)
     {
-    printf("l = %u/%u\n",l,current->forcing_buff[idx]->n_times);
+    printf("l = %u/%u\n",l,current->forcing_data[idx]->n_times);
     printf("last t = %e\n",current->last_t);
-    printf("buffer time = %e\n",current->forcing_buff[idx]->rainfall[l][0]);
+    printf("buffer time = %e\n",current->forcing_data[idx]->rainfall[l].time);
     getchar();
-                if( fabs(current->last_t - current->forcing_buff[idx]->rainfall[l][0]) < 1e-8 )	break;
+                if( fabs(current->last_t - current->forcing_data[idx]->rainfall[l].time) < 1e-8 )	break;
     }
 
-            double forcing_buffer = current->forcing_buff[idx]->rainfall[l][1];
+            double forcing_buffer = current->forcing_data[idx]->rainfall[l].value;
             current->forcing_values[idx] = forcing_buffer;
 
             //Find and set the new change in rainfall
-            for(j=l+1;j<current->forcing_buff[idx]->n_times;j++)
+            for(j=l+1;j<current->forcing_data[idx]->n_times;j++)
             {
-                if( fabs(current->forcing_buff[idx]->rainfall[j][1] - forcing_buffer) > 1e-8 )
+                if( fabs(current->forcing_data[idx]->rainfall[j].value - forcing_buffer) > 1e-8 )
                 {
-                    current->forcing_change_times[idx] = current->forcing_buff[idx]->rainfall[j][0];
+                    current->forcing_change_times[idx] = current->forcing_data[idx]->rainfall[j].time;
                     break;
                 }
             }
-            if(j == current->forcing_buff[idx]->n_times)
-                current->forcing_change_times[idx] = current->forcing_buff[idx]->rainfall[j-1][0];
+            if(j == current->forcing_data[idx]->n_times)
+                current->forcing_change_times[idx] = current->forcing_data[idx]->rainfall[j-1].time;
         }
     */
 
@@ -1136,8 +1129,8 @@ int Asynch_Activate_Forcing(AsynchSolver* asynch, unsigned int idx)
 //Returns 0 if ok, 1 if error
 int Asynch_Deactivate_Forcing(AsynchSolver* asynch, unsigned int idx)
 {
-    unsigned int i, my_N = asynch->my_N, *my_sys = asynch->my_sys;
-    Link* sys = asynch->sys;
+    unsigned int my_N = asynch->my_N;
+    Link **my_sys = asynch->my_sys;
 
     if (idx >= asynch->globals->num_forcings)
     {
@@ -1149,10 +1142,10 @@ int Asynch_Deactivate_Forcing(AsynchSolver* asynch, unsigned int idx)
     asynch->forcings[idx].active = 0;
 
     //Clear forcing values from links
-    for (i = 0; i < my_N; i++)
+    for (unsigned int i = 0; i < my_N; i++)
     {
-        sys[my_sys[i]].forcing_values[idx] = 0.0;
-        sys[my_sys[i]].forcing_change_times[idx] = asynch->globals->maxtime + 1.0;
+        my_sys[i]->my->forcing_values[idx] = 0.0;
+        my_sys[i]->my->forcing_change_times[idx] = asynch->globals->maxtime + 1.0;
     }
 
     return 0;
@@ -1181,45 +1174,47 @@ int Asynch_Set_Forcing_State(AsynchSolver* asynch, unsigned int idx, double t_0,
 //The current time is used for the time to peak, and the last state is used for the values.
 void Asynch_Reset_Peakflow_Data(AsynchSolver* asynch)
 {
-    unsigned int i, my_N = asynch->my_N, *my_sys = asynch->my_sys;
-    Link *current, *sys = asynch->sys;
-    double t_0 = sys[my_sys[0]].last_t;
+    unsigned int i, my_N = asynch->my_N;
+    Link **my_sys = asynch->my_sys;
+    double t_0 = my_sys[0]->last_t;
 
     for (i = 0; i < my_N; i++)
     {
-        current = &sys[my_sys[i]];
+        Link *current = my_sys[i];
         current->peak_time = t_0;
-        v_copy(current->list->tail->y_approx, current->peak_value);
+        dcopy(current->my->list.tail->y_approx, current->peak_value, 0, current->dim);
     }
 }
 
-void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, VEC* states)
+void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, double* states)
 {
-    unsigned i, j, k, l;
+    unsigned j, l;
     Link* current;
 
     //Unpack asynch
     Link* sys = asynch->sys;
     unsigned int N = asynch->N, num_forcings = asynch->globals->num_forcings;
     //Forcing** forcings = asynch->forcings;
-    GlobalVars* GlobalVars = asynch->globals;
+    GlobalVars* globals = asynch->globals;
+    AsynchModel* model = asynch->model;
 
     //Reset some things
     Flush_TransData(asynch->my_data);
     Asynch_Reset_Temp_Files(asynch, unix_time);
 
     //Reset links
-    for (i = 0; i < N; i++)
+    unsigned int in = 0;
+    for (unsigned int i = 0; i < N; i++)
     {
         current = &sys[i];
-        if (current->list != NULL)
+        if (current->my != NULL)
         {
             while (current->current_iterations > 1)
             {
-                Remove_Head_Node(current->list);
+                Remove_Head_Node(&current->my->list);
                 (current->current_iterations)--;
             }
-            current->list->head->t = unix_time;
+            current->my->list.head->t = unix_time;
             current->last_t = unix_time;
             current->steps_on_diff_proc = 1;
             current->iters_removed = 0;
@@ -1229,28 +1224,24 @@ void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, VEC* states
             else
                 current->ready = 0;
 
-
-            for (j = 0; j < current->dim; j++)
-                current->list->head->y_approx.ve[j] = states[i].ve[j];
-            v_copy(states[i], current->list->head->y_approx);
-
-            /*
-                        //Reset the next_save time
-                        if(current->save_flag)
-                        {
-                            current->next_save = t_0;		//!!!! This forces the print times to match up with the assimilation times !!!!
-                            current->disk_iterations = 1;
-                        }
-            */
+            dcopy(states + in, current->my->list.head->y_approx, 0, current->dim);
+            in += current->dim;
 
             //Reset peak flow information
             current->peak_time = unix_time;
-            v_copy(current->list->head->y_approx, current->peak_value);
+            dcopy(current->my->list.head->y_approx, current->peak_value, 0, current->dim);
 
             //Reset current state
-            if (current->state_check != NULL)
-                current->state = current->state_check(current->list->head->y_approx, GlobalVars->global_params, current->params, current->qvs, current->dam);
-            current->list->head->state = current->state;
+            if (model->check_state != NULL)
+                current->state = model->check_state(
+                    current->my->list.head->y_approx, current->dim,
+                    globals->global_params, globals->num_global_params,
+                    current->params, current->num_params,
+                    current->qvs,
+                    current->state,
+                    current->user);
+            
+            current->my->list.head->state = current->state;
 
             //Write initial state
             //if(current->save_flag)
@@ -1258,30 +1249,31 @@ void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, VEC* states
 
             //Set forcings
             //!!!! This block was not here before I started toying with data assimilation stuff. Perhaps it causes problems with the forecasters... !!!!
-            if (current->forcing_buff)
+            if (current->my->forcing_data)
             {
-                for (k = 0; k < num_forcings; k++)
+                for (unsigned int k = 0; k < num_forcings; k++)
                 {
-                    if (!(asynch->forcings[k].flag))	continue;
+                    if (!(asynch->forcings[k].flag))
+                        continue;
 
                     //Find the right index in rainfall
-                    for (l = 0; l < current->forcing_buff[k]->nrows - 1; l++)
-                        if (current->forcing_buff[k]->data[l][0] <= unix_time && unix_time < current->forcing_buff[k]->data[l + 1][0])	break;
-                    double rainfall_buffer = current->forcing_buff[k]->data[l][1];
-                    current->forcing_values[k] = rainfall_buffer;
-                    current->forcing_indices[k] = l;
+                    for (l = 0; l < current->my->forcing_data[k].num_points - 1; l++)
+                        if (current->my->forcing_data[k].data[l].time <= unix_time && unix_time < current->my->forcing_data[k].data[l + 1].time)	break;
+                    double rainfall_buffer = current->my->forcing_data[k].data[l].value;
+                    current->my->forcing_values[k] = rainfall_buffer;
+                    current->my->forcing_indices[k] = l;
 
                     //Find and set the new change in rainfall
-                    for (j = l + 1; j < current->forcing_buff[k]->nrows; j++)
+                    for (j = l + 1; j < current->my->forcing_data[k].num_points; j++)
                     {
-                        if (fabs(current->forcing_buff[k]->data[j][1] - rainfall_buffer) > 1e-12)
+                        if (fabs(current->my->forcing_data[k].data[j].value - rainfall_buffer) > 1e-12)
                         {
-                            current->forcing_change_times[k] = current->forcing_buff[k]->data[j][0];
+                            current->my->forcing_change_times[k] = current->my->forcing_data[k].data[j].time;
                             break;
                         }
                     }
-                    if (j == current->forcing_buff[k]->nrows)
-                        current->forcing_change_times[k] = current->forcing_buff[k]->data[j - 1][0];
+                    if (j == current->my->forcing_data[k].num_points)
+                        current->my->forcing_change_times[k] = current->my->forcing_data[k].data[j - 1].time;
 
                     //Select new step size
                     //current->h = InitialStepSize(current->last_t,current,GlobalVars,workspace);
@@ -1295,15 +1287,16 @@ void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, VEC* states
 //Returns 0 if everything is good, 1 if space is already allocated, 2 if an error occurred.
 int Asynch_Create_OutputUser_Data(AsynchSolver* asynch, unsigned int data_size)
 {
-    if (!asynch)	return 2;
+    if (!asynch)
+        return 2;
 
-    unsigned int my_N = asynch->my_N, i, *my_sys = asynch->my_sys;
-    Link* sys = asynch->sys;
+    unsigned int my_N = asynch->my_N;
+    Link **my_sys = asynch->my_sys;
 
-    if (sys[my_sys[0]].output_user)	return 1;
+    if (my_sys[0]->output_user)	return 1;
 
-    for (i = 0; i < my_N; i++)
-        sys[my_sys[i]].output_user = malloc(data_size);
+    for (unsigned int i = 0; i < my_N; i++)
+        my_sys[i]->output_user = malloc(data_size);
 
     return 0;
 }
@@ -1312,17 +1305,19 @@ int Asynch_Create_OutputUser_Data(AsynchSolver* asynch, unsigned int data_size)
 //Returns 0 if everything is good, 1 if space is already deallocated, 2 if an error occurred.
 int Asynch_Free_OutputUser_Data(AsynchSolver* asynch)
 {
-    if (!asynch)	return 2;
+    if (!asynch)
+        return 2;
 
-    unsigned int my_N = asynch->my_N, i, *my_sys = asynch->my_sys;
-    Link* sys = asynch->sys;
+    unsigned int my_N = asynch->my_N;
+    Link **my_sys = asynch->my_sys;
 
-    if (sys[my_sys[0]].output_user == NULL)	return 1;
+    if (my_sys[0]->output_user == NULL)
+        return 1;
 
-    for (i = 0; i < my_N; i++)
+    for (unsigned int i = 0; i < my_N; i++)
     {
-        free(sys[my_sys[i]].output_user);
-        sys[my_sys[i]].output_user = NULL;
+        free(my_sys[i]->output_user);
+        my_sys[i]->output_user = NULL;
     }
 
     return 0;
@@ -1332,13 +1327,13 @@ int Asynch_Free_OutputUser_Data(AsynchSolver* asynch)
 void Asynch_Copy_Local_OutputUser_Data(AsynchSolver* asynch, unsigned int location, void* source, unsigned int size)
 {
     //printf("Copying size %u %u %p\n",size,location,asynch->sys[asynch->my_sys[location]]->output_user);
-    memcpy(&asynch->sys[asynch->my_sys[location]].output_user, source, size);
+    memcpy(&asynch->my_sys[location]->output_user, source, size);
 }
 
 //Allocates space for output_user for the link with location my_sys[location]
 void Asynch_Set_Size_Local_OutputUser_Data(AsynchSolver* asynch, unsigned int location, unsigned int size)
 {
-    asynch->sys[asynch->my_sys[location]].output_user = malloc(size);
+    asynch->my_sys[location]->output_user = malloc(size);
     //printf("Setting to size %u %p\n",size,asynch->sys[asynch->my_sys[location]]->output_user);
 }
 
@@ -1352,27 +1347,31 @@ int Asynch_Get_Reservoir_Forcing(AsynchSolver* asynch)
 //Returns the number of global parameters in the system.
 unsigned int Asynch_Get_Size_Global_Parameters(AsynchSolver* asynch)
 {
-    return asynch->globals->global_params.dim;
+    return asynch->model->num_global_params;
 }
 
-//Returns in gparams the global parameters of the system.
-//This assumes gparams has enough memory allocated.
-//Returns 1 if an error occurred. 0 otherwise.
-void Asynch_Get_Global_Parameters(AsynchSolver* asynch, VEC params)
+// Copy in gparams the global parameters of the system.
+// This assumes gparams has enough memory allocated.
+// Returns 1 if an error occurred. 0 otherwise.
+void Asynch_Get_Global_Parameters(AsynchSolver* asynch, double *gparams)
 {
     if (!asynch || !asynch->globals)
         return;
 
-    v_copy(asynch->globals->global_params, params);
+    dcopy(asynch->globals->global_params, gparams, 0, asynch->globals->num_global_params);
 }
 
 //Sets the global parameters. n is the number of new parameters.
 //Internally, memory is allocated/deallocated automatically.
 //Returns 1 if an error occurred. 0 otherwise.
-int Asynch_Set_Global_Parameters(AsynchSolver* asynch, VEC gparams, unsigned int n)
+int Asynch_Set_Global_Parameters(AsynchSolver* asynch, double *gparams, unsigned int num_params)
 {
-    if (!asynch || !asynch->globals)	return 1;
-    v_resize(&asynch->globals->global_params, n);
-    v_copy_n(gparams, asynch->globals->global_params, n);
+    if (!asynch || !asynch->globals)
+        return 1;
+    
+    asynch->model->num_global_params = num_params;
+    asynch->globals->global_params = realloc(asynch->globals->global_params, num_params * sizeof(double));
+    dcopy(gparams, asynch->globals->global_params, 0, num_params);
+
     return 0;
 }

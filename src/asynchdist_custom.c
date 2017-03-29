@@ -230,16 +230,16 @@ void InitRoutines_MyModel(Link* link,unsigned int type,unsigned int exp_imp,unsi
 	if(link->res)
 	{
 		link->f = &LinearHillslope_Reservoirs_extras;
-		link->RKSolver = &ForcedSolutionSolver;
+		link->solver = &ForcedSolutionSolver;
 	}
 	else
 	{
 		link->f = &LinearHillslope_MonthlyEvap_extras;
-		link->RKSolver = &ExplicitRKSolver;
+		link->solver = &ExplicitRKSolver;
 	}
-	link->alg = NULL;
+	link->algebraic = NULL;
 	link->state_check = NULL;
-	link->CheckConsistency = &CheckConsistency_Nonzero_AllStates_q;
+	link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
 }
 
 
@@ -512,10 +512,10 @@ void InitRoutines_Assim(Link* link,unsigned int type,unsigned int exp_imp,unsign
 	for(i=1;i<link->num_dense;i++)	link->dense_indices[i] = i+1;
 
 	link->f = &assim_river_rainfall_adjusted_custom;
-	link->alg = NULL;
+	link->algebraic = NULL;
 	link->state_check = NULL;
-	link->CheckConsistency = &CheckConsistency_Nonzero_2States;
-	link->RKSolver = &ExplicitRKSolver;
+	link->check_consistency = &CheckConsistency_Nonzero_2States;
+	link->solver = &ExplicitRKSolver;
 }
 
 

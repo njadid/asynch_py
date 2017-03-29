@@ -5,24 +5,39 @@
 #endif
 
 #include <assert.h>
+#include <stdlib.h>
 #include <memory.h>
+#include <math.h>
 
-#include "solvers.h"
+#include <minmax.h>
+#include <processdata.h>
+#include <rksteppers.h>
+#include <structs.h>
 
-void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N, GlobalVars* globals, int* assignments, short int* getting, unsigned int* res_list, unsigned int res_size, unsigned int** id_to_loc, TempStorage* workspace, Forcing* forcings, ConnData* db_connections, TransData* my_data, bool print_flag, FILE* outputfile)
+
+int num_call_function = 0;
+
+void Advance(
+    Link *sys, unsigned int N,
+    Link **my_sys, unsigned int my_N,
+    GlobalVars* globals,
+    int* assignments, short int* getting, unsigned int* res_list, unsigned int res_size, const Lookup * const id_to_loc,
+    Workspace* workspace,
+    Forcing* forcings,
+    ConnData* db_connections,
+    TransData* my_data,
+    bool print_flag,
+    FILE* outputfile)
 {
     //Initialize remaining data
     short int* done = (short int*)malloc(my_N * sizeof(short int));
     short int parentsval;
-    unsigned int alldone;
-    RKSolutionNode *roottail;
     Link* current;
     unsigned int last_idx, curr_idx, around;
     unsigned int two_my_N = 2 * my_N;
     int error_code;
 
     //Initialize values for forcing data
-    //unsigned int passes = 1;
     for (unsigned int i = 0; i < globals->num_forcings; i++)
     {
         if (forcings[i].active)
@@ -38,17 +53,15 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
     //    passes = max(passes, (unsigned int)ceil(globals->maxtime / globals->dump_time));
 
     //Start the main loop
-    //for (k = 0; k < passes; k++)
     while (globals->t < globals->maxtime)
     {
-        alldone = 0;
         around = 0;
-        current = &sys[my_sys[my_N - 1]];
+        current = my_sys[my_N - 1];
         curr_idx = 0;
         last_idx = my_N - 1;
 
         //Advance the current time
-        globals->t = sys[my_sys[0]].last_t;
+        globals->t = my_sys[0]->last_t;
         
         memset(done, 0, my_N * sizeof(short int));
 
@@ -89,11 +102,13 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
         {
             for (unsigned int i = 0; i < my_N; i++)	//!!!! Can we loop over just the links with reservoirs? Improve id_to_loc. !!!!
             {
-                current = &sys[my_sys[i]];
-                //if(current->res && fabs( (current->last_t) - (current->next_save - current->print_time) ) < 1e-12)
-                if (current->res)
+                current = my_sys[i];
+                assert(current->my != NULL);
+
+                //if(current->res && fabs( (current->last_t) - (current->next_save - current->print_time) ) < 1e-12)                
+                if (current->has_res)
                 {
-                    current->f(current->last_t, current->list->tail->y_approx, NULL, current->num_parents, globals->global_params, current->forcing_values, current->qvs, current->params, current->state, current->user, current->list->tail->y_approx);
+                    current->differential(current->last_t, current->my->list.tail->y_approx, current->dim, NULL, 0, globals->global_params, current->params, current->my->forcing_values, current->qvs, current->state, current->user, current->my->list.tail->y_approx);
                     if (current->save_flag && fabs(current->last_t - (current->next_save - current->print_time)) / (current->last_t + 1e-12) < 1e-6)
                     {
                         error_code = overwrite_last_step(current, globals, outputfile);
@@ -103,30 +118,33 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                 }
             }
         }
-
-        //Set a new step size
-        //CalculateInitialStepSizes(sys,N,my_sys,my_N,assignments,getting,res_list,res_size,id_to_loc,GlobalVars,forcings,workspace,db_connections);
+        
+        // Update forcing
         Exchange_InitState_At_Forced(sys, N, assignments, getting, res_list, res_size, id_to_loc, globals);
+        
         for (unsigned int i = 0; i < my_N; i++)
         {
-            sys[my_sys[i]].h = InitialStepSize(sys[my_sys[i]].last_t, &sys[my_sys[i]], globals, workspace);
-            assert(sys[my_sys[i]].h > 1e-12);
+            my_sys[i]->h = InitialStepSize(my_sys[i]->last_t, my_sys[i], globals, workspace);
+            assert(my_sys[i]->h > 1e-12);
         }
 
         //This might be needed. Sometimes some procs get stuck in Finish for communication, but makes runs much slower.
         MPI_Barrier(MPI_COMM_WORLD);
-
+        unsigned int num_iterations = 0;
         if (globals->t < globals->maxtime)
         {
+            unsigned int alldone = 0;
             while (alldone < my_N)
             {
+                num_iterations++;
+
                 //Find the next link to iterate
                 do
                 {
                     curr_idx = (curr_idx > 0) ? curr_idx - 1 : last_idx;
                     around++;
-                } while ((around < two_my_N) && (sys[my_sys[curr_idx]].ready == 0 || done[curr_idx] == 1));
-                current = &sys[my_sys[curr_idx]];
+                } while ((around < two_my_N) && (my_sys[curr_idx]->ready == 0 || done[curr_idx] == 1));
+                current = my_sys[curr_idx];
 
                 if (around >= two_my_N)
                 {
@@ -145,26 +163,29 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                         {
                             while (current->last_t + current->h < maxtime && current->current_iterations < globals->iter_limit)
                             {
-                                for (unsigned int i = 0; i < globals->num_forcings; i++)		//!!!! Put this in RKSolver !!!!
-                                    if (forcings[i].active && current->last_t < current->forcing_change_times[i])	current->h = min(current->h, current->forcing_change_times[i] - current->last_t);
-                                current->rejected = current->RKSolver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
+                                for (unsigned int i = 0; i < globals->num_forcings; i++)		//!!!! Put this in solver !!!!
+                                    if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
+                                        current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
+                                current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
                             }
 
                             if (current->last_t + current->h >= maxtime  && current->current_iterations < globals->iter_limit && current->last_t < maxtime)	//If less than a full step is needed, just finish up
                             {
                                 for (unsigned int i = 0; i < globals->num_forcings; i++)
-                                    if (forcings[i].active && current->last_t < current->forcing_change_times[i])	current->h = min(current->h, current->forcing_change_times[i] - current->last_t);
+                                    if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
+                                        current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
                                 current->h = min(current->h, maxtime - current->last_t);
                                 assert(current->h > 0);
-                                current->rejected = current->RKSolver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
+                                current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
 
                                 while (current->rejected == 0)
                                 {
                                     for (unsigned int i = 0; i < globals->num_forcings; i++)
-                                        if (forcings[i].active && current->last_t < current->forcing_change_times[i])	current->h = min(current->h, current->forcing_change_times[i] - current->last_t);
+                                        if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
+                                            current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
                                     current->h = min(current->h, maxtime - current->last_t);
                                     assert(current->h > 0);
-                                    current->rejected = current->RKSolver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
+                                    current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
                                 }
                             }
                         }
@@ -177,16 +198,19 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                             while (parentsval == current->num_parents && current->current_iterations < globals->iter_limit)
                             {
                                 for (unsigned int i = 0; i < globals->num_forcings; i++)
-                                    if (forcings[i].active && current->last_t < current->forcing_change_times[i])	current->h = min(current->h, current->forcing_change_times[i] - current->last_t);
+                                    if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
+                                        current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
 
                                 if (current->discont_count > 0 && current->h > current->discont[current->discont_start] - current->last_t)
                                 {
+#if defined (ASYNCH_HAVE_IMPLICIT_SOLVER)
                                     current->h_old = current->h;
+#endif
                                     current->h = current->discont[current->discont_start] - current->last_t;
                                     assert(current->h > 0);
                                 }
 
-                                current->rejected = current->RKSolver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
+                                current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
 
                                 parentsval = 0;
                                 for (unsigned int i = 0; i < current->num_parents; i++)
@@ -196,37 +220,43 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                             parentsval = 0;
                             for (unsigned int i = 0; i < current->num_parents; i++)
                                 parentsval += (current->parents[i]->last_t >= maxtime);
+
                             if (parentsval == current->num_parents && current->current_iterations < globals->iter_limit && current->last_t < maxtime)		//If all parents are done, then current should finish up too
                             {
                                 current->h = min(current->h, maxtime - current->last_t);
                                 assert(current->h > 0);
                                 for (unsigned int i = 0; i < globals->num_forcings; i++)
-                                    if (forcings[i].active && current->last_t < current->forcing_change_times[i])	current->h = min(current->h, current->forcing_change_times[i] - current->last_t);
+                                    if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
+                                        current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
                                 if (current->discont_count > 0 && current->h > current->discont[current->discont_start] - current->last_t)
                                 {
+#if defined (ASYNCH_HAVE_IMPLICIT_SOLVER)
                                     current->h_old = current->h;
+#endif
                                     current->h = current->discont[current->discont_start] - current->last_t;
                                     assert(current->h > 0);
                                 }
 
-                                current->rejected = current->RKSolver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
+                                current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
                                 assert(current->h > 0);
 
                                 while (current->last_t < maxtime && current->current_iterations < globals->iter_limit)
                                 {
                                     for (unsigned int i = 0; i < globals->num_forcings; i++)
-                                        if (forcings[i].active && current->last_t < current->forcing_change_times[i])
-                                            current->h = min(current->h, current->forcing_change_times[i] - current->last_t);
+                                        if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
+                                            current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
 
                                     if (current->discont_count > 0 && current->h > current->discont[current->discont_start] - current->last_t)
                                     {
+#if defined (ASYNCH_HAVE_IMPLICIT_SOLVER)
                                         current->h_old = current->h;
+#endif
                                         current->h = current->discont[current->discont_start] - current->last_t;
 
                                     }
 
                                     current->h = min(current->h, maxtime - current->last_t);
-                                    current->rejected = current->RKSolver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
+                                    current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
                                 }
                             }
 
@@ -293,25 +323,22 @@ void Advance(Link* sys, unsigned int N, unsigned int* my_sys, unsigned int my_N,
                         //If current is a root link, trash its data
                         if (current->child == NULL)
                         {
-                            roottail = current->list->tail;
-                            while (current->list->head != roottail)
+                            RKSolutionNode *roottail = current->my->list.tail;
+                            while (current->my->list.head != roottail)
                             {
-                                Remove_Head_Node(current->list);
+                                Remove_Head_Node(&current->my->list);
                                 (current->current_iterations)--;
                             }
                         }
-
-
-
                     }
                 }
+
+                assert(current->h > 0);
             }//endwhile
         }
-        //else
-        //{
-        //    //			if(my_rank == 0)	printf("%i: Should be done, k is %i/%i\n",my_rank,k,passes-1);
-        //    break;
-        //}
+
+        printf("Num iterations: %i\n", num_iterations);
+        printf("Num calls to f: %i\n", num_call_function);
 
         Transfer_Data_Finish(my_data, sys, assignments, globals);
 

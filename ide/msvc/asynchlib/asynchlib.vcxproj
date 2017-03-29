@@ -50,9 +50,9 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;ASYNCH_WITH_HDF5;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;ASYNCH_WITH_HDF5;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\src;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
     <Link>
@@ -71,9 +71,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;ASYNCH_WITH_HDF5;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;ASYNCH_WITH_HDF5;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\src;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -87,54 +87,91 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="$(RootDir)\src\asynch_interface.h" />
-    <ClInclude Include="$(RootDir)\src\asynch_interface_py.h" />
     <ClInclude Include="$(RootDir)\src\comm.h" />
     <ClInclude Include="$(RootDir)\src\compression.h" />
     <ClInclude Include="$(RootDir)\src\data_types.h" />
-    <ClInclude Include="$(RootDir)\src\date_manip.h" />
-    <ClInclude Include="$(RootDir)\src\definetype.h" />
+    <ClInclude Include="..\..\..\src\advance.h" />
+    <ClInclude Include="..\..\..\src\date_manip.h" />
+    <ClInclude Include="..\..\..\src\models\definitions.h" />
+    <ClInclude Include="..\..\..\src\models\equations.h" />
+    <ClInclude Include="..\..\..\src\model_def.h" />
     <ClInclude Include="$(RootDir)\src\forcings.h" />
     <ClInclude Include="$(RootDir)\src\io.h" />
-    <ClInclude Include="$(RootDir)\src\mathmethods.h" />
+    <ClInclude Include="..\..\..\src\blas.h" />
     <ClInclude Include="$(RootDir)\src\misc.h" />
-    <ClInclude Include="$(RootDir)\src\modeloutputs.h" />
+    <ClInclude Include="..\..\..\src\outputs.h" />
     <ClInclude Include="$(RootDir)\src\partition.h" />
-    <ClInclude Include="$(RootDir)\src\problems.h" />
+    <ClInclude Include="..\..\..\src\model_equ.h" />
     <ClInclude Include="$(RootDir)\src\processdata.h" />
     <ClInclude Include="$(RootDir)\src\rainfall.h" />
     <ClInclude Include="$(RootDir)\src\riversys.h" />
     <ClInclude Include="$(RootDir)\src\rkmethods.h" />
-    <ClInclude Include="$(RootDir)\src\solvers.h" />
     <ClInclude Include="$(RootDir)\src\sort.h" />
     <ClInclude Include="$(RootDir)\src\structs.h" />
     <ClInclude Include="$(RootDir)\src\system.h" />
-    <ClInclude Include="..\..\..\src\libpq-fwd.h" />
+    <ClInclude Include="..\..\..\src\config_gbl.h" />
+    <ClInclude Include="..\..\..\src\globals.h" />
+    <ClInclude Include="..\..\..\src\libpq_fwd.h" />
+    <ClInclude Include="..\..\..\src\models\check_consistency.h" />
+    <ClInclude Include="..\..\..\src\models\check_state.h" />
+    <ClInclude Include="..\..\..\src\models\model.h" />
+    <ClInclude Include="..\..\..\src\rksteppers.h" />
+    <ClInclude Include="..\..\..\src\solvers\lagrange.h" />
+    <ClInclude Include="..\..\..\src\structs_fwd.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(RootDir)\src\asynch_interface.c" />
-    <ClCompile Include="$(RootDir)\src\asynch_interface_py.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="$(RootDir)\src\comm.c" />
     <ClCompile Include="$(RootDir)\src\compression.c" />
     <ClCompile Include="$(RootDir)\src\data_types.c" />
-    <ClCompile Include="$(RootDir)\src\date_manip.c" />
-    <ClCompile Include="$(RootDir)\src\definetype.c" />
+    <ClCompile Include="..\..\..\src\advance.c" />
+    <ClCompile Include="..\..\..\src\date_manip.c" />
+    <ClCompile Include="..\..\..\src\models\definitions.c" />
+    <ClCompile Include="..\..\..\src\models\equations.c" />
     <ClCompile Include="$(RootDir)\src\forcings.c" />
     <ClCompile Include="$(RootDir)\src\io.c" />
-    <ClCompile Include="$(RootDir)\src\mathmethods.c" />
+    <ClCompile Include="..\..\..\src\blas.c" />
     <ClCompile Include="$(RootDir)\src\misc.c" />
-    <ClCompile Include="$(RootDir)\src\modeloutputs.c" />
+    <ClCompile Include="..\..\..\src\outputs.c" />
     <ClCompile Include="$(RootDir)\src\partition.c" />
-    <ClCompile Include="$(RootDir)\src\problems.c" />
     <ClCompile Include="$(RootDir)\src\processdata.c" />
-    <ClCompile Include="$(RootDir)\src\rainfall.c" />
     <ClCompile Include="$(RootDir)\src\riversys.c" />
-    <ClCompile Include="$(RootDir)\src\rkmethods.c" />
-    <ClCompile Include="$(RootDir)\src\solvers.c" />
     <ClCompile Include="$(RootDir)\src\sort.c" />
     <ClCompile Include="$(RootDir)\src\system.c" />
+    <ClCompile Include="..\..\..\src\config_gbl.c" />
+    <ClCompile Include="..\..\..\src\db.c" />
+    <ClCompile Include="..\..\..\src\forcings_io.c" />
+    <ClCompile Include="..\..\..\src\models\check_consistency.c" />
+    <ClCompile Include="..\..\..\src\models\check_state.c" />
+    <ClCompile Include="..\..\..\src\models\model.c" />
+    <ClCompile Include="..\..\..\src\rksteppers.c" />
+    <ClCompile Include="..\..\..\src\solvers\dopri5_dense.c" />
+    <ClCompile Include="..\..\..\src\solvers\lagrange.c" />
+    <ClCompile Include="..\..\..\src\solvers\radau.c" />
+    <ClCompile Include="..\..\..\src\solvers\rk3_2_dense.c" />
+    <ClCompile Include="..\..\..\src\solvers\rk4_3_dense.c" />
+    <ClCompile Include="..\..\..\src\steppers\assim.c" />
+    <ClCompile Include="..\..\..\src\steppers\explicit.c" />
+    <ClCompile Include="..\..\..\src\steppers\explicit_discont.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\steppers\explicit_index1.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\steppers\explicit_index1_dam.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\steppers\forced.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\steppers\implicit.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(RootDir)\LICENSE" />

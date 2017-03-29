@@ -166,9 +166,9 @@ int main(int argc, char* argv[])
     for (i = 0; i < N; i++)
     {
         if (asynch->assignments[i] == my_rank || asynch->getting[i] == 1)
-            backup[i] = v_get(asynch->sys[i].dim);
+            backup[i] = v_init(asynch->sys[i].dim);
         else
-            backup[i] = v_get(0);
+            backup[i] = v_init(0);
     }
 
     if (my_rank == 0)
