@@ -1004,11 +1004,13 @@ static int Load_Initial_Conditions_Ini(
             //if (assignments[loc] == my_rank || getting[loc])
             if (system[loc].my)
             {
-                if (model->initialize_eqs)
-                    system[loc].state = model->initialize_eqs(globals->global_params, system[loc].params, y_0, system[loc].user);
-                //else
-                //    system[loc].state = ReadInitData(globals->global_params, system[loc].params, system[loc].qvs, system[loc].is_dam, y_0, globals->model_uid, diff_start, no_ini_start, system[loc].user, external);
-
+                if (model && model->initialize_eqs)
+                    system[i].state = model->initialize_eqs(globals->global_params, system[loc].params, y_0, system[loc].user);
+                else
+                    system[i].state = ReadInitData(
+                        globals->global_params, globals->num_global_params,
+                        system[loc].params, globals->num_params,
+                        system[loc].qvs, system[loc].has_dam, y_0, system[loc].dim, globals->model_uid, diff_start, no_ini_start, system[loc].user, external);
 
                 Init_List(&system[loc].my->list, globals->t_0, y_0, system[loc].dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
@@ -1066,10 +1068,14 @@ static int Load_Initial_Conditions_Ini(
 
                 MPI_Recv(y_0 + diff_start, no_ini_start - diff_start, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                if (model->initialize_eqs)
-                    system[loc].state = model->initialize_eqs(globals->global_params, system[loc].params, y_0, system[loc].user);
-                //else
-                //    system[loc].state = ReadInitData(globals->global_params, system[loc].params, system[loc].qvs, system[loc].is_dam, y_0, globals->model_uid, diff_start, no_ini_start, system[loc].user, external);
+                if (model && model->initialize_eqs)
+                    system[i].state = model->initialize_eqs(globals->global_params, system[loc].params, y_0, system[loc].user);
+                else
+                    system[i].state = ReadInitData(
+                        globals->global_params, globals->num_global_params,
+                        system[loc].params, globals->num_params,
+                        system[loc].qvs, system[loc].has_dam, y_0, system[loc].dim, globals->model_uid, diff_start, no_ini_start, system[loc].user, external);
+                
                 Init_List(&system[loc].my->list, globals->t_0, y_0, system[loc].dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -1182,6 +1188,7 @@ static int Load_Initial_Conditions_Uini(
                     globals->global_params, globals->num_global_params,
                     system[i].params, globals->num_params,
                     system[i].qvs, system[i].has_dam, y_0, system[i].dim, globals->model_uid, diff_start, no_ini_start, system[i].user, external);
+
             Init_List(&system[i].my->list, globals->t_0, y_0, system[i].dim, system[i].num_dense, system[i].method->num_stages, globals->iter_limit);
             system[i].my->list.head->state = system[i].state;
             system[i].last_t = globals->t_0;
@@ -1277,8 +1284,9 @@ static int Load_Initial_Conditions_Rec(
             //Send data to assigned proc and getting proc
             if (assignments[loc] == my_rank || getting[loc])
             {
-                if (model->check_state)
-                    system[loc].state = model->check_state(y_0, system[loc].dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                if (system[loc].check_state)
+                    system[loc].state = system[loc].check_state(y_0, system[loc].dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                
                 Init_List(&system[loc].my->list, globals->t_0, y_0, system[loc].dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -1328,8 +1336,9 @@ static int Load_Initial_Conditions_Rec(
                 y_0 = realloc(y_0, dim * sizeof(double));
                 MPI_Recv(y_0, dim, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                if (model->check_state)
-                    system[loc].state = model->check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                if (system[loc].check_state)
+                    system[loc].state = system[loc].check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                
                 Init_List(&system[loc].my->list, globals->t_0, y_0, dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -1408,8 +1417,9 @@ static int Load_Initial_Conditions_Dbc(
             //Send the data
             if (assignments[loc] == my_rank || getting[loc])
             {
-                if (model->check_state != NULL)
-                    system[loc].state = model->check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                if (system[loc].check_state != NULL)
+                    system[loc].state = system[loc].check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+
                 Init_List(&system[loc].my->list, globals->t_0, y_0, dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -1455,8 +1465,9 @@ static int Load_Initial_Conditions_Dbc(
             {
                 MPI_Recv(y_0, dim, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                if (model->check_state != NULL)
-                    system[loc].state = model->check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                if (system[loc].check_state != NULL)
+                    system[loc].state = system[loc].check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+
                 Init_List(&system[loc].my->list, globals->t_0, y_0, dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -1566,8 +1577,9 @@ static int Load_Initial_Conditions_H5(
             //Send data to assigned proc and getting proc
             if (assignments[loc] == my_rank || getting[loc])
             {
-                if (model->check_state)
-                    system[loc].state = model->check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                if (system[loc].check_state)
+                    system[loc].state = system[loc].check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+
                 Init_List(&system[loc].my->list, globals->t_0, y_0, dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -1619,8 +1631,9 @@ static int Load_Initial_Conditions_H5(
                 y_0 = realloc(y_0, dim * sizeof(double));
                 MPI_Recv(y_0, dim, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                if (model->check_state)
-                    system[loc].state = model->check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+                if (system[loc].check_state)
+                    system[loc].state = system[loc].check_state(y_0, dim, globals->global_params, globals->num_global_params, system[loc].params, system[loc].num_params, system[loc].qvs, system[loc].state, system[loc].user);
+
                 Init_List(&system[loc].my->list, globals->t_0, y_0, dim, system[loc].num_dense, system[loc].method->num_stages, globals->iter_limit);
                 system[loc].my->list.head->state = system[loc].state;
                 system[loc].last_t = globals->t_0;
@@ -2195,8 +2208,10 @@ int Load_Forcings(
                 //Read the data
                 for (unsigned int j = 0; j < m - 1; j++)
                     fscanf(forcingfile, "%lf %f", &buffer[j].time, &buffer[j].value);
-                buffer[m].time = globals->maxtime + 3.0;
-                buffer[m].value = -1.0;
+                
+                //TODO WTF?
+                buffer[m - 1].time = globals->maxtime + 3.0;
+                buffer[m - 1].value = -1.0;
 
                 fclose(forcingfile);
             }
