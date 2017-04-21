@@ -601,7 +601,8 @@ int Create_Rain_Database(
         res = PQexec(conninfo->conn, query);
         CheckResError(res, "downloading rainfall data");
         tuple_count = PQntuples(res);
-        printf("Received %u intensities.\n", tuple_count);
+        //printf("Received %u intensities.\n", tuple_count);
+        
         //Disconnect
         DisconnectPGDB(conninfo);
 
@@ -876,7 +877,8 @@ int Create_Rain_Database_Irregular(
         res = PQexec(conninfo->conn, query);
         CheckResError(res, "downloading rainfall data");
         tuple_count = PQntuples(res);
-        printf("Received %u intensities.\n", tuple_count);
+        //printf("Received %u intensities.\n", tuple_count);
+        
         //Disconnect
         DisconnectPGDB(conninfo);
 

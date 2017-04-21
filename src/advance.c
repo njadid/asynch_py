@@ -15,8 +15,6 @@
 #include <structs.h>
 
 
-int num_call_function = 0;
-
 void Advance(
     Link *sys, unsigned int N,
     Link **my_sys, unsigned int my_N,
@@ -130,14 +128,11 @@ void Advance(
 
         //This might be needed. Sometimes some procs get stuck in Finish for communication, but makes runs much slower.
         MPI_Barrier(MPI_COMM_WORLD);
-        unsigned int num_iterations = 0;
         if (globals->t < globals->maxtime)
         {
             unsigned int alldone = 0;
             while (alldone < my_N)
             {
-                num_iterations++;
-
                 //Find the next link to iterate
                 do
                 {
@@ -336,9 +331,6 @@ void Advance(
                 assert(current->h > 0);
             }//endwhile
         }
-
-        printf("Num iterations: %i\n", num_iterations);
-        printf("Num calls to f: %i\n", num_call_function);
 
         Transfer_Data_Finish(my_data, sys, assignments, globals);
 
