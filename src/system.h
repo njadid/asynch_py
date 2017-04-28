@@ -21,11 +21,11 @@ extern int np;
 void Init_List(RKSolutionList* list, double t0, double *y0, unsigned int num_dof, unsigned int num_dense_dof, unsigned short int num_stages, unsigned int list_length);
 
 //Destructors
-void Destroy_Link(Link* link_i, unsigned int list_length, int rkd_flag, Forcing* forcings, GlobalVars* GlobalVars);
+void Destroy_Link(Link* link_i, int rkd_flag, Forcing* forcings, GlobalVars* GlobalVars);
 void Destroy_ForcingData(TimeSerie* forcing_buff);
 void Destroy_RKMethod(RKMethod* method);
 void Destroy_ErrorData(ErrorData* error);
-void Destroy_List(RKSolutionList* list, unsigned int list_length);
+void Destroy_List(RKSolutionList* list);
 void Destroy_UnivVars(GlobalVars* GlobalVars);
 
 //Discontinuity list
@@ -38,7 +38,7 @@ void Undo_Step(RKSolutionList* list);
 void Remove_Head_Node(RKSolutionList* list);
 
 //Workspace methods
-void Create_Workspace(Workspace *workspace, unsigned int dim, unsigned short num_stages, unsigned short int max_parents);
+void Create_Workspace(Workspace *workspace, unsigned int dim, unsigned short num_stages, unsigned short max_parents);
 void Destroy_Workspace(Workspace* workspace, unsigned short int s, unsigned short int max_parents);
 
 #endif

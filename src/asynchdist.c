@@ -240,7 +240,9 @@ int main(int argc, char* argv[])
 
     //Clean up
     Asynch_Delete_Temporary_Files(asynch);
+#if !defined(NDEBUG)
     Asynch_Free(asynch);
+#endif
 
     return 0;
 }

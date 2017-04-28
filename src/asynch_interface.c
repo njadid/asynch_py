@@ -441,7 +441,7 @@ void Asynch_Free(AsynchSolver* asynch)
         fclose(asynch->outputfile);
     
     for (i = 0; i < asynch->N; i++)
-        Destroy_Link(&asynch->sys[i], asynch->globals->iter_limit, asynch->rkdfilename[0] != '\0', asynch->forcings, asynch->globals);
+        Destroy_Link(&asynch->sys[i], asynch->rkdfilename[0] != '\0', asynch->forcings, asynch->globals);
 
     for (i = 0; i < ASYNCH_MAX_DB_CONNECTIONS - ASYNCH_DB_LOC_FORCING_START; i++)
         Forcing_Free(&asynch->forcings[i]);

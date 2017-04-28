@@ -16,7 +16,7 @@
 //Link* link: link to be freed.
 //unsigned int list_length: the length of the list stored with link.
 //int rkd_flag: should be 1 if an .rkd file was used, 0 if not.
-void Destroy_Link(Link* link, unsigned int list_length, int rkd_flag, Forcing* forcings, GlobalVars* global)
+void Destroy_Link(Link* link, int rkd_flag, Forcing* forcings, GlobalVars* global)
 {
     unsigned int i;
     assert(link != NULL);
@@ -30,7 +30,7 @@ void Destroy_Link(Link* link, unsigned int list_length, int rkd_flag, Forcing* f
         free(link->my->forcing_change_times);
         if (rkd_flag)
             Destroy_ErrorData(&link->my->error_data);
-        Destroy_List(&link->my->list, list_length);
+        Destroy_List(&link->my->list);
         
         free(link->peak_value);
         if (link->discont != NULL)
@@ -147,7 +147,7 @@ void Init_List(RKSolutionList* list, double t0, double *y0, unsigned int num_dof
 }
 
 //Frees the data list.
-void Destroy_List(RKSolutionList* list, unsigned int list_length)
+void Destroy_List(RKSolutionList* list)
 {
     free(list->nodes);
     free(list->y_storage);
