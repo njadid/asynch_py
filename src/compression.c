@@ -12,7 +12,7 @@
 #include <zlib.h>
 #endif
 
-#include "compression.h"
+#include <compression.h>
 
 #define CHUNK 16384
 

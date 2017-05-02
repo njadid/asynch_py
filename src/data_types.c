@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "data_types.h"
+#include <data_types.h>
 
 
 typedef int IsEqualFunc(void* a, void* b);

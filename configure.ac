@@ -1,4 +1,4 @@
-AC_INIT([asynch], [1.2.1], [samuel-debionne@uiowa.edu])
+AC_INIT([asynch], [1.3], [samuel-debionne@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 # Check for programms
 AX_PROG_CC_MPI([], [], [AC_MSG_FAILURE([MPI compiler requested, but couldn't find MPI.])] )
 AC_PROG_CC_STDC #C99
+AM_PROG_CC_C_O  #automake < 1.14
 AM_PROG_AR
 AC_PROG_RANLIB
 
@@ -17,7 +18,7 @@ AX_LIB_POSTGRESQL
 AM_CONDITIONAL([HAVE_POSTGRESQL], [test "$HAVE_POSTGRESQL" -eq 1])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile forecasters/Makefile tests/Makefile tools/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile tools/Makefile])
 
 # Checks for packages
 PKG_CHECK_MODULES([CHECK], [check], [HAVE_LIBCHECK=1], [HAVE_LIBCHECK=0])

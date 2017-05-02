@@ -7,20 +7,16 @@
 
 
 #include <stdbool.h>
+#include <stdio.h>
 
-#include "structs.h"
-#include "comm.h"
-#include "modeloutputs.h"
-#include "processdata.h"
+#include <structs.h>
 
 extern int np;
 extern int my_rank;
 
 void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_flag, unsigned short dump_loc_flag, OutputFunc* output_func);
-
-void ReadDBC(char* filename, ConnData* const conninfo);
 void WriteValue(FILE* outputfile, const char* specifier, char* data_storage, short int data_type, char* delim);
-unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, GlobalVars* GlobalVars, VEC params, unsigned int state, void* user, long int* pos_offset);
+unsigned int WriteStep(Output *output, unsigned int num_outputs, FILE* outputfile, unsigned int id, double t, double *y, unsigned int num_dof, long int* pos_offset);
 unsigned int CatBinaryToString(char* submission, const char* specifier, void* data_storage, short int data_type, char* delim);
 
 #endif

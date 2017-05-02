@@ -5,12 +5,18 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "io.h"
+#include <io.h>
+#include <processdata.h>
 
-//Creates an io object
-void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_flag, unsigned short dump_loc_flag, OutputFunc* output_func)
+//Creates an OutputFunc object
+void OutputFunc_Init(
+    unsigned short hydros_loc_flag,
+    unsigned short peaks_loc_flag,
+    unsigned short dump_loc_flag,
+    OutputFunc* output_func)
 {
     //Temporary Calculations
     output_func->PrepareTempOutput = &PrepareTempFiles;
@@ -98,128 +104,6 @@ void OutputFunc_Init(unsigned short hydros_loc_flag, unsigned short peaks_loc_fl
         output_func->CreateSnapShot = NULL;
 }
 
-
-//Reads a .dbc file and creates a corresponding database connection.
-//This does NOT connect to the database.
-//Returns NULL if there was an error.
-void ReadDBC(char* filename, ConnData* const conninfo)
-{
-    bool res = true;
-    unsigned int i = 0, j = 0;
-    char connstring[ASYNCH_MAX_CONNSTRING_LENGTH];
-    char c;
-
-    //if(my_rank == 0)
-    //{
-    FILE* input = fopen(filename, "r");
-
-    if (!input)
-    {
-        printf("Error opening .dbc file %s.\n", filename);
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-    if (CheckWinFormat(input))
-    {
-        printf("Error: File %s appears to be in Windows format. Try converting to unix format using 'dos2unix' at the command line.\n", filename);
-        fclose(input);
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-
-    //Read connection information
-    //Currently, this expects 4 things like:
-    fgets(connstring, ASYNCH_MAX_CONNSTRING_LENGTH, input);
-    ConnData_Init(conninfo, connstring);
-    if (!conninfo)
-    {
-        fclose(input);
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-
-    //Get number of queries
-    if (fscanf(input, "%u", &(conninfo->num_queries)) == EOF)
-    {
-        printf("[%i]: Error: failed to parse file.\n", my_rank);
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-    for (i = 0; i < conninfo->num_queries; i++)
-        conninfo->queries[i] = (char*)malloc(ASYNCH_MAX_QUERY_LENGTH * sizeof(char));
-
-    //Get queries. They are delineated by a ;
-    for (j = 0; j < conninfo->num_queries; j++)
-    {
-        //Get rid of whitespace
-        c = fgetc(input);
-        while (c != EOF && (c == ' ' || c == '\n' || c == '\t'))	c = fgetc(input);
-        if (c == EOF)
-        {
-            printf("[%i]: Warning: did not see %u queries in %s.\n", my_rank, conninfo->num_queries, filename);
-            break;
-        }
-
-        //Read in query
-        for (i = 0; i < ASYNCH_MAX_QUERY_LENGTH - 2 && c != ';' && c != EOF; i++)
-        {
-            conninfo->queries[j][i] = c;
-            c = fgetc(input);
-        }
-
-        //Check for problems and put stuff on the end
-        if (i == ASYNCH_MAX_QUERY_LENGTH)
-            printf("[%i]: Warning: query %u is too long in %s.\n", my_rank, j, filename);
-        else if (c == EOF)
-        {
-            printf("[%i]: Warning: did not see %u queries in %s.\n", my_rank, conninfo->num_queries, filename);
-            break;
-        }
-        else
-        {
-            conninfo->queries[j][i] = ';';
-            conninfo->queries[j][i + 1] = '\0';
-        }
-    }
-
-    fclose(input);
-
-    ////Get string length for other procs
-    //j = (unsigned int) strlen(connstring) + 1;
-//}
-
-////Check if an error occurred
-//finish:
-//MPI_Bcast(&has_error,1,MPI_C_BOOL,0,MPI_COMM_WORLD);
-
-////Transfer info from .dbc file
-//if(!errorcode)
-//{
-//	MPI_Bcast(&j,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
-//	MPI_Bcast(connstring,j,MPI_CHAR,0,MPI_COMM_WORLD);
-//	if(my_rank != 0)
-//		ConnData_Init(conninfo, connstring);
-//	MPI_Bcast(&(conninfo->num_queries),1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
-//	if(my_rank == 0)
-//	{
-//		for(i=0;i<conninfo->num_queries;i++)
-//		{
-//			j = (unsigned int) strlen(conninfo->queries[i]) + 1;
-//			MPI_Bcast(&j,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
-//			MPI_Bcast(conninfo->queries[i],j,MPI_CHAR,0,MPI_COMM_WORLD);
-//		}
-//	}
-//	else
-//	{
-//		conninfo->queries = (char**) malloc(conninfo->num_queries*sizeof(char*));
-//		for(i=0;i<conninfo->num_queries;i++)
-//		{
-//			conninfo->queries[i] = (char*) malloc(ASYNCH_MAX_QUERY_LENGTH*sizeof(char));
-//			MPI_Bcast(&j,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
-//			MPI_Bcast(conninfo->queries[i],j,MPI_CHAR,0,MPI_COMM_WORLD);
-//		}
-//	}
-//}
-
-
-}
-
 //!!!! This really sucks. Is there any way to improve it? !!!!
 //Writes a value to an ASCII file
 void WriteValue(FILE* outputfile, const char* specifier, char* data_storage, short int data_type, char* delim)
@@ -249,7 +133,7 @@ void WriteValue(FILE* outputfile, const char* specifier, char* data_storage, sho
     fprintf(outputfile, "%s", delim);
 }
 
-unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, GlobalVars* GlobalVars, VEC params, unsigned int state, void* user, long int* pos_offset)
+unsigned int WriteStep(Output *output, unsigned int num_outputs, FILE* outputfile, unsigned int id, double t, double *y, unsigned int num_dof, long int* pos_offset)
 {
     unsigned int i;
 
@@ -257,40 +141,43 @@ unsigned int WriteStep(FILE* outputfile, unsigned int id, double t, VEC y, Globa
 
     //Set file to current position
     //fsetpos(outputfile,pos);
-    if (pos_offset)	fseek(outputfile, *pos_offset, SEEK_SET);
+    if (pos_offset)
+        fseek(outputfile, *pos_offset, SEEK_SET);
 
     //Write the step
-    for (i = 0; i < GlobalVars->num_outputs; i++)
+    for (i = 0; i < num_outputs; i++)
     {
-        switch (GlobalVars->output_types[i])	//!!!! Get rid of this. Try char[] and output_sizes. !!!!
+        switch (output[i].type)	//!!!! Get rid of this. Try char[] and output_sizes. !!!!
         {
         case ASYNCH_INT:
         {
-            int output_i = (GlobalVars->outputs[i].out_int)(id, t, y, GlobalVars->global_params, params, state, user);
+            int output_i = output[i].callback.out_int(id, t, y, num_dof);
             fwrite(&output_i, sizeof(int), 1, outputfile);
             break;
         }
         case ASYNCH_DOUBLE:
         {
-            double output_d = (GlobalVars->outputs[i].out_double)(id, t, y, GlobalVars->global_params, params, state, user);
+            double output_d = output[i].callback.out_double(id, t, y, num_dof);
             fwrite(&output_d, sizeof(double), 1, outputfile);
             break;
         }
         case ASYNCH_FLOAT:
         {
-            float output_f = (GlobalVars->outputs[i].out_float)(id, t, y, GlobalVars->global_params, params, state, user);
+            float output_f = output[i].callback.out_float(id, t, y, num_dof);
             fwrite(&output_f, sizeof(float), 1, outputfile);
             break;
         }
         default:
-            printf("[%i]: Error: Invalid output %s (%i).\n", my_rank, GlobalVars->output_specifiers[i], GlobalVars->output_types[i]);
+            printf("[%i]: Error: Invalid output %s (%i).\n", my_rank, output[i].specifier, output[i].type);
             MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
-        total_written += GlobalVars->output_sizes[i];
-        //if(pos_offset)	*pos_offset += GlobalVars->output_sizes[i];
+        total_written += output[i].size;
+        //if(pos_offset)	*pos_offset += globals->output_sizes[i];
     }
 
-    if (pos_offset)	*pos_offset += total_written;
+    if (pos_offset)
+        *pos_offset += total_written;
+    
     return total_written;
 }
 

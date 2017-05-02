@@ -4,20 +4,14 @@
 #include <config_msvc.h>
 #endif
 
-#include <stdio.h>
+#include <memory.h>
 
-#include "date_manip.h"
+#include <date_manip.h>
 
 
-void copy_tm(struct tm *source,struct tm *dest)
+void tmcpy(struct tm *source,struct tm *dest)
 {
-	dest->tm_sec = source->tm_sec;
-	dest->tm_min = source->tm_min;
-	dest->tm_hour = source->tm_hour;
-	dest->tm_mday = source->tm_mday;
-	dest->tm_mon = source->tm_mon;
-	dest->tm_year = source->tm_year;
-	dest->tm_isdst = source->tm_isdst;
+    memcpy(dest, source, sizeof(struct tm));
 }
 
 int days_in_month(int mon,int year)

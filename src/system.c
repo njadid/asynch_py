@@ -9,416 +9,407 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "system.h"
+#include <blas.h>
+#include <system.h>
 
 //Frees link.
 //Link* link: link to be freed.
 //unsigned int list_length: the length of the list stored with link.
 //int rkd_flag: should be 1 if an .rkd file was used, 0 if not.
-void Destroy_Link(Link* link,unsigned int list_length,int rkd_flag,Forcing* forcings,GlobalVars* GlobalVars)
+void Destroy_Link(Link* link, int rkd_flag, Forcing* forcings, GlobalVars* global)
 {
-	unsigned int i;
-	assert(link != NULL);
+    unsigned int i;
+    assert(link != NULL);
 
-	v_free(&link->params);
+    free(link->params);
 
-	if(link->method != NULL)
-	{
-		free(link->forcing_values);
-		free(link->forcing_indices);
-		free(link->forcing_change_times);
-		if(rkd_flag)
-            Destroy_ErrorData(link->errorinfo);
-		Destroy_List(link->list,list_length);
-		//v_free(link->params);
-		v_free(&link->peak_value);
-		if(link->discont != NULL)
+    if (link->my != NULL)
+    {
+        free(link->my->forcing_values);
+        free(link->my->forcing_indices);
+        free(link->my->forcing_change_times);
+        if (rkd_flag)
+            Destroy_ErrorData(&link->my->error_data);
+        Destroy_List(&link->my->list);
+        
+        free(link->peak_value);
+        if (link->discont != NULL)
             free(link->discont);
-		if(link->discont_send != NULL)
-		{
-			free(link->discont_send);
-			free(link->discont_order_send);
-		}
-		for(i=0;i<GlobalVars->num_forcings;i++)
-		{
-			if(link->forcing_buff && forcings[i].flag != 4 && forcings[i].flag != 7 && link->forcing_buff[i] != NULL)
-				ForcingData_Free(&(link->forcing_buff[i]));
-		}
-		free(link->forcing_buff);
-		if(link->qvs != NULL)
-		{
-/*
-			for(i=0;i<link->qvs->n_values;i++)
-				free(link->qvs->points[i]);
-*/
-			free(link->qvs->points);
-			free(link->qvs->points_array);
-			free(link->qvs);
-		}
-		m_free(&link->JMatrix);
-		m_free(&link->CoefMat);
-		v_free(&link->sol_diff);
+        if (link->discont_send != NULL)
+        {
+            free(link->discont_send);
+            free(link->discont_order_send);
+        }
+        for (i = 0; i < global->num_forcings; i++)
+        {
+            if (link->my->forcing_data && forcings[i].flag != 4 && forcings[i].flag != 7)
+                Destroy_ForcingData(&(link->my->forcing_data[i]));
+        }
+        free(link->my->forcing_data);
+        //if (link->qvs != NULL)
+        //{
+        //    /*
+        //                for(i=0;i<link->qvs->n_values;i++)
+        //                    free(link->qvs->points[i]);
+        //    */
+        //    free(link->qvs->points);
+        //    free(link->qvs->points_array);
+        //    free(link->qvs);
+        //}
+#if defined (ASYNCH_HAVE_IMPLICIT_SOLVER)
+        m_free(&link->JMatrix);
+        m_free(&link->CoefMat);
+        v_free(&link->sol_diff);
         if (link->Z_i != NULL)
         {
-		    for(i=0;i<GlobalVars->max_s;i++)
-			    v_free(&link->Z_i[i]);
-		    free(link->Z_i);
+            for (i = 0; i < global->max_s; i++)
+                v_free(&link->Z_i[i]);
+            free(link->Z_i);
         }
-/*
-		if(GlobalVars->template_flag && link->equations != NULL)
-		{
-			//mupRelease(link->equations->parser);
-			printf("Warning: Not freeing parser in system.c, Destroy_Link\n");
-			v_free(&link->equations->variable_values);
-			free(link->equations);
-		}
-*/
-	}
+#endif
+        /*
+                if(global->template_flag && link->equations != NULL)
+                {
+                    //mupRelease(link->equations->parser);
+                    printf("Warning: Not freeing parser in system.c, Destroy_Link\n");
+                    v_free(&link->equations->variable_values);
+                    free(link->equations);
+                }
+        */
+    }
 
-	if(link->dense_indices)
+    if (link->dense_indices)
         free(link->dense_indices);
 
-	free(link->parents);
+    free(link->parents);
 }
 
 //Frees rain
 //ForcingData** forcing_buff: forcing data to be freed
-void ForcingData_Free(ForcingData** forcing_buff)
+void Destroy_ForcingData(TimeSerie* forcing_buff)
 {
-	unsigned int i;
-	if(forcing_buff && *forcing_buff)
-	{
-		for(i=0;i<(*forcing_buff)->nrows;i++)
-			free((*forcing_buff)->data[i]);
-		free((*forcing_buff)->data);
-		free(*forcing_buff);
-	}
+    if (forcing_buff)
+    {
+        if (forcing_buff->data)
+            free(forcing_buff->data);
+    }
 }
 
 
-//Creates a list to hold the data for an ODE.
-//VEC* y0: the initial data.
-//double t0: the initial time.
-//int dim: the dimension of the ODE.
-//int s: the number of steps in the RKMethod.
-//unsigned int list_length: the maximum number of steps to store in the list.
-//Returns the created list.
-RKSolutionList* Create_List(VEC y0,double t0,int dim,unsigned int num_dense,unsigned short int s,unsigned int list_length)
+/// Creates a list to hold the data for an ODE.
+///
+/// \param t0: the initial time.
+/// \param y0: Vector of the initial data [num_dof]
+/// \param num_dof: the number of degree of freedom of the ODE.
+/// \param num_dense_dof
+/// \param num_stages: the number of stages in the RKMethod.
+/// \param list_length: the maximum number of steps to store in the list.
+void Init_List(RKSolutionList* list, double t0, double *y0, unsigned int num_dof, unsigned int num_dense_dof, unsigned short int num_stages, unsigned int list_length)
 {
-	unsigned int i,j;
+    assert(list_length > 0);
+    if (list_length < 2)
+        printf("Warning in Create_List: list_length is %u.\n", list_length);
 
-	if(list_length < 2)	printf("Warning in Create_List: list_length is %u.\n",list_length);
-
-	//Allocate space
-	RKSolutionList* list = (RKSolutionList*) malloc(sizeof(RKSolutionList));
     memset(list, 0, sizeof(RKSolutionList));
-	list->list_data = (RKSolutionNode*) malloc(list_length * sizeof(RKSolutionNode));
-    memset(list->list_data, 0, sizeof(list_length * sizeof(RKSolutionNode)));
-	//for(i=0;i<list_length;i++)
-    //  list->list_data[i] = (RKSolutionNode*) malloc(sizeof(RKSolutionNode));
+    list->nodes = (RKSolutionNode*)calloc(list_length, sizeof(RKSolutionNode));
 
-	//Set the next and prev ptrs for each node
-	list->list_data[0].next = &list->list_data[1];
-	list->list_data[0].prev = &list->list_data[list_length-1];
+    //Set the next and prev ptrs for each node
+    list->nodes[0].next = &list->nodes[1];
+    list->nodes[0].prev = &list->nodes[list_length - 1];
 
-	for(i=1;i<list_length-1;i++)
-	{
-		list->list_data[i].next = &list->list_data[i+1];
-		list->list_data[i].prev = &list->list_data[i-1];
-	}
+    for (unsigned int i = 1; i < list_length - 1; i++)
+    {
+        list->nodes[i].next = &list->nodes[i + 1];
+        list->nodes[i].prev = &list->nodes[i - 1];
+    }
 
-	list->list_data[list_length-1].next = &list->list_data[0];
-	list->list_data[list_length-1].prev = &list->list_data[list_length-2];
+    list->nodes[list_length - 1].next = &list->nodes[0];
+    list->nodes[list_length - 1].prev = &list->nodes[list_length - 2];
 
-	//Allocate space for all the vectors
-	for(i=0;i<list_length;i++)
-	{
-		list->list_data[i].y_approx = v_get(dim);
-		list->list_data[i].k = (VEC*) malloc(s * sizeof(VEC));
-		for(j=0;j<s;j++)
-            list->list_data[i].k[j] = v_get(num_dense);
-	}
+    //Allocate space for all the vectors
+    list->y_storage = malloc(list_length * num_dof * sizeof(double));
+    list->k_storage = malloc(list_length * num_stages * num_dense_dof * sizeof(double));
 
-	//Set remaining fields
-	list->head = &list->list_data[0];
-	list->tail = &list->list_data[0];
-	list->s = s;
+    for (unsigned int i = 0; i < list_length; i++)
+    {
+        list->nodes[i].y_approx = list->y_storage + i * num_dof;
+        list->nodes[i].k = list->k_storage + i * num_stages * num_dense_dof;
+    }
 
-	//Store the initial step
-	list->head->t = t0;
-	v_copy(y0,list->head->y_approx);
+    //Set remaining fields
+    list->head = &list->nodes[0];
+    list->tail = &list->nodes[0];
+    list->num_stages = num_stages;
 
-	return list;
+    //Store the initial step
+    list->head->t = t0;
+    dcopy(y0, list->head->y_approx, 0, num_dof);
 }
 
 //Frees the data list.
-void Destroy_List(RKSolutionList* list,unsigned int list_length)
+void Destroy_List(RKSolutionList* list)
 {
-	unsigned int i;
-	for(i=0;i<list_length;i++)
-	{
-		Destroy_Node(&list->list_data[i],list->s);
-	}
-	free(list->list_data);
-	free(list);
+    free(list->nodes);
+    free(list->y_storage);
+    free(list->k_storage);
 }
 
 //Removes the first node in list.
 void Remove_Head_Node(RKSolutionList* list)
 {
-	if(list->head == list->tail)	//Keep the tail at head if the list has no data
-		list->tail = list->tail->next;
+    if (list->head == list->tail)	//Keep the tail at head if the list has no data
+        list->tail = list->tail->next;
 
-	list->head = list->head->next;
-}
-
-//Frees a node from a data list.
-//RKSolutionNode* node: node to be freed.
-//int s: size of node->k (number of steps).
-void Destroy_Node(RKSolutionNode *node,unsigned short int s)
-{
-	unsigned int i;
-	if(node->k != NULL)
-	{
-		for(i=0;i<s;i++)
-			v_free(&node->k[i]);
-		free(node->k);
-	}
-
-	v_free(&node->y_approx);
-	node->next = NULL;
-	node->prev = NULL;
+    list->head = list->head->next;
 }
 
 //Adds a new step to list, after tail. The new node is returned.
 RKSolutionNode* New_Step(RKSolutionList* list)
 {
-	list->tail = list->tail->next;
-	return list->tail;
+    list->tail = list->tail->next;
+    return list->tail;
 }
 
 //This method undoes the last step taken.
 //Used for rejecting steps.
 void Undo_Step(RKSolutionList* list)
 {
-	list->tail = list->tail->prev;
+    list->tail = list->tail->prev;
 }
 
 //Frees an RKMethod
 void Destroy_RKMethod(RKMethod* method)
 {
-	m_free(&method->A);
-	v_free(&method->b);
-	v_free(&method->b_theta);
-	v_free(&method->b_theta_deriv);
-	v_free(&method->c);
-	v_free(&method->e);
-	v_free(&method->d);
-	v_free(&method->w);
+    assert(method != NULL);
 
-	free(method);
+    //if (method->b)
+    //    free(method->b);
+    //if (method->b_theta)
+    //    free(method->b_theta);
+    //if (method->b_theta_deriv)
+    //    free(method->b_theta_deriv);
 }
 
 //Frees an ErrorData
 void Destroy_ErrorData(ErrorData* error)
 {
     assert(error != NULL);
-	v_free(&error->abstol);
-	v_free(&error->reltol);
-	v_free(&error->abstol_dense);
-	v_free(&error->reltol_dense);
-	free(error);
+    free(&error->abstol);
+    free(&error->reltol);
+    free(&error->abstol_dense);
+    free(&error->reltol_dense);
 }
 
 //Allocates workspace for RK solvers
-TempStorage* Create_Workspace(unsigned int dim,unsigned short int s,unsigned short int max_parents)
+void Create_Workspace(Workspace *workspace, unsigned int num_dof, unsigned short num_stages, unsigned short max_parents)
 {
-	unsigned int i,j;
+    memset(workspace, 0, sizeof(Workspace));
 
-	TempStorage* workspace = (TempStorage*) malloc(sizeof(TempStorage));
-    memset(workspace, 0, sizeof(TempStorage));
+    workspace->sum =malloc(num_dof * sizeof(double));
+    workspace->temp = malloc(num_dof * sizeof(double));
+    workspace->temp2 = malloc(num_dof * sizeof(double));
+    workspace->temp3 = malloc(num_dof * sizeof(double));
 
-	workspace->temp = v_get(dim);
-	workspace->sum = v_get(dim);
-	workspace->temp2 = v_get(dim);
-	workspace->temp3 = v_get(dim);
 
-	workspace->temp_parent_approx = (VEC**) malloc(s*sizeof(VEC*));
-	for(i=0;i<s;i++)
-	{
-		workspace->temp_parent_approx[i] = malloc(max_parents*sizeof(VEC));
-		for(j=0;j<max_parents;j++)
-			workspace->temp_parent_approx[i][j] = v_get(dim);
-	}
+    workspace->parents_approx = malloc(max_parents * num_dof * sizeof(double));
+    workspace->stages_parents_approx = malloc(num_stages * max_parents * num_dof * sizeof(double));
 
-	workspace->temp_k = (VEC*) malloc(s*sizeof(VEC));
-	for(i=0;i<s;i++)
-		workspace->temp_k[i] = v_get(dim);
+    //workspace->temp_k = (VEC*)malloc(num_stages * sizeof(VEC));
+    //for (unsigned int i = 0; i < num_stages; i++)
+    //    workspace->temp_k[i] = v_init(dim);
 
-	workspace->ipiv = (int*) malloc(s*dim*sizeof(int));
-	workspace->rhs = v_get(s*dim);
-	//workspace->CoefMat = m_get(s*dim,s*dim);
-	workspace->JMatrix = m_get(dim,dim);
-	workspace->Z_i = (VEC*) malloc(s*sizeof(VEC));
-	for(i=0;i<s;i++)	workspace->Z_i[i] = v_get(dim);
-	workspace->err = v_get(dim);
+    workspace->temp_k = malloc(num_stages * num_dof * sizeof(double));
 
-	return workspace;
+    for (unsigned int i = 0; i < num_stages; i++)
+        workspace->temp_k_slices[i] = workspace->temp_k + i * num_dof;
+
+#if defined(ASYNCH_HAVE_IMPLICIT_SOLVER)
+    workspace->ipiv = (int*)malloc(s*dim * sizeof(int));
+    workspace->rhs = v_init(s*dim);
+    //workspace->CoefMat = m_get(s*dim,s*dim);
+    workspace->JMatrix = m_get(dim, dim);
+    workspace->Z_i = (VEC*)malloc(s * sizeof(VEC));
+    for (i = 0; i < s; i++)	workspace->Z_i[i] = v_init(dim);
+    workspace->err = v_init(dim);
+#endif // defined(ASYNCH_HAVE_IMPLICIT_SOLVER)
 }
 
 //Deallocates workspace for RK solvers
-void Destroy_Workspace(TempStorage* workspace,unsigned short int s,unsigned short int max_parents)
+void Destroy_Workspace(Workspace* workspace, unsigned short int num_stages, unsigned short int max_parents)
 {
-	unsigned int i,j;
+    free(workspace->sum);
+    free(workspace->temp);    
+    free(workspace->temp2);
+    free(workspace->temp3);
 
-	v_free(&workspace->temp);
-	v_free(&workspace->sum);
-	v_free(&workspace->temp2);
-	v_free(&workspace->temp3);
+    //for (unsigned int i = 0; i < num_stages; i++)
+    //{
+    //    for (unsigned int j = 0; j < max_parents; j++)
+    //        v_free(&workspace->temp_parent_approx[i][j]);
+    //    free(workspace->temp_parent_approx[i]);
+    //}
+    free(workspace->parents_approx);
+    free(workspace->stages_parents_approx);
 
-	for(i=0;i<s;i++)
-	{
-		for(j=0;j<max_parents;j++)
-            v_free(&workspace->temp_parent_approx[i][j]);
-		free(workspace->temp_parent_approx[i]);
-	}
-	free(workspace->temp_parent_approx);
-
-	for(i=0;i<s;i++)
-		v_free(&workspace->temp_k[i]);
-	free(workspace->temp_k);
-
-	free(workspace->ipiv);
-	v_free(&workspace->rhs);
-	//m_free(&workspace->CoefMat);
-	m_free(&workspace->JMatrix);
-	for(i=0;i<s;i++)
+    //for (unsigned int i = 0; i < num_stages; i++)
+    //    v_free(&workspace->temp_k[i]);
+    free(workspace->temp_k);
+    
+#if defined(ASYNCH_HAVE_IMPLICIT_SOLVER)
+    free(workspace->ipiv);
+    v_free(&workspace->rhs);
+    //m_free(&workspace->CoefMat);
+    m_free(&workspace->JMatrix);
+    for (i = 0; i < s; i++)
         v_free(&workspace->Z_i[i]);
-	free(workspace->Z_i);
-	v_free(&workspace->err);
+    free(workspace->Z_i);
+    v_free(&workspace->err);
+#endif // defined(ASYNCH_HAVE_IMPLICIT_SOLVER)
+}
+
+
+void Destroy_Outputs(Output* outputs, unsigned int num_outputs)
+{
+    for (unsigned int i = 0; i < num_outputs; i++)
+        if (outputs[i].name)
+            free(outputs[i].name);
+
+    free(outputs);
 }
 
 //Deallocates UnivVars
-void Destroy_UnivVars(GlobalVars* GlobalVars)
+void Destroy_UnivVars(GlobalVars* global)
 {
-	unsigned int i;
-	free(GlobalVars->peakflow_function_name);
-	free(GlobalVars->output_types);
-	free(GlobalVars->output_sizes);
-	for(i=0;i<GlobalVars->num_outputs;i++)
-	{
-		free(GlobalVars->output_names[i]);
-	}
-	free(GlobalVars->output_names);
-    free(GlobalVars->outputs);
-	if(GlobalVars->rsv_filename)	free(GlobalVars->rsv_filename);
-	if(GlobalVars->rvr_filename)	free(GlobalVars->rvr_filename);
-	if(GlobalVars->prm_filename)	free(GlobalVars->prm_filename);
-	if(GlobalVars->init_filename)	free(GlobalVars->init_filename);
-	if(GlobalVars->rain_filename)	free(GlobalVars->rain_filename);
-	if(GlobalVars->dam_filename)	free(GlobalVars->dam_filename);
-	if(GlobalVars->hydrosave_filename)	free(GlobalVars->hydrosave_filename);
-	if(GlobalVars->peaksave_filename)	free(GlobalVars->peaksave_filename);
-	if(GlobalVars->temp_filename)	free(GlobalVars->temp_filename);
-	if(GlobalVars->peakfilename)	free(GlobalVars->peakfilename);
-	if(GlobalVars->hydros_loc_filename)	free(GlobalVars->hydros_loc_filename);
-	if(GlobalVars->peaks_loc_filename)	free(GlobalVars->peaks_loc_filename);
-	if(GlobalVars->hydro_table)	free(GlobalVars->hydro_table);
-	if(GlobalVars->peak_table)	free(GlobalVars->peak_table);
-	if(GlobalVars->dump_table)	free(GlobalVars->dump_table);
-	if(GlobalVars->dump_loc_filename)	free(GlobalVars->dump_loc_filename);
-	v_free(&GlobalVars->global_params);
-	free(GlobalVars->print_indices);
-	free(GlobalVars);
+    free(global->peakflow_function_name);
+
+    Destroy_Outputs(global->outputs, global->num_outputs);
+
+    if (global->rsv_filename)
+        free(global->rsv_filename);
+    if (global->rvr_filename)
+        free(global->rvr_filename);
+    if (global->prm_filename)
+        free(global->prm_filename);
+    if (global->init_filename)
+        free(global->init_filename);
+    if (global->rain_filename)
+        free(global->rain_filename);
+    if (global->dam_filename)
+        free(global->dam_filename);
+    if (global->hydrosave_filename)
+        free(global->hydrosave_filename);
+    if (global->peaksave_filename)
+        free(global->peaksave_filename);
+    if (global->temp_filename)
+        free(global->temp_filename);
+    if (global->peakfilename)
+        free(global->peakfilename);
+    if (global->hydros_loc_filename)
+        free(global->hydros_loc_filename);
+    if (global->peaks_loc_filename)
+        free(global->peaks_loc_filename);
+    if (global->hydro_table)
+        free(global->hydro_table);
+    if (global->peak_table)
+        free(global->peak_table);
+    if (global->dump_table)
+        free(global->dump_table);
+    if (global->dump_loc_filename)
+        free(global->dump_loc_filename);
+    //if (global->global_params)
+    //    free(&global->global_params);
+    if (global->print_indices)
+        free(global->print_indices);
+    free(global);
 }
 
 //Inserts a time into the list of discontinuities
-unsigned int Insert_Discontinuity(double time,unsigned int start,unsigned int end,unsigned int* count,unsigned int size,double* array,unsigned int id)
+unsigned int Insert_Discontinuity(double time, unsigned int start, unsigned int end, unsigned int* count, unsigned int size, double* array, unsigned int id)
 {
-	if(*count == 0)
-	{
-		array[start] = time;
-		(*count)++;
-		return (end+1)%size;
-	}
-	else if((end+1)%size == start)
-	{
-		//printf("Warning: A discontinuity is being ignored. Increase the size of the discontinuity buffer. id = %u time = %f\n",id,time);
-		return end;
-	}
+    if (*count == 0)
+    {
+        array[start] = time;
+        (*count)++;
+        return (end + 1) % size;
+    }
+    else if ((end + 1) % size == start)
+    {
+        //printf("Warning: A discontinuity is being ignored. Increase the size of the discontinuity buffer. id = %u time = %f\n",id,time);
+        return end;
+    }
 
-	unsigned int curr = end;
-	unsigned int toofar = (start==0) ? size-1 : start-1;
+    unsigned int curr = end;
+    unsigned int toofar = (start == 0) ? size - 1 : start - 1;
 
-	while(curr != toofar && time < array[curr])
-		curr = (curr == 0) ? size-1 : curr-1;
-	if(curr != toofar && time == array[curr])	return end;
+    while (curr != toofar && time < array[curr])
+        curr = (curr == 0) ? size - 1 : curr - 1;
+    if (curr != toofar && time == array[curr])	return end;
 
-	curr = end;
-	while(curr != toofar && time < array[curr])
-	{
-		array[(curr+1)%size] = array[curr];
-		curr = (curr == 0) ? size-1 : curr-1;
-	}
+    curr = end;
+    while (curr != toofar && time < array[curr])
+    {
+        array[(curr + 1) % size] = array[curr];
+        curr = (curr == 0) ? size - 1 : curr - 1;
+    }
 
-	curr = (curr+1)%size;
-	end = (end+1)%size;
-	array[curr] = time;
-	(*count)++;
-/*
-	if(end == start)
-	{
-		printf("Warning: A discontinuity is being ignored. Increase the size of the discontinuity buffer.\n");
-	}
-*/
-	return end;
+    curr = (curr + 1) % size;
+    end = (end + 1) % size;
+    array[curr] = time;
+    (*count)++;
+    /*
+        if(end == start)
+        {
+            printf("Warning: A discontinuity is being ignored. Increase the size of the discontinuity buffer.\n");
+        }
+    */
+    return end;
 }
 
 
 //Inserts a time into the list of discontinuities to be send to another processes
-void Insert_SendDiscontinuity(double time,unsigned int order,unsigned int* count,unsigned int size,double* array,unsigned int* order_array,unsigned int id)
+void Insert_SendDiscontinuity(double time, unsigned int order, unsigned int* count, unsigned int size, double* array, unsigned int* order_array, unsigned int id)
 {
-	if(*count == 0)
-	{
-		array[0] = time;
-		order_array[0] = order;
-		*count = 1;
-		return;
-	}
-	else if(*count+1 == size)
-	{
-		//printf("Warning: A discontinuity is being ignored in send. Increase the size of the discontinuity buffer. id = %i time = %f\n",id,time);
-		return;
-	}
+    if (*count == 0)
+    {
+        array[0] = time;
+        order_array[0] = order;
+        *count = 1;
+        return;
+    }
+    else if (*count + 1 == size)
+    {
+        //printf("Warning: A discontinuity is being ignored in send. Increase the size of the discontinuity buffer. id = %i time = %f\n",id,time);
+        return;
+    }
 
-	unsigned int curr = *count - 1;
+    unsigned int curr = *count - 1;
 
-	while(curr < size && time < array[curr])	curr--;
-	if(curr < size && time == array[curr])
-	{
-		if(order_array[curr] < order)	order_array[curr] = order;
-		return;
-	}
+    while (curr < size && time < array[curr])	curr--;
+    if (curr < size && time == array[curr])
+    {
+        if (order_array[curr] < order)	order_array[curr] = order;
+        return;
+    }
 
-	curr = *count - 1;
-	while(curr < size && time < array[curr])
-	{
-		array[curr+1] = array[curr];
-		order_array[curr+1] = order_array[curr];
-		curr--;
-	}
+    curr = *count - 1;
+    while (curr < size && time < array[curr])
+    {
+        array[curr + 1] = array[curr];
+        order_array[curr + 1] = order_array[curr];
+        curr--;
+    }
 
-	curr++;
-	array[curr] = time;
-	order_array[curr] = order;
-	(*count)++;
+    curr++;
+    array[curr] = time;
+    order_array[curr] = order;
+    (*count)++;
 
-/*
-	if(*count == size)
-	{
-		printf("Warning: A discontinuity is being ignored. Increase the size of the discontinuity buffer.\n");
-	}
-*/
+    /*
+        if(*count == size)
+        {
+            printf("Warning: A discontinuity is being ignored. Increase the size of the discontinuity buffer.\n");
+        }
+    */
 
 }
 
