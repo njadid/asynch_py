@@ -174,6 +174,9 @@ Whenever the ``autoconf`` or ``automake`` files are modified, the build system n
 
 .. code-block:: sh
 
+  # Using 'make dist' with a 32 UID
+  export TAR_OPTIONS=--owner=0 --group=0 --numeric-owner
+
   autoreconf --install
   mkdir build && cd build
   make dist
