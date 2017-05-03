@@ -1,24 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asynch", "asynch\asynch.vcxproj", "{CE61AAE4-06D8-4998-A859-B26769818B54}"
-	ProjectSection(ProjectDependencies) = postProject
-		{745DEC58-EBB3-47A9-A9B8-4C6627C01BF8} = {745DEC58-EBB3-47A9-A9B8-4C6627C01BF8}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlibstat", "..\..\third_party\zlib-1.2.8\contrib\vstudio\vc14\zlibstat.vcxproj", "{745DEC58-EBB3-47A9-A9B8-4C6627C01BF8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asynchlib", "asynchlib\asynchlib.vcxproj", "{B7C669BC-CB73-4FD5-B095-65AA2C1D6D1B}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asynch_persis", "asynch_persis\asynch_persis.vcxproj", "{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B0}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asynch_persis_end", "asynch_persis_end\asynch_persis_end.vcxproj", "{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B1}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "forecaster_maps", "forecaster_maps\forecaster_maps.vcxproj", "{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B2}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "forecaster_maps_end", "forecaster_maps_end\forecaster_maps_end.vcxproj", "{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,21 +17,10 @@ Global
 		{CE61AAE4-06D8-4998-A859-B26769818B54}.Debug|x64.Build.0 = Debug|x64
 		{CE61AAE4-06D8-4998-A859-B26769818B54}.Release|x64.ActiveCfg = Release|x64
 		{CE61AAE4-06D8-4998-A859-B26769818B54}.Release|x64.Build.0 = Release|x64
-		{745DEC58-EBB3-47A9-A9B8-4C6627C01BF8}.Debug|x64.ActiveCfg = Debug|x64
-		{745DEC58-EBB3-47A9-A9B8-4C6627C01BF8}.Debug|x64.Build.0 = Debug|x64
-		{745DEC58-EBB3-47A9-A9B8-4C6627C01BF8}.Release|x64.ActiveCfg = ReleaseWithoutAsm|x64
 		{B7C669BC-CB73-4FD5-B095-65AA2C1D6D1B}.Debug|x64.ActiveCfg = Debug|x64
 		{B7C669BC-CB73-4FD5-B095-65AA2C1D6D1B}.Debug|x64.Build.0 = Debug|x64
 		{B7C669BC-CB73-4FD5-B095-65AA2C1D6D1B}.Release|x64.ActiveCfg = Release|x64
 		{B7C669BC-CB73-4FD5-B095-65AA2C1D6D1B}.Release|x64.Build.0 = Release|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B0}.Debug|x64.ActiveCfg = Debug|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B0}.Release|x64.ActiveCfg = Release|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B1}.Debug|x64.ActiveCfg = Debug|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B1}.Release|x64.ActiveCfg = Release|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B2}.Debug|x64.ActiveCfg = Debug|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B2}.Release|x64.ActiveCfg = Release|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B3}.Debug|x64.ActiveCfg = Debug|x64
-		{B5C9DCC4-4CA9-4ECB-B654-D6A2704719B3}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
