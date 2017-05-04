@@ -147,7 +147,7 @@ Format:
 
   {parameter on output filename flag}
 
-This is a boolean value (``0`` or ``1``) that indicates whether all output filenames should include the uniform in space and time parameters ``0`` indicates no, ``1`` indicates yes. This feature can be useful for keeping track of output files from multiple simulations.
+This is a boolean value (``0`` or ``1``) that indicates whether all output filenames should be postfixed with the uniform in space and time (global) parameters. ``0`` indicates no, ``1`` indicates yes. This feature can be useful for keeping track of output files from multiple simulations.
 
 Solver Outputs
 ~~~~~~~~~~~~~~
