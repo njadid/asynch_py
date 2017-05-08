@@ -181,9 +181,9 @@ Format:
 
 ::
 
-  {number of parameters} [parameter1] [parameter2]
+  {number of parameters} [parameter 1] [parameter 2] ... [parameter n]
 
-This is where model parameters which are constant in space and time are specified The first value is a nonnegative integer specifying the number of global parameters to follow. Every model requires a certain number of global parameters If the number given in the global file is less than expected for a particular model, an error occurs If the number is greater than expected, a warning is given. These "extra" parameters are available to the model for use This can sometimes be useful for quick tests, but should be avoided normally.
+This is where model parameters which are constant in space and time are specified. The first value is a nonnegative integer specifying the number of global parameters to follow. Every model requires a certain number of global parameters. If the number given in the global file is less than expected for a particular model, an error occurs. If the number is greater than expected, a warning is given. These "extra" parameters are available to the model for use. This can sometimes be useful for quick tests, but should be avoided normally.
 
 The parameter meanings depend upon the model used. The units of these parameters is also model dependent.
 
