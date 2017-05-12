@@ -25,9 +25,12 @@ void Destroy_Link(Link* link, int rkd_flag, Forcing* forcings, GlobalVars* globa
 
     if (link->my != NULL)
     {
-        free(link->my->forcing_values);
-        free(link->my->forcing_indices);
-        free(link->my->forcing_change_times);
+        if (link->my->forcing_values)
+            free(link->my->forcing_values);
+        if (link->my->forcing_indices)
+            free(link->my->forcing_indices);
+        if (link->my->forcing_change_times)
+            free(link->my->forcing_change_times);
         if (rkd_flag)
             Destroy_ErrorData(&link->my->error_data);
         Destroy_List(&link->my->list);
@@ -40,12 +43,16 @@ void Destroy_Link(Link* link, int rkd_flag, Forcing* forcings, GlobalVars* globa
             free(link->discont_send);
             free(link->discont_order_send);
         }
-        for (i = 0; i < global->num_forcings; i++)
+
+        if (link->my->forcing_data)
         {
-            if (link->my->forcing_data && forcings[i].flag != 4 && forcings[i].flag != 7)
-                Destroy_ForcingData(&(link->my->forcing_data[i]));
+            for (i = 0; i < global->num_forcings; i++)
+            {
+                if (forcings[i].flag != 4 && forcings[i].flag != 7)
+                    Destroy_ForcingData(&(link->my->forcing_data[i]));
+            }
+            free(link->my->forcing_data);
         }
-        free(link->my->forcing_data);
         //if (link->qvs != NULL)
         //{
         //    /*

@@ -664,7 +664,10 @@ int Partition_Network(
     //Allocate the link data according to the partition
     for (unsigned int i = 0; i < N; i++)
         if ((*assignments)[i] == my_rank || (*getting)[i])
+        {
             system[i].my = malloc(sizeof(LinkData));
+            memset(system[i].my, 0, sizeof(LinkData));
+        }
 
     return 0;
 }
