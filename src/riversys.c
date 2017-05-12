@@ -1813,15 +1813,15 @@ int Load_Forcings(
                     buffer = realloc(buffer, m * sizeof(DataPoint));
                     for (unsigned int j = 0; j < m - 1; j++)
                         fscanf(forcingfile, "%lf %f", &(buffer[j].time), &(buffer[j].value));
-                    buffer[m].time = globals->maxtime;
-                    buffer[m].value = -1.0f;
+                    buffer[m - 1].time = globals->maxtime;
+                    buffer[m - 1].value = -1.0f;
 
                     //Send data
                     MPI_Bcast(&loc, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
                     if (assignments[loc] != my_rank)
                     {
                         MPI_Send(&m, 1, MPI_UNSIGNED, assignments[loc], 1, MPI_COMM_WORLD);
-                        MPI_Send(buffer, 2 * m, MPI_DOUBLE, assignments[loc], 1, MPI_COMM_WORLD);
+                        MPI_Send(buffer, m, mpi_datapoint_type, assignments[loc], 1, MPI_COMM_WORLD);
                     }
                 }
                 else
@@ -1831,7 +1831,7 @@ int Load_Forcings(
                     {
                         MPI_Recv(&m, 1, MPI_UNSIGNED, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                         buffer = realloc(buffer, m * sizeof(DataPoint));
-                        MPI_Recv(buffer, m, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        MPI_Recv(buffer, m, mpi_datapoint_type, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                     }
                 }
 

@@ -10,7 +10,7 @@ The documentation is available [here](http://asynch.readthedocs.io/). Thank you 
 
 The source for the documentation is in the `docs` folder. Here are the instructions to built and read it locally. The documentation is built with [Doxygen](http://www.doxygen.org/) and [Sphinx](http://www.sphinx-doc.org). The sphinx template is from [ReadtheDocs](https://docs.readthedocs.io). [Breathe](https://breathe.readthedocs.io) provides a bridge between the Sphinx and Doxygen documentation systems.
 
-    pip install sphinx sphinx-autobuild breathe
+    pip install --user sphinx sphinx-autobuild sphinx_rtd_theme breathe recommonmark
     apt-get doxygen
 
     cd docs  
