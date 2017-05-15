@@ -1848,6 +1848,11 @@ FILE* PrepareTempFiles(Link* sys, unsigned int N, int* assignments, GlobalVars* 
             sprintf(filename, "%s", globals->temp_filename);
         //sprintf(filename,"%s_%.3i",globals->temp_filename,my_rank);
         outputfile = fopen(filename, "w+b");
+        if (outputfile == NULL)
+        {
+            printf("[%i]: Error: Could not create file %s.\n", my_rank, filename);
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
 
         //if(globals->assim_flag == 1)	start = 0;
         //else				start = 1;
