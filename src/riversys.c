@@ -664,7 +664,10 @@ int Partition_Network(
     //Allocate the link data according to the partition
     for (unsigned int i = 0; i < N; i++)
         if ((*assignments)[i] == my_rank || (*getting)[i])
+        {
             system[i].my = malloc(sizeof(LinkData));
+            memset(system[i].my, 0, sizeof(LinkData));
+        }
 
     return 0;
 }
@@ -1708,7 +1711,7 @@ int Load_Forcings(
     // Create an MPI type for struct DataPoint
     const int nitems = 2;
     int          blocklengths[2] = { 1,1 };
-    MPI_Datatype types[2] = { MPI_INT, MPI_INT };
+    MPI_Datatype types[2] = { MPI_DOUBLE, MPI_FLOAT };
     MPI_Datatype mpi_datapoint_type;
     MPI_Aint     offsets[2];
 
