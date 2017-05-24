@@ -353,7 +353,7 @@ Format:
 
   {dam flag} [.dam or .qvs filename]
 
-This section specifies whether dams will be used A dam flag of ``0`` means no dams are used. A flag of ``1`` indicates a dam file ( dam) will be used, and a flag value of ``2`` indicates a discharge vs storage file ( qvs) will be used. Some models do not support dams. For these models, the dam flag must be set to ``0`` or an error occurs.
+This section specifies whether dams will be used. A dam flag of ``0`` means no dams are used. A flag of ``1`` indicates a dam file (.dam) will be used, and a flag value of ``2`` indicates a discharge vs storage file (.qvs) will be used. Some models do not support dams. For these models, the dam flag must be set to ``0`` or an error occurs.
 
 State Forcing Feeds
 ~~~~~~~~~~~~~~~~~~~
