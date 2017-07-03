@@ -21,7 +21,7 @@ When contributing code, then please follow the standard Contribution Guidelines 
 .. _Sprintable: https://github.com/rtfd/readthedocs.org/issues?q=is%3Aopen+is%3Aissue+label%3ASprintable
 .. _contribution-guide.org: http://www.contribution-guide.org/#submitting-bugs
 
-Release Procedure
+Managing releases
 -----------------
 
 Once you are happy with your changes in the ``develop`` branch and ran a couple of test simulations, here is the procedure to release a new version ``x.y.z`` (e.g. ``1.5.0``):
