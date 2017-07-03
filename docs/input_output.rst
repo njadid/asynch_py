@@ -1030,9 +1030,9 @@ Peakflow files created with the "Classic" peakflow function take the structure:
 
   {number of link}
   {model type}
-  {link id 1} {peakflow value} {time to peak} {area}
-  {link id 2} {peakflow value} {time to peak} {area}
-  {link id 3} {peakflow value} {time to peak} {area}
+  {link id 1} {area} {time to peak} {peakflow value}
+  {link id 2} {area} {time to peak} {peakflow value}
+  {link id 3} {area} {time to peak} {peakflow value}
 
 The time to peak is measured since the beginning of the simulation. The peakflow value for each link is the maximum value achieved over the simulation for the state with index ``0`` in the state vector. The area given is the parameter from the link parameters with index area idx. See :ref:`SetParamSizes`.
 
