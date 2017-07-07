@@ -31,10 +31,41 @@ libasynch_a_SOURCES = \
   steppers/explicit.c \
   steppers/explicit_index1.c \
   steppers/explicit_index1_dam.c \
-  steppers/forced.c
+  steppers/forced.c \
+  advance.h \
+  asynch_interface.h \
+  blas.h \
+  comm.h \
+  compression.h \
+  config_gbl.h \
+  data_types.h \
+  date_manip.h \
+  db.h \
+  forcings.h forcings_io.h \
+  globals.h \
+  io.h \
+  libpq_fwd.h \
+  minmax.h \
+  misc.h \
+  outputs.h \
+  partition.h \
+  processdata.h \
+  riversys.h \
+  rkmethods.h \
+  rksteppers.h \
+  sort.h \
+  structs.h \
+  structs_fwd.h \
+  system.h \
+  models/check_consistency.h \
+  models/check_state.h \
+  models/definitions.h \
+  models/equations.h \
+  models/model.h \
+  solvers/lagrange.h
 
 bin_PROGRAMS = asynch
-asynch_SOURCES = optparse.c asynchdist.c
+asynch_SOURCES = optparse.c optparse.h asynchdist.c
 asynch_LDADD = libasynch.a $(HDF5_LIBS) $(POSTGRESQL_LIBS)
 asynch_LDFLAGS = $(HDF5_LDFLAGS) $(POSTGRESQL_LDFLAGS)
 
