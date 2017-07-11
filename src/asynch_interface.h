@@ -5,8 +5,10 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -14,6 +16,7 @@
 
 #include <structs_fwd.h>
 #include <data_types.h>
+#include <constants.h>
 
 #include <models/model.h>
 
@@ -68,7 +71,7 @@ typedef void (PeakflowOutputCallback)(unsigned int ID, double peak_time, double 
 /// \param comm  The MPI communicator to use with this solver object.
 /// \return A pointer to an AsynchSolver object.
 /// \see Asynch_Free
-AsynchSolver* Asynch_Init(MPI_Comm comm);
+AsynchSolver* Asynch_Init(MPI_Comm comm, bool verbose);
 
 /// This routine deallocates the memory occupied by an AsynchSolver object created with a call to Asynch_Init.
 ///
@@ -418,11 +421,30 @@ unsigned short Asynch_Get_Model_Type(AsynchSolver* asynch);
 /// \param type    The model type.
 void Asynch_Set_Model_Type(AsynchSolver* asynch, unsigned short type);
 
-/// This routine returns the value of *duration*, as defined in Section[sec:model type and duration].
+/// This routine returns the begin timestamp of the simulation as defined in Section[sec:simulation period].
 ///
 /// \param asynch A pointer to a AsynchSolver object to use.
-/// \return The current duration of the simulation time of the AsynchSolver object.
+/// \return The current begin timestamp of the simulation.
+time_t Asynch_Get_Begin_Timestamp(AsynchSolver* asynch);
+
+/// This routine returns the end timestamp of the simulation as defined in Section[sec:simulation period].
+///
+/// \param asynch A pointer to a AsynchSolver object to use.
+/// \return The current end timestamp of the simulation.
+time_t Asynch_Get_End_Timestamp(AsynchSolver* asynch);
+
+/// This routine returns the value of *duration*, as defined in Section[sec:simulation period].
+///
+/// \param asynch A pointer to a AsynchSolver object to use.
+/// \return The current duration of the simulation time of the AsynchSolver object (unit is model dependant, but usually minutes is used).
 double Asynch_Get_Total_Simulation_Duration(AsynchSolver* asynch);
+
+/// This routine set the simulation period, as defined in Section[sec:simulation period].
+///
+/// \param asynch A pointer to a AsynchSolver object to use.
+/// \param begin A unix timestamp of the beginning of the simulation.
+/// \param end A unix timestamp of the end of the simulation.
+void Asynch_Set_Simulation_Period(AsynchSolver* asynch, time_t begin, time_t end);
 
 /// This routine returns the value of *duration*, as defined in Section[sec:model type and duration].
 ///
@@ -547,7 +569,6 @@ void Asynch_Set_System_State(AsynchSolver* asynch, double unix_time, double* sta
 ///
 /// \param asynch A pointer to a AsynchSolver object to use.
 void Asynch_Reset_Peakflow_Data(AsynchSolver* asynch);
-
 int Asynch_Set_Forcing_State(AsynchSolver* asynch, unsigned int idx, double t_0, unsigned int first_file, unsigned int last_file);
 
 /// This routine gets the filename of the output peakflow file. If a database connection is used, then
@@ -566,7 +587,6 @@ int Asynch_Get_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname);
 /// \param peakflowname Name to set the peakflow output filename.
 /// \return 0 if the filename was set successfully. 1 otherwise.
 int Asynch_Set_Peakflow_Output_Name(AsynchSolver* asynch, char* peakflowname);
-
 unsigned int Asynch_Get_Local_LinkID(AsynchSolver* asynch, unsigned int location);
 
 int Asynch_Set_Init_Timestamp(AsynchSolver* asynch, unsigned int unix_time);

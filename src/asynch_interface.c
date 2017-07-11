@@ -40,7 +40,7 @@
 #include <asynch_interface.h>
 
 //Initializes the asynch solver object.
-AsynchSolver* Asynch_Init(MPI_Comm comm)
+AsynchSolver* Asynch_Init(MPI_Comm comm, bool verbose)
 {
     AsynchSolver* res = NULL;
 
@@ -51,9 +51,11 @@ AsynchSolver* Asynch_Init(MPI_Comm comm)
     if (res)
     {
         memset(res, 0, sizeof(AsynchSolver));
+        res->verbose = verbose;
 
         res->comm = comm;
-        if (comm != MPI_COMM_WORLD)	printf("Warning: asynchsolver object my not work fully with in a comm other than MPI_COMM_WORLD.\n");
+        if (comm != MPI_COMM_WORLD)
+            printf("Warning: asynchsolver object my not work fully with in a comm other than MPI_COMM_WORLD.\n");
 
         //Initialize MPI stuff
         MPI_Initialized(&init_flag);
@@ -439,7 +441,7 @@ void Asynch_Free(AsynchSolver* asynch)
     
     if (asynch->outputfile)
         fclose(asynch->outputfile);
-    
+
     for (i = 0; i < asynch->N; i++)
         Destroy_Link(&asynch->sys[i], asynch->rkdfilename[0] != '\0', asynch->forcings, asynch->globals);
 
@@ -524,21 +526,33 @@ Link* Asynch_Get_Links_Proc(AsynchSolver* asynch)
     return asynch->sys;
 }
 
-
 void Asynch_Set_Database_Connection(AsynchSolver* asynch, const char* connstring, unsigned int conn_idx)
 {
     ConnData_Free(&asynch->db_connections[conn_idx]);
     ConnData_Init(&asynch->db_connections[conn_idx], connstring);
 }
 
+time_t Asynch_Get_Begin_Timestamp(AsynchSolver* asynch)
+{
+    return asynch->globals->begin_time;
+}
+
+time_t Asynch_Get_End_Timestamp(AsynchSolver* asynch)
+{
+    return asynch->globals->end_time;
+}
+
+void Asynch_Set_Simulation_Period(AsynchSolver* asynch, time_t begin, time_t end)
+{
+    assert(end >= begin);
+    asynch->globals->begin_time = begin;
+    asynch->globals->end_time = end;
+    asynch->globals->maxtime = (end - begin) / 60.0;
+}
+
 double Asynch_Get_Total_Simulation_Duration(AsynchSolver* asynch)
 {
     return asynch->globals->maxtime;
-}
-
-void Asynch_Set_Total_Simulation_Duration(AsynchSolver* asynch, double new_time)
-{
-    asynch->globals->maxtime = new_time;
 }
 
 unsigned int Asynch_Get_Last_Forcing_Timestamp(AsynchSolver* asynch, unsigned int forcing_idx)
@@ -845,7 +859,8 @@ int Asynch_Set_Output_Int(AsynchSolver* asynch, char* name, OutputIntCallback* c
         }
     }
 
-    if (states_to_add)	free(states_to_add);
+    if (states_to_add)
+        free(states_to_add);
 
     return 1;
 }
@@ -882,7 +897,7 @@ int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallb
 
     //Check if anything should be added to the dense_indices from used_states
     for (unsigned int loc = 0; loc < my_N; loc++)
-    {
+        {
         Link *current = my_sys[loc];
         unsigned int num_to_add = 0;
         states_to_add = (unsigned int*)realloc(states_to_add, num_states * sizeof(unsigned int));
@@ -910,7 +925,8 @@ int Asynch_Set_Output_Double(AsynchSolver* asynch, char* name, OutputDoubleCallb
         }
     }
 
-    if (states_to_add)	free(states_to_add);
+    if (states_to_add)
+        free(states_to_add);
 
     return 1;
 }
@@ -975,7 +991,8 @@ int Asynch_Set_Output_Float(AsynchSolver* asynch, char* name, OutputFloatCallbac
         }
     }
 
-    if (states_to_add)	free(states_to_add);
+    if (states_to_add)
+        free(states_to_add);
 
     return 1;
 }

@@ -618,7 +618,7 @@ GlobalVars* Read_Global_Data(
     globals->max_rk_stages = 0;
     globals->max_parents = 0;
 
-    if (globals->rkd_flag == 0)	//Error data is found in the universal file
+    if (globals->rkd_flag == 0)	//Error data is in the config file
     {
         rkdfilename[0] = '\0';
         ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);

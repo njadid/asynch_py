@@ -32,7 +32,7 @@ int ForcedSolutionSolver(Link* link_i, GlobalVars* globals, int* assignments, bo
     unsigned int num_stages = link_i->method->num_stages;
     double *params = link_i->params;
     RKMethod* meth = link_i->method;
-    ErrorData* error = &link_i->my->error_data;
+    ErrorData* error = link_i->my->error_data;
     const unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
@@ -143,7 +143,11 @@ int ForcedSolutionSolver(Link* link_i, GlobalVars* globals, int* assignments, bo
             }
         }
     }
-    link_i->differential(t + h, y_0, dim, NULL, 0, globals->global_params, params, link_i->my->forcing_values, link_i->qvs, link_i->state, link_i->user, new_y);
+    link_i->differential(
+        t + h,
+        y_0, dim,
+        NULL, 0, 0,
+        globals->global_params, params, link_i->my->forcing_values, link_i->qvs, link_i->state, link_i->user, new_y);
     if (link_i->check_state)
         new_node->state = link_i->check_state(new_y, dim, globals->global_params, globals->num_global_params, link_i->params, link_i->num_params, link_i->qvs, link_i->has_dam, link_i->user);
 
@@ -158,7 +162,7 @@ int ForcedSolutionSolver(Link* link_i, GlobalVars* globals, int* assignments, bo
     //Save the new data
     link_i->last_t = t + h;
     link_i->current_iterations++;
-    store_k(workspace->temp_k, link_i->dim, new_node->k, num_stages, dense_indices, num_dense);
+    store_k(workspace->temp_k, globals->max_dim, new_node->k, num_stages, dense_indices, num_dense);
 
     //Check if new data should be written to disk
     if (print_flag)

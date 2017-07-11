@@ -18,21 +18,18 @@
     <ClInclude Include="$(RootDir)\src\asynch_interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(RootDir)\src\asynch_interface_py.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\optparse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(RootDir)\src\asynchdist.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="$(RootDir)\src\asynchdist_custom.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\optparse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\asynch_cli.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

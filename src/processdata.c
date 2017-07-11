@@ -1863,7 +1863,8 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
             i++;
 
         //Assume that every links have the same dimension
-        unsigned int dim = sys[i].dim;
+        //unsigned int dim = sys[i].dim;
+        unsigned int dim = 4;
 
         size_t line_size = sizeof(unsigned int) + dim * sizeof(double);
 
@@ -1915,12 +1916,15 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
         H5Fclose(file_id);
         H5Tclose(compound_id);
     }
-    else			//Sending data to proc 0
+    //Sending data to proc 0
+    else
     {
         //Check for error while opening the file
         MPI_Bcast(&res, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
         if (res)
             return 1;
+
+        unsigned int dim = 4;
 
         for (i = 0; i < N; i++)
         {
@@ -2480,69 +2484,6 @@ int SetTempFiles(double set_time,Link** sys,unsigned int N,FILE* tempfile,UnivVa
 }
 */
 
-//Read in a .rec file from disk and loads it into the intial condition for sys (tail).
-//This does NOT set the current time at each link.
-void LoadRecoveryFile(char* filename, Link* sys, unsigned int N, unsigned int my_N, unsigned int* assignments, GlobalVars* globals)
-{
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    if (my_rank == 0)
-    {
-        FILE *input = fopen(filename, "r");
-        if (!input)
-        {
-            printf("[%i]: Error opening recovery file %s.\n", my_rank, filename);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-
-        unsigned int read_type, read_N;
-        fscanf(input, "%u %u %*f", &read_type, &read_N);
-        if (N != read_N)		//!!!! Ignoring read_type for now (190 vs 19) !!!!
-        {
-            printf("[%i]: Error reading recovery file: bad model type (%i) or wrong number of links (%i).\n", my_rank, read_type, read_N);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-
-        unsigned int max_dim = 0;
-        for (unsigned int i = 0; i < N; i++)
-            max_dim = max(max_dim, sys[i].dim);
-
-        double *buffer = malloc(max_dim * sizeof(double));
-        for (unsigned int i = 0; i < N; i++)
-        {
-            unsigned int id;
-            fscanf(input, "%u", &id);
-            if (sys[i].ID != id)
-            {
-                printf("[%i]: Error reading recovery file: bad link id (%i); expected %i.\n", my_rank, id, sys[i].ID);
-                MPI_Abort(MPI_COMM_WORLD, 1);
-            }
-
-            for (unsigned int j = 0; j < sys[i].dim; j++)
-                fscanf(input, "%lf", buffer + j);
-
-            if (assignments[i] == my_rank)
-                dcopy(buffer, sys[i].my->list.tail->y_approx, 0, sys[i].dim);
-            else
-            {
-                MPI_Send(&i, 1, MPI_UNSIGNED, assignments[i], 0, MPI_COMM_WORLD);
-                MPI_Send(buffer, sys[i].dim, MPI_DOUBLE, assignments[i], 0, MPI_COMM_WORLD);
-            }
-        }
-        free(buffer);
-    }
-    else
-    {
-        for (unsigned int i = 0; i < N; i++)
-        {
-            unsigned int j;
-            MPI_Recv(&j, 1, MPI_UNSIGNED, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(sys[j].my->list.tail->y_approx, sys[j].dim, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-}
 
 //Rewrites the previous step written at link_i with the current step. The current time and state is used.
 //!!!! This assumes we are writting into files. !!!!

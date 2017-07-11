@@ -1,5 +1,5 @@
-#if !defined(STRUCTS_H)
-#define STRUCTS_H
+#if !defined(ASYNCH_STRUCTS_H)
+#define ASYNCH_STRUCTS_H
 
 #if _MSC_VER > 1000
 #pragma once
@@ -23,50 +23,16 @@
 
 #include <asynch_interface.h>
 
-//Constants
-#define ASYNCH_MAX_DB_CONNECTIONS 20
-
-#define ASYNCH_DB_LOC_TOPO 0
-#define ASYNCH_DB_LOC_PARAMS 1
-#define ASYNCH_DB_LOC_INIT 2
-#define ASYNCH_DB_LOC_QVS 3
-#define ASYNCH_DB_LOC_RSV 4
-#define ASYNCH_DB_LOC_HYDROSAVE 5
-#define ASYNCH_DB_LOC_PEAKSAVE 6
-#define ASYNCH_DB_LOC_HYDRO_OUTPUT 7
-#define ASYNCH_DB_LOC_PEAK_OUTPUT 8
-#define ASYNCH_DB_LOC_SNAPSHOT_OUTPUT 9
-#define ASYNCH_DB_LOC_FORCING_START 10
-
-#define ASYNCH_MAX_QUERY_LENGTH 2048
-#define ASYNCH_MAX_CONNSTRING_LENGTH 1024
-#define ASYNCH_MAX_QUERIES 5
-
-#define ASYNCH_MAX_NUM_FORCINGS 12
-#define ASYNCH_MAX_TIMESTAMP_LENGTH 12
-#define ASYNCH_MAX_PATH_LENGTH 1024
-
-#define ASYNCH_MAX_LINE_LENGTH 1024
-#define ASYNCH_MAX_SYMBOL_LENGTH 64
-#define ASYNCH_MAX_QUERY_LENGTH 2048
-
-#define ASYNCH_MAX_SOLVER_STAGES 8      //!< Maximum number of stages in RK solvers
-
-#define ASYNCH_MAX_DIM 256              //!< Maximum number of Degree of Freedom
-
-#define ASYNCH_LINK_MAX_PARENTS 8
-
-
 /// Structure to store temporary memory needed for RK solvers.
 ///
 struct Workspace
 {
     //Memory for all Solvers
-    double *sum, *temp, *temp2, *temp3;    //!< Vectors for summations and temp workspace. size = dim of problem at each link.
+    double *sum, *temp, *temp2, *temp3;    //!< Vectors for summations and temp workspace. [max_dim]
 
-    double *stages_parents_approx;      //!< Matrix of vectors to hold temporary work from parent links. [num_stages][max_parents][dim]
-    double *parents_approx;             //!< Matrix of vectors to hold temporary work from parent links. [max_parents][dim]
-    double *temp_k;                     //!< Vector of vectors to hold temporary internal stage values.[num_stages][dim]    
+    double *stages_parents_approx;      //!< Matrix of vectors to hold temporary work from parent links. [num_stages][max_parents][max_dim]
+    double *parents_approx;             //!< Matrix of vectors to hold temporary work from parent links. [max_parents][max_dim]
+    double *temp_k;                     //!< Vector of vectors to hold temporary internal stage values.[num_stages][max_dim]    
 
     double *temp_k_slices[ASYNCH_MAX_SOLVER_STAGES];
 
@@ -286,7 +252,7 @@ struct GlobalVars
     char* peaksave_filename;
     char* peakfilename;             //!< Filename for .pea file
     //char* identifier;
-    unsigned int max_dim;
+    unsigned int max_dim;           //!< Maximum num of degree of freedom in the system (assim uses variable dimensions)
     unsigned int outletlink;        //!< For database: holds the link id of the outlet. Use 0 if reading entire database.
     //unsigned int num_dense;       //!< Number of states where dense output is calculated
     //unsigned int* dense_indices;  //!< List of indices in solution where dense output is needed
@@ -311,7 +277,7 @@ struct GlobalVars
     char* peaks_loc_filename;
     char* dump_loc_filename;
     char* rsv_filename;
-    unsigned int init_timestamp;
+    unsigned int init_timestamp;        //!< The timestamp of the initial state (only used to get initial condition from the DB)
     short int res_forcing_idx;
 
 
@@ -356,7 +322,7 @@ struct GlobalVars
 typedef struct LinkData
 {
     RKSolutionList list;            //!< The list for the calculated numerical solution
-    ErrorData error_data;           //!< Error estimiation information for this link
+    ErrorData *error_data;          //!< Error estimation information for this link
 
     //Forcings data
     //TODO merge into one struct
@@ -565,6 +531,7 @@ struct AsynchSolver
     MPI_Comm comm;		//!< COMM on which the solver works
     int np;			    //!< Number of procs in the comm
     int my_rank;		//!< This processes rank in the comm (varies by proc)
+    bool verbose;       //!< Set to true is asynch
 
     //Routines for checking what is initialized
     bool setup_gbl;
@@ -622,11 +589,10 @@ struct AsynchSolver
     char rkdfilename[ASYNCH_MAX_PATH_LENGTH];	//!< Filename for .rkd file
     FILE* outputfile;		    //!< File handle for outputing temporary data
     FILE* peakfile;			    //!< File handle for the peakflow data
-    char peakfilename[ASYNCH_MAX_PATH_LENGTH];		    //!< Filename for .pea file
     ConnData db_connections[ASYNCH_MAX_DB_CONNECTIONS];	//!< Database connection information
     Forcing forcings[ASYNCH_MAX_DB_CONNECTIONS - ASYNCH_DB_LOC_FORCING_START];	//!< Forcing information
     void* ExternalInterface;
 };
 
 
-#endif //STRUCTS_H
+#endif //ASYNCH_STRUCTS_H
