@@ -27,9 +27,11 @@ AsynchModel const * GetModel(unsigned short model_uid);
 /// These are the right-hand side functions for the differential equations.
 ///
 /// \param t The current time (typically measured in minutes).
-/// \param y_i The vector of the current states of the system at this link. Only states defined by a differential equation are available. This means the indices from diff_start and beyond are available. States defined by algebraic equations must be calculated, if needed for the differential equations.
-/// \param y_p The array of vectors of the states of the system of each upstream (parent) link. Only states defined by a differential equation are available. States defined by algebraic equations must be calculated. Further, only those states listed in dense_indices (defined in SetParamSizes) are available.
-/// \param num_parents The number of upstream links (parents) to link i
+/// \param y_i The vector of the current states of the system at this link [num_dof]. Only states defined by a differential equation are available. This means the indices from diff_start and beyond are available. States defined by algebraic equations must be calculated, if needed for the differential equations.
+/// \param num_dof The number of degree of freedom at this link. In other word, the dimension of the vector y_i. 
+/// \param y_p The vector of the states of the system of each upstream (parent) link [num_parents][max_num_dof]. Only states defined by a differential equation are available. States defined by algebraic equations must be calculated. Further, only those states listed in dense_indices (defined in SetParamSizes) are available.
+/// \param num_parents The number of upstream links (parents) to link i.
+/// \param max_num_dof The maximum number of degree of freedom of every links.
 /// \param global_params The vector of parameters constant in both space and time.
 /// \param params The vector of parameters for link i.
 /// \param forcings The array of current forcing values.
