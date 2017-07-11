@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     start = MPI_Wtime();
 
     //Init asynch object and the river network
-    AsynchSolver *asynch = Asynch_Init(MPI_COMM_WORLD);
+    AsynchSolver *asynch = Asynch_Init(MPI_COMM_WORLD, false);
     print_out("Reading global file...\n");
     Asynch_Parse_GBL(asynch, global_filename);
     print_out("Loading network...\n");

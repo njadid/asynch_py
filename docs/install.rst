@@ -61,6 +61,28 @@ From the `libpq webpage <http://www.postgresql.org/does/9.1/statie/libpq.html>`_
 
 libpq can be ommitted while running ``./configure`` with ``--without-postgresql``. If you want to use libpq on a machine for ASYNCH, be sure to install the PostgreSQL development packages. In Linux repositories, these packages are usually denoted by a "-dev" or similar in the package name.
 
+METIS Library
+~~~~~~~~~~~~~
+
+``METIS`` is a set of serial programs for partitioning graphs, partitioning finite element meshes, and producing fill reducing orderings for sparse matrices.
+
+From the `METIS webpage <http://glaros.dtc.umn.edu/gkhome/metis/metis/overview>`__ :
+
+  Experiments on a large number of graphs arising in various domains including finite element methods, linear programming, VLSI, and transportation show that METIS produces partitions that are consistently better than those produced by other widely used algorithms. The partitions produced by METIS are consistently 10% to 50% better than those produced by spectral partitioning algorithms.
+
+METIS can be ommitted while running ``./configure`` with ``--without-metis``.
+
+PETSc Library
+~~~~~~~~~~~~~
+
+``PETSc`` is a suite of data structures and routines for the scalable (parallel) solution of scientific applications modeled by partial differential equations.
+
+From the `PETSc webpage <http://www.mcs.anl.gov/petsc/>`__ :
+
+  PETSc is intended for use in large-scale application projects, many ongoing computational science projects are built around the PETSc libraries. PETSc is easy to use for beginners. Moreover, its careful design allows advanced users to have detailed control over the solution process.
+
+PETSc can be ommitted while running ``./configure`` with ``--without-petsc``.
+
 Optional Software
 -----------------
 
@@ -114,7 +136,7 @@ These are the generic instruction for an out of source build (prefered method):
 .. code-block:: sh
 
   mkdir build && cd build
-  ../configure CFLAGS=-DNDEBUG
+  ../configure CFLAGS="-O3 -DNDEBUG"
   make
   make check
   make install
@@ -162,7 +184,7 @@ Then run the classic GNU build tool chain:
 .. code-block:: sh
 
   mkdir build && cd build
-  ../configure --prefix=/Dedicated/IFC/.argon CFLAGS="-O3 -march=core-avx2 -DNDEBUG" CHECK_CFLAGS=-I/Dedicated/IFC/.local/include CHECK_LIBS=/Dedicated/IFC/.local/lib/libcheck.a
+  ../configure --prefix=/Dedicated/IFC/.argon CFLAGS="-O3 -march=core-avx2 -DNDEBUG" PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/Dedicated/IFC/.argon/lib/pkgconfig
   make
   make check
   make install
@@ -175,7 +197,7 @@ Whenever the ``autoconf`` or ``automake`` files are modified, the build system n
 .. code-block:: sh
 
   # Using 'make dist' with a 32 UID
-  export TAR_OPTIONS=--owner=0 --group=0 --numeric-owner
+  export TAR_OPTIONS="--owner=0 --group=0 --numeric-owner"
 
   autoreconf --install
   mkdir build && cd build

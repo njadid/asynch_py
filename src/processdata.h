@@ -49,7 +49,7 @@ int RemoveTemporaryFiles(GlobalVars* GlobalVars, unsigned int my_save_size, char
 int ResetTempFiles(double set_time, Link* sys, unsigned int N, FILE* tempfile, GlobalVars* GlobalVars, unsigned int my_save_size, const Lookup * const id_to_loc);
 int SetTempFiles(double set_time, void* set_value, enum AsynchTypes data_type, unsigned int component_idx, Link* sys, unsigned int N, FILE* tempfile, GlobalVars* GlobalVars, unsigned int my_save_size, const Lookup * const id_to_loc);
 
-void LoadRecoveryFile(char* filename, Link* sys, unsigned int N, unsigned int my_N, unsigned int* assignments, GlobalVars* GlobalVars);
+//void LoadRecoveryFile(char* filename, Link* sys, unsigned int N, unsigned int my_N, unsigned int* assignments, GlobalVars* GlobalVars);
 
 //Utility
 //int ConvertBinaryToString(double* data_storage, char* submission, unsigned int blocks, unsigned int dimp1, unsigned int id);

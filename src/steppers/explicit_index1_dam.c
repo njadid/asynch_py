@@ -37,7 +37,7 @@ int ExplicitRKIndex1SolverDam(Link* link_i, GlobalVars* globals, int* assignment
     const double * const d = link_i->method->d;
     unsigned int num_stages = link_i->method->num_stages;
     RKMethod* meth = link_i->method;
-    ErrorData* error = &link_i->my->error_data;
+    ErrorData* error = link_i->my->error_data;
     unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
@@ -68,8 +68,10 @@ int ExplicitRKIndex1SolverDam(Link* link_i, GlobalVars* globals, int* assignment
             current_theta = (t_needed - curr_node[i]->t) / dt;
             curr_parent->method->dense_b(current_theta, curr_parent->method->b_theta);
 
-            //[num_stages][max_parents][dim]
-            double *parent_approx = workspace->stages_parents_approx + j * globals->max_parents * dim + i * dim;
+            //[num_stages][max_parents][max_dim] -> [max_dim]
+            double *parent_approx = workspace->stages_parents_approx
+                + j * globals->max_parents * globals->max_dim
+                + i * globals->max_dim;
 
             for (unsigned int m = 0; m < curr_parent->num_dense; m++)
             {
@@ -120,7 +122,7 @@ int ExplicitRKIndex1SolverDam(Link* link_i, GlobalVars* globals, int* assignment
         link_i->differential(
             t + dt,
             sum, link_i->dim,
-            y_p, link_i->num_parents,
+            y_p, link_i->num_parents, globals->max_dim,
             globals->global_params,
             link_i->params,
             link_i->my->forcing_values,                        
@@ -275,7 +277,7 @@ int ExplicitRKIndex1SolverDam(Link* link_i, GlobalVars* globals, int* assignment
                 link_i->differential(
                     t + h,
                     new_y, link_i->dim,
-                    workspace->parents_approx, link_i->num_parents,
+                    workspace->parents_approx, link_i->num_parents, globals->max_dim,
                     globals->global_params,
                     link_i->params,
                     link_i->my->forcing_values,                    
@@ -359,7 +361,7 @@ int ExplicitRKIndex1SolverDam(Link* link_i, GlobalVars* globals, int* assignment
         //Save the new data
         link_i->last_t = t + h;
         link_i->current_iterations++;
-        store_k(workspace->temp_k, link_i->dim, new_node->k, num_stages, dense_indices, num_dense);
+        store_k(workspace->temp_k, globals->max_dim, new_node->k, num_stages, dense_indices, num_dense);
 
         //Check if new data should be written to disk
         if (print_flag)

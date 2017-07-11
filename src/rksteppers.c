@@ -15,7 +15,7 @@
 #include <blas.h>
 
 
-//Copies contents of the vectors full_k with dim entries into the vectors k with num_dense entries.
+//Copies contents of the vectors full_k [num_stages][max_dim] into the vector k [num_stages][num_dense]
 void store_k(const double * const full_k, unsigned int num_dof, double *k, unsigned int num_stages, const unsigned int * const dense_indices, unsigned int num_dense)
 {
     unsigned int i, j;
@@ -46,7 +46,7 @@ double InitialStepSize(double t, Link* link_i, const GlobalVars * const globals,
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
     double *parents_approx = workspace->parents_approx;
-    ErrorData* error = &link_i->my->error_data;
+    ErrorData* error = link_i->my->error_data;
 
     //Build SC for this link
     for (unsigned int i = 0; i < dim; i++)
@@ -61,7 +61,7 @@ double InitialStepSize(double t, Link* link_i, const GlobalVars * const globals,
         unsigned int num_stages = curr_parent->method->num_stages;
         unsigned int num_dense = curr_parent->num_dense;
 
-        double *curr_parent_approx = workspace->parents_approx + i * dim;
+        double *curr_parent_approx = workspace->parents_approx + i * globals->max_dim;
 
         if (fabs(curr_parent->my->list.tail->t - t) < 1e-10)	//!!!! Ugh... !!!!
             dcopy(curr_parent->my->list.tail->y_approx, curr_parent_approx, 0, curr_parent->dim);
@@ -97,7 +97,11 @@ double InitialStepSize(double t, Link* link_i, const GlobalVars * const globals,
     //Step a
     //d0 = vector_norminf(y0,start);
     d0 = nrminf2(y_0, SC, start, link_i->dim);
-    link_i->differential(t_0, y_0, link_i->dim, parents_approx, link_i->num_parents, globals->global_params, link_i->params, link_i->my->forcing_values, link_i->qvs, link_i->state, link_i->user, fy0);
+    link_i->differential(
+        t_0,
+        y_0, link_i->dim,
+        parents_approx, link_i->num_parents, globals->max_dim,
+        globals->global_params, link_i->params, link_i->my->forcing_values, link_i->qvs, link_i->state, link_i->user, fy0);
     d1 = nrminf2(fy0, SC, start, link_i->dim);
 
     //Step b
@@ -111,7 +115,11 @@ double InitialStepSize(double t, Link* link_i, const GlobalVars * const globals,
     dcopy(y_0, y_1, 0, link_i->dim);
     daxpy(h0, fy0, y_1, start, link_i->dim);
     link_i->check_consistency(y_1, link_i->dim, globals->global_params, globals->num_global_params, link_i->params, link_i->num_params, link_i->user);
-    link_i->differential(t_0 + h0, y_1, link_i->dim, parents_approx, link_i->num_parents, globals->global_params, link_i->params, link_i->my->forcing_values, link_i->qvs, link_i->state, link_i->user, fy1);
+    link_i->differential(
+        t_0 + h0,
+        y_1, link_i->dim,
+        parents_approx, link_i->num_parents, globals->max_dim,
+        globals->global_params, link_i->params, link_i->my->forcing_values, link_i->qvs, link_i->state, link_i->user, fy1);
 
     //Step d
     dsub(fy1, fy0, fy1, start, link_i->dim);

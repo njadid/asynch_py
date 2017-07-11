@@ -493,7 +493,7 @@ void Exchange_InitState_At_Forced(
                     link->differential(
                         link->last_t,
                         link->my->list.tail->y_approx, link->dim,
-                        NULL, 0,
+                        NULL, 0, 0,
                         globals->global_params,
                         link->params,
                         link->my->forcing_values,

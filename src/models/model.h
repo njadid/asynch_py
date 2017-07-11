@@ -40,7 +40,7 @@ AsynchModel const * GetModel(unsigned short model_uid);
 typedef void (DifferentialFunc) (
     double t,
     const double * const y_i, unsigned int num_dof,
-    const double * const y_p, unsigned short num_parents,
+    const double * const y_p, unsigned short num_parents, unsigned int max_num_dof,
     const double * const global_params,
     const double * const params,
     const double * const forcing_values,
@@ -71,7 +71,7 @@ typedef void (AlgebraicFunc)(
 typedef void (JacobianFunc)(
     double t,
     const double * const y_i, unsigned int num_dof,
-    const double * const y_p, unsigned short num_parents,
+    const double * const y_p, unsigned short num_parents, unsigned int max_num_dof,
     const double * const global_params,
     const double * const params,
     const double * const forcing_values,
@@ -119,8 +119,14 @@ typedef void (SetParamSizesFunc)(GlobalVars* globals, void* user);
 typedef void (ConvertFunc)(double *params, unsigned int type, void* user);
 typedef void (RoutinesFunc)(Link*, unsigned int, unsigned int, unsigned short has_dam, void *user);
 //typedef void (PrecalculationsFunc)(Link* link_i, double *global_params, double *params, unsigned int disk_params, unsigned int params_size, unsigned short int dam, unsigned int type, void *user);
-typedef void (PrecalculationsFunc)(Link* link_i, const double * const gparams, const double * const lparams, unsigned short has_dam, void *user);
-typedef int (InitializeEqsFunc)(double *global_params, double *params, double *y_0, void *user);
+typedef void (PrecalculationsFunc)(Link* link_i, const double * const gparams, double * const lparams, unsigned short has_dam, void *user);
+
+typedef int (InitializeEqsFunc)(
+    const double * const global_params, unsigned int num_global_params,
+    const double * const params, unsigned int num_params,
+    double *y, unsigned int dim,
+    void *user);
+
 typedef int* (PartitionFunc)(Link *sys, unsigned int N, Link **leaves, unsigned int num_leaves, Link ***my_sys, unsigned int *my_N, TransData *my_data, short int *getting);
 
 typedef struct AsynchModel

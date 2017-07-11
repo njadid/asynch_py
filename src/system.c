@@ -32,7 +32,7 @@ void Destroy_Link(Link* link, int rkd_flag, Forcing* forcings, GlobalVars* globa
         if (link->my->forcing_change_times)
             free(link->my->forcing_change_times);
         if (rkd_flag)
-            Destroy_ErrorData(&link->my->error_data);
+            Destroy_ErrorData(link->my->error_data);
         Destroy_List(&link->my->list);
         
         free(link->peak_value);
@@ -208,27 +208,27 @@ void Destroy_ErrorData(ErrorData* error)
 }
 
 //Allocates workspace for RK solvers
-void Create_Workspace(Workspace *workspace, unsigned int num_dof, unsigned short num_stages, unsigned short max_parents)
+void Create_Workspace(Workspace *workspace, unsigned int max_dim, unsigned short num_stages, unsigned short max_parents)
 {
     memset(workspace, 0, sizeof(Workspace));
 
-    workspace->sum =malloc(num_dof * sizeof(double));
-    workspace->temp = malloc(num_dof * sizeof(double));
-    workspace->temp2 = malloc(num_dof * sizeof(double));
-    workspace->temp3 = malloc(num_dof * sizeof(double));
+    workspace->sum =malloc(max_dim * sizeof(double));
+    workspace->temp = malloc(max_dim * sizeof(double));
+    workspace->temp2 = malloc(max_dim * sizeof(double));
+    workspace->temp3 = malloc(max_dim * sizeof(double));
 
 
-    workspace->parents_approx = malloc(max_parents * num_dof * sizeof(double));
-    workspace->stages_parents_approx = malloc(num_stages * max_parents * num_dof * sizeof(double));
+    workspace->parents_approx = malloc(max_parents * max_dim * sizeof(double));
+    workspace->stages_parents_approx = malloc(num_stages * max_parents * max_dim * sizeof(double));
 
     //workspace->temp_k = (VEC*)malloc(num_stages * sizeof(VEC));
     //for (unsigned int i = 0; i < num_stages; i++)
     //    workspace->temp_k[i] = v_init(dim);
 
-    workspace->temp_k = malloc(num_stages * num_dof * sizeof(double));
+    workspace->temp_k = malloc(num_stages * max_dim * sizeof(double));
 
     for (unsigned int i = 0; i < num_stages; i++)
-        workspace->temp_k_slices[i] = workspace->temp_k + i * num_dof;
+        workspace->temp_k_slices[i] = workspace->temp_k + i * max_dim;
 
 #if defined(ASYNCH_HAVE_IMPLICIT_SOLVER)
     workspace->ipiv = (int*)malloc(s*dim * sizeof(int));
