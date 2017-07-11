@@ -39,6 +39,7 @@ libasynch_a_SOURCES = \
   comm.h \
   compression.h \
   config_gbl.h \
+  constants.h \
   data_types.h \
   date_manip.h \
   db.h \
