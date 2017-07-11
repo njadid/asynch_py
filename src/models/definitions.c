@@ -4,6 +4,7 @@
 #include <config_msvc.h>
 #endif
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -381,6 +382,18 @@ void SetParamSizes(
         globals->min_error_tolerances = 8;
         break;
         //--------------------------------------------------------------------------------------------
+    case 257:   num_global_params = 31;
+        globals->uses_dam = 0;
+        globals->num_params = 9;
+        globals->dam_params_size = 0;
+        globals->area_idx = 0;
+        globals->areah_idx = 2;
+        globals->num_disk_params = 4;
+        globals->convertarea_flag = 0;
+        globals->num_forcings = 3;
+        globals->min_error_tolerances = 8;
+        break;
+        //--------------------------------------------------------------------------------------------
     case 260:	num_global_params = 11;
         globals->uses_dam = 0;
         globals->num_params = 6;
@@ -574,7 +587,7 @@ void ConvertParams(
         params[2] *= 1e6;		//A_h: km^2 -> m^2
         params[4] *= .001;		//H_h: mm -> m
     }
-    else if (model_uid == 252 || model_uid == 253 || model_uid == 254 || model_uid == 255 || model_uid == 256 || model_uid == 260 || model_uid == 261 || model_uid == 262)
+    else if (model_uid == 252 || model_uid == 253 || model_uid == 254 || model_uid == 255 || model_uid == 256 || model_uid == 257 || model_uid == 260 || model_uid == 261 || model_uid == 262)
     {
         params[1] *= 1000;		//L_h: km -> m
         params[2] *= 1e6;		//A_h: km^2 -> m^2
@@ -1079,6 +1092,28 @@ void InitRoutines(
         }
         else		
             link->differential = &TopLayerHillslope_even_more_extras;
+        link->algebraic = NULL;
+        link->check_state = NULL;
+        link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
+    }
+    else if (model_uid == 257)
+    {
+        link->dim = 8;
+        link->no_ini_start = 4;
+        link->diff_start = 0;
+
+        link->num_dense = 2;
+        link->dense_indices = (unsigned int*)realloc(link->dense_indices, link->num_dense * sizeof(unsigned int));
+        link->dense_indices[0] = 0;
+        link->dense_indices[1] = 6;
+
+        if (link->has_res)
+        {
+            link->differential = &TopLayerHillslope_Reservoirs;
+            link->solver = &ForcedSolutionSolver;
+        }
+        else
+            link->differential = &TopLayerHillslope_spatial_velocity;
         link->algebraic = NULL;
         link->check_state = NULL;
         link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
@@ -1712,6 +1747,31 @@ void Precalculations(
         vals[14] = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
         vals[15] = A_h / 60.0;	//  c_2
     }
+    else if (model_uid == 257)
+    {
+        //Order of parameters: A_i,L_i,A_h,horder,invtau,k_2,k_i,c_1,c_2
+        //The numbering is:    0   1   2   3      4      5   6   7...8
+        //Order of global_params: v_0_0,...,v_0_9,lambda_1_0,...,lambda_1_9,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A ,B, exponent,v_B,k_tl
+        //The numbering is:       0         9     10,            19         20       21  22  23         24  25  26 27 28       29  30
+        double* vals = params;
+        double A_i = params[0];
+        double L_i = params[1];
+        double A_h = params[2];
+        int h_order = (int) params[3];
+        assert(h_order < 10);
+
+        double v_0 = global_params[h_order - 1];
+        double lambda_1 = global_params[10 + h_order - 1];
+        double lambda_2 = global_params[20];
+        double v_h = global_params[21];
+        double k_i_factor = global_params[23];
+
+        vals[4] = 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
+        vals[5] = v_h * L_i / A_h * 60.0;	//[1/min] k_2
+        vals[6] = vals[4] * k_i_factor;	//[1/min] k_i
+        vals[7] = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
+        vals[8] = A_h / 60.0;	//  c_2
+    }
     else if (model_uid == 260)
     {
         //Order of parameters: A_i,L_i,A_h | invtau,c_1,c_2
@@ -2064,6 +2124,14 @@ int ReadInitData(
         }
     }
     else if (model_uid == 256)
+    {
+        //For this model_uid, the extra states need to be set (4,5,6,7)
+        y_0[4] = 0.0;
+        y_0[5] = 0.0;
+        y_0[6] = 0.0;
+        y_0[7] = y_0[0];
+    }
+    else if (model_uid == 257)
     {
         //For this model_uid, the extra states need to be set (4,5,6,7)
         y_0[4] = 0.0;

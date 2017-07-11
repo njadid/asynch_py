@@ -1450,7 +1450,7 @@ static int Load_Initial_Conditions_Dbc(
         //Clean up
         PQclear(res);
         DisconnectPGDB(&db_connections[ASYNCH_DB_LOC_INIT]);
-        free(&y_0);
+        free(y_0);
         free(who_needs);
     }
     else
@@ -1483,7 +1483,7 @@ static int Load_Initial_Conditions_Dbc(
         }
 
         //Clean up
-        free(&y_0);
+        free(y_0);
     }
 
 #else //HAVE_POSTGRESQL
