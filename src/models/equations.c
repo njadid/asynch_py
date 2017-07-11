@@ -508,7 +508,7 @@ void TopLayerHillslope_even_more_extras(double t, const double * const y_i, unsi
 //The numbering is:    0   1   2   3      4      5   6   7...8
 //Order of global_params: v_0_0,...,v_0_9,lambda_1_0,...,lambda_1_9,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A ,B, exponent,v_B,k_tl
 //The numbering is:       0         9     10,            19         20       21  22  23         24  25  26 27 28       29  30
-void TopLayerHillslope_spatial_velocity(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerHillslope_spatial_velocity(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
