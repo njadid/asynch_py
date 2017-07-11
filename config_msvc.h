@@ -3,6 +3,12 @@
 /* Defined if you have HDF5 support */
 #define HAVE_HDF5 1
 
+/* Defined if you have METIS support */
+#define HAVE_METIS 1
+
+/* Defined if you have PETSc support */
+#define HAVE_PETSC 1
+
 /* Defined if you have SSH2 support */
 /* #define HAVE_SSH2 1 */
 

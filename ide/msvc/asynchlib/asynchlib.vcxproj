@@ -15,6 +15,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>asynchlib</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>asynchlib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -52,8 +53,9 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;ASYNCH_WITH_HDF5;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\src;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\src;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include;$(RootDir)\third_party\metis-5.1.0\include;$(RootDir)\third_party\petsc-3.7.3\include;$(RootDir)\third_party\petsc-3.7.3\arch-mswin-c-debug\include</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
+      <AdditionalOptions>/we4133 /we4113 /we4029 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -68,12 +70,14 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;NOMINMAX;ASYNCH_WITH_HDF5;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\src;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSMPI_INC);$(MSMPI_INC)\x64;$(RootDir);$(RootDir)\src;$(RootDir)\third_party\zlib-1.2.8;$(RootDir)\third_party\postgresql-8.4.22-1\include;$(RootDir)\third_party\hdf5-1.8.18-win64\include;$(RootDir)\third_party\metis-5.1.0\include;$(RootDir)\third_party\petsc-3.7.3\include;$(RootDir)\third_party\petsc-3.7.3\arch-mswin-c-opt\include</AdditionalIncludeDirectories>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -91,6 +95,11 @@
     <ClInclude Include="$(RootDir)\src\compression.h" />
     <ClInclude Include="$(RootDir)\src\data_types.h" />
     <ClInclude Include="..\..\..\src\advance.h" />
+    <ClInclude Include="..\..\..\src\assim\ancillary.h" />
+    <ClInclude Include="..\..\..\src\assim\linear_least_squares.h" />
+    <ClInclude Include="..\..\..\src\assim\models.h" />
+    <ClInclude Include="..\..\..\src\assim\structs.h" />
+    <ClInclude Include="..\..\..\src\constants.h" />
     <ClInclude Include="..\..\..\src\date_manip.h" />
     <ClInclude Include="..\..\..\src\models\definitions.h" />
     <ClInclude Include="..\..\..\src\models\equations.h" />
@@ -125,6 +134,9 @@
     <ClCompile Include="$(RootDir)\src\compression.c" />
     <ClCompile Include="$(RootDir)\src\data_types.c" />
     <ClCompile Include="..\..\..\src\advance.c" />
+    <ClCompile Include="..\..\..\src\assim\ancillary.c" />
+    <ClCompile Include="..\..\..\src\assim\linear_least_squares.c" />
+    <ClCompile Include="..\..\..\src\assim\models.c" />
     <ClCompile Include="..\..\..\src\date_manip.c" />
     <ClCompile Include="..\..\..\src\models\definitions.c" />
     <ClCompile Include="..\..\..\src\models\equations.c" />
@@ -175,7 +187,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(RootDir)\LICENSE" />
-    <None Include="$(RootDir)\makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,6 +10,10 @@
 
 #include <mpi.h>
 
+#if defined(HAVE_METIS)
+#include <metis.h>
+#endif
+
 #include <partition.h>
 
 //Partitions a river system by first partitioning the leaves.
@@ -405,85 +409,99 @@ int* Partition_System_By_Leaves_2(Link *sys, unsigned int N, Link **leaves, unsi
     return assignments;
 }
 
-/*
-int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting,UnivVars* GlobalVars)
+
+#if defined(HAVE_METIS)
+
+int* Partition_METIS_ByEqs(Link* sys, unsigned int N, Link** leaves, unsigned int numleaves, Link** my_sys, unsigned int* my_N, TransData* my_data, short int *getting)
 {
-    unsigned int i,j,start_index,end_index,extras,partition,loc,retval;
-    unsigned int nodes_per_proc = numleaves/np;	//Number of leaves assigned to each process (except the last)
+    unsigned int loc, retval;
+    unsigned int nodes_per_proc = numleaves / np;	//Number of leaves assigned to each process (except the last)
     Link* current;
 
-    start_index = nodes_per_proc * my_rank;
-    if(my_rank == np-1)		end_index = numleaves;
-    else				end_index = nodes_per_proc * (my_rank + 1);
-//	*my_N = end_index - start_index;
+    unsigned int start_index = nodes_per_proc * my_rank;
+    unsigned int end_index;
+    if (my_rank == np - 1)		
+        end_index = numleaves;
+    else
+        end_index = nodes_per_proc * (my_rank + 1);
+    //	*my_N = end_index - start_index;
     *my_N = 0;
     unsigned int my_max_nodes = N - numleaves + nodes_per_proc;
-    *my_sys = (unsigned int*) malloc(my_max_nodes * sizeof(unsigned int));	//The indices of this processes links (in sys)
-    for(i=0;i<my_max_nodes;i++)	(*my_sys)[i] = -1;
-    for(i=start_index;i<end_index;i++)	(*my_sys)[i-start_index] = leaves[i]->location;
-    for(i=0;i<N;i++)	getting[i] = 0;
+    *my_sys = malloc(my_max_nodes * sizeof(unsigned int));	//The indices of this processes links (in sys)
+    for (unsigned int i = 0; i < my_max_nodes; i++)
+        my_sys[i] = NULL;
+    for (unsigned int i = start_index; i < end_index; i++)
+        my_sys[i - start_index] = leaves[i];
+    for (unsigned int i = 0; i < N; i++)
+        getting[i] = 0;
 
     //Initialize assignments
-    int* assignments = (int*) malloc(N*sizeof(int));
-    for(i=0;i<N;i++)	assignments[i] = -1;
+    int* assignments = malloc(N * sizeof(int));
+    for (unsigned int i = 0; i < N; i++)
+        assignments[i] = -1;
 
     //Form the graph to partition
-    idx_t* xadj = malloc((N+1)*sizeof(idx_t));
-    idx_t* adjncy = malloc(2*(N-1)*sizeof(idx_t));
+    idx_t* xadj = malloc((N + 1) * sizeof(idx_t));
+    idx_t* adjncy = malloc(2 * (N - 1) * sizeof(idx_t));
     idx_t index = 0;
 
-    for(i=0;i<N;i++)
+    for (unsigned int i = 0; i < N; i++)
     {
         xadj[i] = index;
-        current = sys[i];
-        if(current->child != NULL)
+        current = &sys[i];
+        if (current->child != NULL)
         {
             adjncy[index] = current->child->location;
             index++;
         }
-        for(j=0;j<current->num_parents;j++)
+        for (unsigned int j = 0; j < current->num_parents; j++)
         {
             adjncy[index] = current->parents[j]->location;
             index++;
         }
     }
-    xadj[N] = 2*(N-1);
+    xadj[N] = 2 * (N - 1);
 
     //Partition the system
     idx_t nverts = N;
     idx_t parts = np;
     idx_t ncon = 1;
     idx_t objval;
-    idx_t* partitions = calloc(N,sizeof(idx_t));
-    if(np != 1)
+    idx_t* partitions = calloc(N, sizeof(idx_t));
+    idx_t* vwgt = malloc(N * sizeof(idx_t));
+
+    for (unsigned int i = 0; i < N; i++)
+        vwgt[i] = sys[i].dim;
+    if (np != 1)
     {
-        retval = METIS_PartGraphKway(&nverts,&ncon,xadj,adjncy,NULL,NULL,NULL,&parts,NULL,NULL,NULL,&objval,partitions);
-        if(retval != METIS_OK)
+        retval = METIS_PartGraphKway(&nverts, &ncon, xadj, adjncy, vwgt, vwgt, NULL, &parts, NULL, NULL, NULL, &objval, partitions);
+        //retval = METIS_PartGraphKway(&nverts,&ncon,xadj,adjncy,NULL,NULL,NULL,&parts,NULL,NULL,NULL,&objval,partitions);
+        if (retval != METIS_OK)
         {
-            printf("Error: METIS returned error code %i.\n",retval);
+            printf("Error: METIS returned error code %i.\n", retval);
             return NULL;
         }
     }
 
     *my_N = 0;
-    for(i=0;i<N;i++)
+    for (unsigned int i = 0; i < N; i++)
     {
         assignments[i] = partitions[i];	//!!!! Just use assignments? !!!!
-        if(partitions[i] == my_rank)
+        if (partitions[i] == my_rank)
         {
-            (*my_sys)[*my_N] = i;
+            my_sys[*my_N] = &sys[i];
             (*my_N)++;
         }
     }
 
     //Set the getting array and determine number of sending and receiving links
-    for(i=0;i<*my_N;i++)
+    for (unsigned int i = 0; i < *my_N; i++)
     {
         //Receiving
-        for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
+        for (unsigned int j = 0; j < my_sys[i]->num_parents; j++)
         {
-            loc = sys[(*my_sys)[i]]->parents[j]->location;
-            if(assignments[loc] != my_rank)
+            loc = my_sys[i]->parents[j]->location;
+            if (assignments[loc] != my_rank)
             {
                 getting[loc] = 1;
                 my_data->receive_size[assignments[loc]]++;
@@ -491,47 +509,47 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
         }
 
         //Sending
-        if(sys[(*my_sys)[i]]->child != NULL)
+        if (my_sys[i]->child != NULL)
         {
-            loc = sys[(*my_sys)[i]]->child->location;
-            if(assignments[loc] != my_rank)
+            loc = my_sys[i]->child->location;
+            if (assignments[loc] != my_rank)
                 my_data->send_size[assignments[loc]]++;
         }
     }
 
     //Reorder my_sys so that the links with lower numbering are towards the beginning
-    merge_sort_by_distance(sys,*my_sys,*my_N);
+    merge_sort_by_distance(my_sys, *my_N);
 
     //Allocate space in my_data for recieving and sending
-    for(j=0;j<np;j++)
+    for (int j = 0; j < np; j++)
     {
-        my_data->receive_data[j] = (Link**) malloc(my_data->receive_size[j] * sizeof(Link*));
-        my_data->send_data[j] = (Link**) malloc(my_data->send_size[j] * sizeof(Link*));
+        my_data->receive_data[j] = malloc(my_data->receive_size[j] * sizeof(Link*));
+        my_data->send_data[j] = malloc(my_data->send_size[j] * sizeof(Link*));
     }
 
     //Set the receive_data and send_data arrays
-    int* current_receive_size = (int*) calloc(np,sizeof(int));
-    int* current_send_size = (int*) calloc(np,sizeof(int));
-    for(i=0;i<*my_N;i++)
+    int* current_receive_size = (int*)calloc(np, sizeof(int));
+    int* current_send_size = (int*)calloc(np, sizeof(int));
+    for (unsigned int i = 0; i < *my_N; i++)
     {
         //Receiving
-        for(j=0;j<sys[(*my_sys)[i]]->num_parents;j++)
+        for (unsigned int j = 0; j < my_sys[i]->num_parents; j++)
         {
-            loc = sys[(*my_sys)[i]]->parents[j]->location;
-            if(assignments[loc] != my_rank)
+            loc = my_sys[i]->parents[j]->location;
+            if (assignments[loc] != my_rank)
             {
-                my_data->receive_data[assignments[loc]][current_receive_size[assignments[loc]]] = sys[loc];
+                my_data->receive_data[assignments[loc]][current_receive_size[assignments[loc]]] = &sys[loc];
                 current_receive_size[assignments[loc]]++;
             }
         }
 
         //Sending
-        if(sys[(*my_sys)[i]]->child != NULL)
+        if (my_sys[i]->child != NULL)
         {
-            loc = sys[(*my_sys)[i]]->child->location;
-            if(assignments[loc] != my_rank)
+            loc = my_sys[i]->child->location;
+            if (assignments[loc] != my_rank)
             {
-                my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = sys[(*my_sys)[i]];
+                my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = my_sys[i];
                 current_send_size[assignments[loc]]++;
             }
         }
@@ -543,12 +561,162 @@ int* Partition_METIS_Traditional(Link** sys,unsigned int N,Link** leaves,unsigne
     free(xadj);
     free(adjncy);
     free(partitions);
-    (*my_sys) = (unsigned int*) realloc(my_sys,*my_N*sizeof(unsigned int));
+    free(vwgt);
+    *my_sys = realloc(*my_sys, *my_N * sizeof(Link *));
 
     return assignments;
 }
 
 
+int* Partition_METIS_Traditional(Link* sys, unsigned int N, Link** leaves, unsigned int numleaves, Link** my_sys, unsigned int* my_N, TransData* my_data, short int *getting)
+{
+    unsigned int loc, retval;
+    unsigned int nodes_per_proc = numleaves / np;	//Number of leaves assigned to each process (except the last)
+    Link* current;
+
+    unsigned int start_index = nodes_per_proc * my_rank;
+    unsigned int end_index;
+    if (my_rank == np - 1)	
+        end_index = numleaves;
+    else
+        end_index = nodes_per_proc * (my_rank + 1);
+    //	*my_N = end_index - start_index;
+    *my_N = 0;
+    unsigned int my_max_nodes = N - numleaves + nodes_per_proc;
+    for (unsigned int i = 0; i < my_max_nodes; i++)
+        my_sys[i] = NULL;
+    for (unsigned int i = start_index; i < end_index; i++)
+        my_sys[i - start_index] = leaves[i];
+    for (unsigned int i = 0; i < N; i++)
+        getting[i] = 0;
+
+    //Initialize assignments
+    int* assignments = malloc(N * sizeof(int));
+    for (unsigned int i = 0; i < N; i++)
+        assignments[i] = -1;
+
+    //Form the graph to partition
+    idx_t* xadj = malloc((N + 1) * sizeof(idx_t));
+    idx_t* adjncy = malloc(2 * (N - 1) * sizeof(idx_t));
+    idx_t index = 0;
+
+    for (unsigned int i = 0; i < N; i++)
+    {
+        xadj[i] = index;
+        current = &sys[i];
+        if (current->child != NULL)
+        {
+            adjncy[index] = current->child->location;
+            index++;
+        }
+        for (unsigned int j = 0; j < current->num_parents; j++)
+        {
+            adjncy[index] = current->parents[j]->location;
+            index++;
+        }
+    }
+    xadj[N] = 2 * (N - 1);
+
+    //Partition the system
+    idx_t nverts = N;
+    idx_t parts = np;
+    idx_t ncon = 1;
+    idx_t objval;
+    idx_t* partitions = calloc(N, sizeof(idx_t));
+    if (np != 1)
+    {
+        retval = METIS_PartGraphKway(&nverts, &ncon, xadj, adjncy, NULL, NULL, NULL, &parts, NULL, NULL, NULL, &objval, partitions);
+        if (retval != METIS_OK)
+        {
+            printf("Error: METIS returned error code %i.\n", retval);
+            return NULL;
+        }
+    }
+
+    *my_N = 0;
+    for (unsigned int i = 0; i < N; i++)
+    {
+        assignments[i] = partitions[i];	//!!!! Just use assignments? !!!!
+        if (partitions[i] == my_rank)
+        {
+            my_sys[*my_N] = &sys[i];
+            (*my_N)++;
+        }
+    }
+
+    //Set the getting array and determine number of sending and receiving links
+    for (unsigned int i = 0; i < *my_N; i++)
+    {
+        //Receiving
+        for (unsigned int j = 0; j < my_sys[i]->num_parents; j++)
+        {
+            loc = my_sys[i]->parents[j]->location;
+            if (assignments[loc] != my_rank)
+            {
+                getting[loc] = 1;
+                my_data->receive_size[assignments[loc]]++;
+            }
+        }
+
+        //Sending
+        if (my_sys[i]->child != NULL)
+        {
+            loc = my_sys[i]->child->location;
+            if (assignments[loc] != my_rank)
+                my_data->send_size[assignments[loc]]++;
+        }
+    }
+
+    //Reorder my_sys so that the links with lower numbering are towards the beginning
+    merge_sort_by_distance(my_sys, *my_N);
+
+    //Allocate space in my_data for recieving and sending
+    for (int j = 0; j < np; j++)
+    {
+        my_data->receive_data[j] = (Link**)malloc(my_data->receive_size[j] * sizeof(Link*));
+        my_data->send_data[j] = (Link**)malloc(my_data->send_size[j] * sizeof(Link*));
+    }
+
+    //Set the receive_data and send_data arrays
+    int* current_receive_size = (int*)calloc(np, sizeof(int));
+    int* current_send_size = (int*)calloc(np, sizeof(int));
+    for (unsigned int i = 0; i < *my_N; i++)
+    {
+        //Receiving
+        for (unsigned int j = 0; j < my_sys[i]->num_parents; j++)
+        {
+            loc = my_sys[i]->parents[j]->location;
+            if (assignments[loc] != my_rank)
+            {
+                my_data->receive_data[assignments[loc]][current_receive_size[assignments[loc]]] = &sys[loc];
+                current_receive_size[assignments[loc]]++;
+            }
+        }
+
+        //Sending
+        if (my_sys[i]->child != NULL)
+        {
+            loc = my_sys[i]->child->location;
+            if (assignments[loc] != my_rank)
+            {
+                my_data->send_data[assignments[loc]][current_send_size[assignments[loc]]] = my_sys[i];
+                current_send_size[assignments[loc]]++;
+            }
+        }
+    }
+
+    //Clean up
+    free(current_receive_size);
+    free(current_send_size);
+    free(xadj);
+    free(adjncy);
+    free(partitions);
+    *my_sys = realloc(my_sys, *my_N * sizeof(Link *));
+
+    return assignments;
+}
+
+/*
 int* Partition_METIS_RainChanges(Link** sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting,UnivVars* GlobalVars)
 {
     unsigned int i,j,start_index,end_index,extras,partition,loc,retval;
@@ -1014,3 +1182,5 @@ MPI_Barrier(MPI_COMM_WORLD);
     return assignments;
 }
 */
+
+#endif //defined(HAVE_METIS)

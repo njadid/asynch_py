@@ -15,8 +15,11 @@ extern int np;
 
 int* Partition_System_By_Leaves(Link *sys, unsigned int N, Link **leaves, unsigned int numleaves, Link ***my_sys, unsigned int *my_N, TransData *my_data, short int *getting);
 int* Partition_System_By_Leaves_2(Link *sys, unsigned int N, Link **leaves, unsigned int numleaves, Link ***my_sys, unsigned int * my_N, TransData *my_data, short int *getting);
-//int* Partition_METIS_Traditional(Link* sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting,UnivVars* GlobalVars);
-//int* Partition_METIS_RainChanges(Link* sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting,UnivVars* GlobalVars);
-//int* Partition_METIS_RainVolume(Link* sys,unsigned int N,Link** leaves,unsigned int numleaves,unsigned int** my_sys,unsigned int* my_N,TransData* my_data,short int *getting,UnivVars* GlobalVars);
+
+#if defined(HAVE_METIS)
+
+int* Partition_METIS_ByEqs(Link* sys, unsigned int N, Link** leaves, unsigned int numleaves, Link** my_sys, unsigned int* my_N, TransData* my_data, short int *getting);
+
+#endif
 
 #endif

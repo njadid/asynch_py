@@ -1,4 +1,4 @@
-AC_INIT([asynch], [1.3.2], [samuel-debionne@uiowa.edu])
+AC_INIT([asynch], [1.4.0], [samuel-debionne@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
@@ -14,13 +14,25 @@ AC_PROG_RANLIB
 AX_CHECK_ZLIB
 AX_LIB_HDF5([serial])
 AX_LIB_POSTGRESQL
-
-AM_CONDITIONAL([HAVE_POSTGRESQL], [test "$HAVE_POSTGRESQL" -eq 1])
-
-AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile tools/Makefile])
+AX_BLAS
+AX_LAPACK
 
 # Checks for packages
-PKG_CHECK_MODULES([CHECK], [check], [HAVE_LIBCHECK=1], [HAVE_LIBCHECK=0])
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.8], [found_libcheck=1], [found_libcheck=0])
+PKG_CHECK_MODULES([METIS], [metis >= 5.0.0], [found_metis=1], [found_metis=0])
+PKG_CHECK_MODULES([PETSC], [PETSc >= 3.7.0], [found_petsc=1], [found_petsc=0])
+
+# Define automake conditionals
+AM_CONDITIONAL([USE_POSTGRESQL], [test "$found_postgresql" = "yes"])
+AM_CONDITIONAL([USE_PETSC], [test $found_petsc -eq 1])
+
+# Add preprocessor definition to config
+AS_IF([test $found_libcheck -eq 1], [AC_DEFINE([HAVE_LIBCHECK], [1], [Defined if you have libcheck support])])
+AS_IF([test $found_metis -eq 1], [AC_DEFINE([HAVE_METIS], [1], [Defined if you have METIS support])])
+AS_IF([test $found_petsc -eq 1], [AC_DEFINE([HAVE_PETSC], [1], [Defined if you have PETSc support])])
+
+# Generate config header
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile tools/Makefile])
 
 AC_OUTPUT

@@ -106,7 +106,7 @@ void Advance(
                 //if(current->res && fabs( (current->last_t) - (current->next_save - current->print_time) ) < 1e-12)                
                 if (current->has_res)
                 {
-                    current->differential(current->last_t, current->my->list.tail->y_approx, current->dim, NULL, 0, globals->global_params, current->params, current->my->forcing_values, current->qvs, current->state, current->user, current->my->list.tail->y_approx);
+                    current->differential(current->last_t, current->my->list.tail->y_approx, current->dim, NULL, 0, 0, globals->global_params, current->params, current->my->forcing_values, current->qvs, current->state, current->user, current->my->list.tail->y_approx);
                     if (current->save_flag && fabs(current->last_t - (current->next_save - current->print_time)) / (current->last_t + 1e-12) < 1e-6)
                     {
                         error_code = overwrite_last_step(current, globals, outputfile);
@@ -342,6 +342,9 @@ void Advance(
 //		if(my_rank == 0)
 //			printf("%i: Going to next set of forcing data, k is %i/%i\n",my_rank,k,passes-1);
     }
+
+    if (my_rank == 0)
+        printf("\n");
 
     //Cleanup
     free(done);

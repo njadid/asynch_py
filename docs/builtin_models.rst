@@ -318,6 +318,10 @@ Top Layer Hydrological Model
 
 This model describes a hydrological model with nonlinear reservoirs used to describe the hillslope surrounding the channel. It features a layer of topsoil to create a runoff coefficient that varies in time. This model is implemented as model 254. The setup of the top layer model is similar to that of the constant runoff model presented in Section :ref:`Constant Runoff Hydrological Model`. However, the top layer model does make use of additional features.
 
+.. figure:: figures/toplayer.png
+
+  The top layer hillslope model
+
 Seven states are modeled at every link:
 
 +-----------------------+-------------------------------------------------------------------------------------+
@@ -331,7 +335,7 @@ Seven states are modeled at every link:
 +-----------------------+-------------------------------------------------------------------------------------+
 | :math:`s_s(t)`        | Effective water depth in hillslope subsurface [:math:`m`\ ]                         |
 +-----------------------+-------------------------------------------------------------------------------------+
-| math:`s_{precip}(t)`  | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]           |
+| :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]           |
 +-----------------------+-------------------------------------------------------------------------------------+
 | :math:`V_r(t)`        | Total volume of water from runoff from time :math:`0` to :math:`t` [:math:`m^3`\ ]  |
 +-----------------------+-------------------------------------------------------------------------------------+

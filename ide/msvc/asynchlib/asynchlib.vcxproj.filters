@@ -25,6 +25,12 @@
     <Filter Include="Header Files\models">
       <UniqueIdentifier>{00cce110-afb6-420b-bf99-bd60165abd6b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\assim">
+      <UniqueIdentifier>{99572720-e986-4d09-9466-915c71ae1474}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\assim">
+      <UniqueIdentifier>{8ffcf894-acc5-4bd8-9cf3-eccf8be42464}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(RootDir)\src\asynch_interface.c">
@@ -138,6 +144,15 @@
     <ClCompile Include="..\..\..\src\date_manip.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\assim\linear_least_squares.c">
+      <Filter>Source Files\assim</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\assim\models.c">
+      <Filter>Source Files\assim</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\assim\ancillary.c">
+      <Filter>Source Files\assim</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(RootDir)\src\asynch_interface.h">
@@ -236,9 +251,23 @@
     <ClInclude Include="..\..\..\src\date_manip.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\assim\models.h">
+      <Filter>Header Files\assim</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\assim\linear_least_squares.h">
+      <Filter>Header Files\assim</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\assim\ancillary.h">
+      <Filter>Header Files\assim</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\assim\structs.h">
+      <Filter>Header Files\assim</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="$(RootDir)\LICENSE" />
-    <None Include="$(RootDir)\makefile" />
   </ItemGroup>
 </Project>

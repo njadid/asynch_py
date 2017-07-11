@@ -1,4 +1,4 @@
-if HAVE_POSTGRESQL
+if USE_POSTGRESQL
 
 bin_PROGRAMS = asynch_createtables asynch_deletetables
 

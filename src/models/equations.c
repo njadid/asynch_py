@@ -37,7 +37,7 @@
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void parser_test(double t,double *y_i,double *y_p,unsigned short num_parents,double *global_params,double *forcing_values,QVSData *qvs,double *params,int state,void* user,double *ans)
+void parser_test(double t,double *y_i,double *y_p,unsigned short num_parents, unsigned int max_dim,double *global_params,double *forcing_values,QVSData *qvs,double *params,int state,void* user,double *ans)
 {
 unsigned int i;
 unsigned int dim = y_i.dim;
@@ -73,7 +73,7 @@ double sq(double x) { return x * x; }
 //The numbering is:	0   1   2   3    4     5   6   7   8
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,gamma,h_b,e_pot
 //The numbering is:        0      1        2     3   4     5         6    7	8
-void NonLinearHillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void NonLinearHillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     double lambda_1 = global_params[1];
     double k_3 = global_params[4];	//[1/min]
@@ -138,7 +138,7 @@ void NonLinearHillslope(double t, const double * const y_i, unsigned int dim, co
 //The numbering is:	0   1   2     3    4   5   6   7
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent
 //The numbering is:        0      1        2     3   4     5        6   7  8 9  10
-void TopLayerHillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerHillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -212,7 +212,7 @@ void TopLayerHillslope(double t, const double * const y_i, unsigned int dim, con
 //The numbering is:	0   1   2     3    4   5   6   7
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent
 //The numbering is:        0      1        2     3   4     5        6   7  8 9  10
-void TopLayerHillslope_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerHillslope_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     ans[0] = forcing_values[2];
     ans[1] = 0.0;
@@ -227,7 +227,7 @@ void TopLayerHillslope_Reservoirs(double t, const double * const y_i, unsigned i
 //The numbering is:	0   1   2     3    4   5   6   7
 //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent,v_B
 //The numbering is:        0      1        2     3   4     5        6   7  8 9  10       11
-void TopLayerHillslope_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerHillslope_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -312,7 +312,7 @@ void TopLayerHillslope_extras(double t, const double * const y_i, unsigned int d
 //The numbering is:	0   1   2   3   4      5       6   7  8 9   10        11    12  13  14  15
 //Order of global_params: v_0,lambda_1,lambda_2
 //The numbering is:        0      1        2
-void TopLayerHillslope_variable(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerHillslope_variable(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -417,6 +417,178 @@ void dam_TopLayerHillslope_variable(const double * const y_i, unsigned int num_d
     }
 }
 
+//Type 256
+//Contains 3 layers on hillslope: ponded, top layer, soil. Also has 3 extra states: total precip, total ET, total runoff, base flow
+//Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
+//The numbering is:	0   1   2     3    4   5   6   7
+//Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent,v_B,k_tl
+//The numbering is:        0      1        2     3   4     5        6   7  8 9  10       11   12
+void TopLayerHillslope_even_more_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    unsigned short i;
+
+    double lambda_1 = global_params[1];
+    double k_3 = global_params[4];  //[1/min]
+    double h_b = global_params[6];  //[m]
+    double S_L = global_params[7];  //[m]
+    double A = global_params[8];
+    double B = global_params[9];
+    double exponent = global_params[10];
+    double v_B = global_params[11];
+    double k_tl = global_params[12];
+    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));   //[mm/month] -> [m/min]
+
+    double L = params[1];   //[m]
+    double A_h = params[2]; //[m^2]
+                            //double h_r = params[3];	//[m]
+    double invtau = params[3];  //[1/min]
+    double k_2 = params[4];     //[1/min]
+    double k_i = params[5];     //[1/min]
+    double c_1 = params[6];
+    double c_2 = params[7];
+
+    double q = y_i[0];      //[m^3/s]
+    double s_p = y_i[1];    //[m]
+    double s_t = y_i[2];    //[m]
+    double s_s = y_i[3];    //[m]
+                            //double s_precip = y_i[4];	//[m]
+                            //double V_r = y_i[5];	//[m^3]
+    double q_b = y_i[7];    //[m^3/s]
+
+    //Evaporation
+    double e_p, e_t, e_s;
+    double Corr = s_p + s_t / S_L + s_s / (h_b - S_L);
+    if (e_pot > 0.0 && Corr > 1e-12)
+    {
+        e_p = s_p * 1e3 * e_pot / Corr;
+        e_t = s_t / S_L * e_pot / Corr;
+        e_s = s_s / (h_b - S_L) * e_pot / Corr;
+    }
+    else
+    {
+        e_p = 0.0;
+        e_t = 0.0;
+        e_s = 0.0;
+    }
+
+    double pow_term = (1.0 - s_t / S_L > 0.0) ? pow(1.0 - s_t / S_L, exponent) : 0.0;
+    double k_t = (A + B * pow_term) * k_2;
+
+    //Fluxes
+    double q_pl = k_2 * s_p;
+    double q_pt = k_t * s_p;
+    double q_ts = k_i * s_t;
+    double q_tl = k_tl * s_t;
+    double q_sl = k_3 * s_s;    //[m/min]
+
+    //Discharge
+    ans[0] = -q + (q_pl + q_tl + q_sl) * c_2;
+    for (i = 0; i < num_parents; i++)
+        ans[0] += y_p[i * dim];
+    ans[0] = invtau * pow(q, lambda_1) * ans[0];    // discharge[0]
+
+    //Hillslope
+    ans[1] = forcing_values[0] * c_1 - q_pl - q_pt - e_p;   // pond[1]
+    ans[2] = q_pt - q_ts - q_tl - e_t;                      // toplayer[2]
+    ans[3] = q_ts - q_sl - e_s;                             // subsurface[3]
+
+    //Additional states
+    ans[4] = forcing_values[0] * c_1;   // precip[4]
+    ans[5] = forcing_values[1] * c_1;   // et[5]
+    ans[6] = q_pl;                      // runoff[]6
+    ans[7] = q_sl * A_h - q_b*60.0;     // baseflow[7]
+    for (i = 0; i < num_parents; i++)
+        ans[7] += y_p[i * dim + 7] * 60.0;
+    ans[7] *= v_B / L;
+}
+
+//Type 257
+//Contains 3 layers on hillslope: ponded, top layer, soil. Also has 4 extra states: total precip, total ET, total runoff, base flow
+//Order of parameters: A_i,L_i,A_h,horder,invtau,k_2,k_i,c_1,c_2
+//The numbering is:    0   1   2   3      4      5   6   7...8
+//Order of global_params: v_0_0,...,v_0_9,lambda_1_0,...,lambda_1_9,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A ,B, exponent,v_B,k_tl
+//The numbering is:       0         9     10,            19         20       21  22  23         24  25  26 27 28       29  30
+void TopLayerHillslope_spatial_velocity(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    unsigned short i;
+
+    double k_3 = global_params[22];  //[1/min]
+    double h_b = global_params[24];  //[m]
+    double S_L = global_params[25];  //[m]
+    double A = global_params[26];
+    double B = global_params[27];
+    double exponent = global_params[28];
+    double v_B = global_params[29];
+    double k_tl = global_params[30];
+    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));   //[mm/month] -> [m/min]
+
+    double L = params[1];   //[m]
+    double A_h = params[2]; //[m^2]
+                            //double h_r = params[3];	//[m]
+    int h_order = (int)params[3];
+    assert(0 < h_order && h_order <= 10);
+    double invtau = params[4];  //[1/min]
+    double k_2 = params[5];     //[1/min]
+    double k_i = params[6];     //[1/min]
+    double c_1 = params[7];
+    double c_2 = params[8];
+
+    double lambda_1 = global_params[10 + h_order - 1];
+
+    double q = y_i[0];      //[m^3/s]
+    double s_p = y_i[1];    //[m]
+    double s_t = y_i[2];    //[m]
+    double s_s = y_i[3];    //[m]
+                            //double s_precip = y_i[4];	//[m]
+                            //double V_r = y_i[5];	//[m^3]
+    double q_b = y_i[7];    //[m^3/s]
+
+                            //Evaporation
+    double e_p, e_t, e_s;
+    double Corr = s_p + s_t / S_L + s_s / (h_b - S_L);
+    if (e_pot > 0.0 && Corr > 1e-12)
+    {
+        e_p = s_p * 1e3 * e_pot / Corr;
+        e_t = s_t / S_L * e_pot / Corr;
+        e_s = s_s / (h_b - S_L) * e_pot / Corr;
+    }
+    else
+    {
+        e_p = 0.0;
+        e_t = 0.0;
+        e_s = 0.0;
+    }
+
+    double pow_term = (1.0 - s_t / S_L > 0.0) ? pow(1.0 - s_t / S_L, exponent) : 0.0;
+    double k_t = (A + B * pow_term) * k_2;
+
+    //Fluxes
+    double q_pl = k_2 * s_p;
+    double q_pt = k_t * s_p;
+    double q_ts = k_i * s_t;
+    double q_tl = k_tl * s_t;
+    double q_sl = k_3 * s_s;    //[m/min]
+
+                                //Discharge
+    ans[0] = -q + (q_pl + q_tl + q_sl) * c_2;
+    for (i = 0; i < num_parents; i++)
+        ans[0] += y_p[i * dim];
+    ans[0] = invtau * pow(q, lambda_1) * ans[0];    // discharge[0]
+
+                                                    //Hillslope
+    ans[1] = forcing_values[0] * c_1 - q_pl - q_pt - e_p;   // pond[1]
+    ans[2] = q_pt - q_ts - q_tl - e_t;                      // toplayer[2]
+    ans[3] = q_ts - q_sl - e_s;                             // subsurface[3]
+
+                                                            //Additional states
+    ans[4] = forcing_values[0] * c_1;   // precip[4]
+    ans[5] = forcing_values[1] * c_1;   // et[5]
+    ans[6] = q_pl;                      // runoff[]6
+    ans[7] = q_sl * A_h - q_b*60.0;     // baseflow[7]
+    for (i = 0; i < num_parents; i++)
+        ans[7] += y_p[i * dim + 7] * 60.0;
+    ans[7] *= v_B / L;
+}
 
 //Type 260
 //Contains 3 layers on hillslope: ponded, top layer, soil
@@ -424,7 +596,7 @@ void dam_TopLayerHillslope_variable(const double * const y_i, unsigned int num_d
 //The numbering is:	0   1   2  |    3    4   5 
 //Order of global_params: v_0,lambda_1,lambda_2,h_b,k_D,k_2,k_dry,k_i,T_L,N,phi
 //The numbering is:        0      1        2     3   4   5   6     7   8  9  10
-void TopLayerNonlinearExp(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerNonlinearExp(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double pers_to_permin = 60.0;
@@ -497,7 +669,7 @@ void TopLayerNonlinearExp(double t, const double * const y_i, unsigned int dim, 
 //The numbering is:	0   1   2   3   4   5   6   7     8  |   9     10  11  12
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5 
-void TopLayerNonlinearExpSoilvel(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerNonlinearExpSoilvel(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double pers_to_permin = 60.0;
@@ -631,7 +803,7 @@ void dam_TopLayerNonlinearExpSoilvel(const double * const y_i, unsigned int num_
 //The numbering is:	0   1   2   3   4   5   6   7     8  |   9     10  11  12
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5 
-void TopLayerNonlinearExpSoilvel_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerNonlinearExpSoilvel_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     ans[0] = forcing_values[3];
     ans[1] = 0.0;
@@ -650,7 +822,7 @@ void TopLayerNonlinearExpSoilvel_Reservoirs(double t, const double * const y_i, 
 //The numbering is:	0   1   2   3   4   5   6   7   8     9  |   10    11  12  13
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5
-void TopLayerNonlinearExpSoilvel_ConstEta(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerNonlinearExpSoilvel_ConstEta(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double pers_to_permin = 60.0;
@@ -784,7 +956,7 @@ void dam_TopLayerNonlinearExpSoilvel_ConstEta(const double * const y_i, unsigned
 //The numbering is:	0   1   2   3   4   5   6   7   8     9  |   10    11  12  13
 //Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
 //The numbering is:        0      1        2    3  4   5
-void TopLayerNonlinearExpSoilvel_ConstEta_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void TopLayerNonlinearExpSoilvel_ConstEta_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     ans[0] = forcing_values[2];
     ans[1] = 0.0;
@@ -801,7 +973,7 @@ void TopLayerNonlinearExpSoilvel_ConstEta_Reservoirs(double t, const double * co
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,e_pot
 //The numbering is:        0      1        2     3  4   5    6
-void LinearHillslope_Evap(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void LinearHillslope_Evap(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -886,9 +1058,9 @@ int LinearHillslope_Evap_Check(const double * const y_i, const double * const pa
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
 //The numbering is:        0      1        2     3  4   5 
-void LinearHillslope_MonthlyEvap(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void LinearHillslope_MonthlyEvap(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
-    unsigned short i;
+        unsigned short i;
 
     double lambda_1 = global_params[1];
     //double e_pot = global_params[6] * (1e-3/60.0);	//[mm/hr]->[m/min]
@@ -911,6 +1083,8 @@ void LinearHillslope_MonthlyEvap(double t, const double * const y_i, unsigned in
     double C_p, C_a, C_T, Corr_evap;
     //double e_pot = forcing_values[1] * (1e-3/60.0);
     double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));	//[mm/month] -> [m/min]
+	
+	double infiltration_eff = forcing_values[2] + 1;
 
     if (e_pot > 0.0)
     {
@@ -948,7 +1122,7 @@ void LinearHillslope_MonthlyEvap(double t, const double * const y_i, unsigned in
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,v_B
 //The numbering is:        0      1        2     3  4   5   6
-void LinearHillslope_MonthlyEvap_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void LinearHillslope_MonthlyEvap_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     double lambda_1 = global_params[1];
     double v_B = global_params[6];
@@ -1019,7 +1193,7 @@ void LinearHillslope_MonthlyEvap_extras(double t, const double * const y_i, unsi
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,v_B
 //The numbering is:        0      1        2     3  4   5   6
-void LinearHillslope_Reservoirs_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void LinearHillslope_Reservoirs_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     ans[0] = forcing_values[2];
     ans[1] = 0.0;
@@ -1028,6 +1202,70 @@ void LinearHillslope_Reservoirs_extras(double t, const double * const y_i, unsig
     ans[4] = 0.0;
     ans[5] = 0.0;
     ans[6] = 0.0;
+}
+
+//Type 195
+//Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
+//The numbering is:	0   1   2   3  4    5    6   7
+//Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
+//The numbering is:        0      1        2     3  4   5 
+void LinearHillslope_MonthlyEvap_OnlyRouts(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    unsigned short i;
+
+    double lambda_1 = global_params[1];
+
+    double A_h = params[2];
+    double k2 = params[3];
+    double k3 = params[4];
+    double invtau = params[5];
+
+    double q = y_i[0];		                                        // [m^3/s]
+	double s_p = y_i[1];	                                        // [m]
+    double s_a = y_i[2];	                                        // [m]
+	double acc = y_i[3];	                                        // [m]
+
+	double q_rp = forcing_values[0] * (0.001 / 60.0);		        // (mm/hr -> m/min)
+	double q_pl = k2 * s_p;                                         // (1/min * m)
+	
+	double q_ra = forcing_values[1] * (0.001 / 60.0);               // (mm/hr -> m/min)
+    double q_al = k3 * s_a;                                         // (1/min * m)
+
+    //Evaporation
+    double C_a, C_T, Corr_evap;
+    double e_pot = forcing_values[2] * (1e-3 / (30.0*24.0*60.0));	//[mm/month] -> [m/min]
+
+    if (e_pot > 0.0){
+        C_a = s_a / e_pot;
+        C_T = C_a;
+    } else {
+        C_a = 0.0;
+        C_T = 0.0;
+    }
+
+    Corr_evap = (C_T > 1.0) ? 1.0 / C_T : 1.0;
+
+    double e_a = Corr_evap * C_a * e_pot;
+	double q_parent;
+	int q_pidx;
+
+    //Discharge
+    ans[0] = -q + ((q_al + q_pl) * A_h / 60.0);
+	for (i = 0; i < num_parents; i++) {
+		q_pidx = i * dim;
+		q_parent = y_p[q_pidx];
+		ans[0] += q_parent;
+	}
+    ans[0] = invtau * pow(q, lambda_1) * ans[0];
+
+    //Hillslope
+	ans[1] = q_rp - q_pl;
+	
+	//Sub-surface
+    ans[2] = q_ra - q_al - e_a;	
+
+	//Accumulated precip
+	ans[3] = q_rp + q_ra;
 }
 
 
@@ -1041,7 +1279,7 @@ void LinearHillslope_Reservoirs_extras(double t, const double * const y_i, unsig
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
 //The numbering is:        0      1        2     3  4   5 
-void Hillslope_Toy(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void Hillslope_Toy(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
 
     unsigned short i;
@@ -1167,7 +1405,7 @@ void Hillslope_Toy(double t, const double * const y_i, unsigned int dim, const d
 //The numbering is:	0   1   2   3   4  5    6    7 
 //Order of global_params: v_r,lambda_1,lambda_2,v_h,v_g,e_pot
 //The numbering is:        0      1        2     3   4   5  
-void LinearHillslope_Evap_RC(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void LinearHillslope_Evap_RC(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -1230,7 +1468,7 @@ void LinearHillslope_Evap_RC(double t, const double * const y_i, unsigned int di
 //The numbering is:	0   1   2  3  4    5
 //Order of global_params: v_r,lambda_1,lambda_2,RC,S_0,v_h,v_g
 //The numbering is:        0      1        2     3  4   5   6
-void nodam_rain_hillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void nodam_rain_hillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[1];
@@ -1264,7 +1502,7 @@ void nodam_rain_hillslope(double t, const double * const y_i, unsigned int dim, 
 //The numbering is:	0   1   2  3  4    5	       6      7       8     9	  10	    11       12  13  14
 //Order of global_params: v_r,lambda_1,lambda_2,RC,S_0,v_h,v_g
 //The numbering is:        0      1        2     3  4   5   6
-void dam_rain_hillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void dam_rain_hillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[1];
@@ -1405,7 +1643,7 @@ int dam_check(
 //The numbering is:	0   1   2   3  4   5   6  7    8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void nodam_rain_hillslope2(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void nodam_rain_hillslope2(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[0];
@@ -1437,7 +1675,7 @@ void nodam_rain_hillslope2(double t, const double * const y_i, unsigned int dim,
 //The numbering is:	0   1   2  3   4   5   6  7   8          9	  10	  11   12     13      14        15  16   17
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void dam_rain_hillslope2(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void dam_rain_hillslope2(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[0];
@@ -1578,7 +1816,7 @@ int dam_check2(
 //The numbering is:	0   1   2   3  4   5   6  7    8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void nodam_rain_hillslope3(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void nodam_rain_hillslope3(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[0];
@@ -1610,7 +1848,7 @@ void nodam_rain_hillslope3(double t, const double * const y_i, unsigned int dim,
 //The numbering is:	0   1   2  3   4   5   6  7   8          9	  10	  11   12     13      14        15  16   17
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void dam_rain_hillslope3(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void dam_rain_hillslope3(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[0];
@@ -1753,7 +1991,7 @@ int dam_check3(
 //The numbering is:	0   1   2   3  4   5   6  7    8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void nodam_rain_hillslope_qsv(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void nodam_rain_hillslope_qsv(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[0];
@@ -1782,7 +2020,7 @@ void nodam_rain_hillslope_qsv(double t, const double * const y_i, unsigned int d
 //The numbering is:	0   1   2  3   4   5   6  7   8
 //Order of global_params: lambda_1,lambda_2,S_0,v_g
 //The numbering is:         0        1       2   3
-void dam_rain_hillslope_qsv(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void dam_rain_hillslope_qsv(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
     double lambda_1 = global_params[0];
@@ -1867,8 +2105,8 @@ void dam_q_qvs(const double * const y_i, unsigned int num_dof, const double * co
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q
-//void simple_river(double t,double *y_i,double *y_p,unsigned short num_parents,double *global_params,double *forcing_values,double *params,int state,void* user,double *ans)
-void simple_river(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+//void simple_river(double t,double *y_i,double *y_p,unsigned short num_parents, unsigned int max_dim,double *global_params,double *forcing_values,double *params,int state,void* user,double *ans)
+void simple_river(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -1886,7 +2124,7 @@ void simple_river(double t, const double * const y_i, unsigned int dim, const do
 //Type 0
 //This assumes there is only 1 variable being passed link to link.
 //double NormJx_simple_river(double *y_i,double *global_params,double *params)
-void Jsimple_river(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
+void Jsimple_river(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
 {
     ans[0] = params[12] * pow(y_i[0], global_params[1]);
 }
@@ -1899,7 +2137,7 @@ void Jsimple_river(double t, const double * const y_i, unsigned int dim, const d
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
-void Jsimple(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
+void Jsimple(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
 {
     unsigned short i;
     double q = y_i[0];
@@ -1921,7 +2159,7 @@ void Jsimple(double t, const double * const y_i, unsigned int dim, const double 
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void river_rainfall(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void river_rainfall(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -1955,7 +2193,7 @@ void river_rainfall(double t, const double * const y_i, unsigned int dim, const 
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void simple_hillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void simple_hillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -1988,7 +2226,7 @@ void simple_hillslope(double t, const double * const y_i, unsigned int dim, cons
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document  
-void simple_soil(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void simple_soil(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -2047,7 +2285,7 @@ void simple_soil(double t, const double * const y_i, unsigned int dim, const dou
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
-void soil_rainfall(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void soil_rainfall(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -2106,7 +2344,7 @@ void soil_rainfall(double t, const double * const y_i, unsigned int dim, const d
 //The numbering is:     0   1   2   3   4     5    6   7   8     9      10       11       12    13     14    15   16  17  18  19
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r
 //The numbering is:        0      1        2     3   4
-void qsav_rainfall(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void qsav_rainfall(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -2187,7 +2425,11 @@ void qsav_rainfall(double t, const double * const y_i, unsigned int dim, const d
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s_p
-void river_rainfall_adjusted(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void river_rainfall_adjusted(
+    double t,
+    const double * const y_i, unsigned int dim,
+    const double * const y_p, unsigned short num_parents, unsigned int max_dim,
+    const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -2225,7 +2467,7 @@ void river_rainfall_adjusted(double t, const double * const y_i, unsigned int di
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s, followed by N entries for the variational equation
-void assim_river_rainfall_adjusted(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void assim_river_rainfall_adjusted(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     printf("Error: assim models do not exist...\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
@@ -2327,7 +2569,7 @@ void assim_river_rainfall_adjusted(double t, const double * const y_i, unsigned 
 //Order of global_params: v_0,lambda_1,lambda_2,Q_r,A_r,K_T,C_r,e_pot
 //The numbering is:        0      1        2     3   4   5   6   7
 /*
-void lcuencas_soilrain(double t,double *y_i,double *y_p,unsigned short num_parents,double *global_params,double *forcing_values,QVSData *qvs,double *params,int state,void* user,double *ans)
+void lcuencas_soilrain(double t,double *y_i,double *y_p,unsigned short num_parents, unsigned int max_dim,double *global_params,double *forcing_values,QVSData *qvs,double *params,int state,void* user,double *ans)
 {
 unsigned int i;
 
@@ -2450,7 +2692,7 @@ ans[3] = c_6 / v_sunsat * (q_pu - q_us - e_unsat + theta*(q_us - q_sl - e_sat));
 }
 */
 
-void lcuencas_soilrain(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void lcuencas_soilrain(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned int i;
 
@@ -2568,7 +2810,7 @@ void lcuencas_soilrain(double t, const double * const y_i, unsigned int dim, con
 //Order of global_params: v_r,lambda_1,lambda_2,Q_r,A_r,RC
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
-void Jsimple_soil(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
+void Jsimple_soil(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
 {
     unsigned short i;
 
@@ -2637,7 +2879,7 @@ void Jsimple_soil(double t, const double * const y_i, unsigned int dim, const do
 }
 
 //Type 101
-void Robertson(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void Robertson(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     double y1 = y_i[0];
     double y2 = y_i[1];
@@ -2649,7 +2891,7 @@ void Robertson(double t, const double * const y_i, unsigned int dim, const doubl
 }
 
 //Type 101
-void JRobertson(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
+void JRobertson(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, double *ans)
 {
     double y2 = y_i[1];
     double y3 = y_i[2];
@@ -2677,7 +2919,7 @@ void JRobertson(double t, const double * const y_i, unsigned int dim, const doub
 //The numbering is:        0      1        2     3   4   5
 //This uses the units and functions from September 18, 2011 document
 //y_i[0] = q, y_i[1] = s
-void river_rainfall_summary(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void river_rainfall_summary(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 
@@ -2710,7 +2952,7 @@ void river_rainfall_summary(double t, const double * const y_i, unsigned int dim
 //The numbering is:	0   1   2    3     4
 //Order of global_params: v_0,lambda_1,lambda_2
 //The numbering is:        0      1        2
-void Tiling(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+void Tiling(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
 {
     unsigned short i;
 

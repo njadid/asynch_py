@@ -35,14 +35,13 @@ int ExplicitRKSolver(Link* link_i, GlobalVars* globals, int* assignments, bool p
     const double * const d = link_i->method->d;
     unsigned int num_stages = link_i->method->num_stages;
     RKMethod* meth = link_i->method;
-    ErrorData* error = &link_i->my->error_data;
+    ErrorData* error = link_i->my->error_data;
     unsigned int dim = link_i->dim;
     unsigned int num_dense = link_i->num_dense;
     unsigned int* dense_indices = link_i->dense_indices;
-    unsigned int num_outputs = globals->num_outputs;
     double *temp = workspace->temp;
     double *sum = workspace->sum;
-    double **temp_k = workspace->temp_k_slices;
+    double **temp_k = workspace->temp_k_slices;    
 
     //Get the approximate solutions from each parent
     for (unsigned int i = 0; i < link_i->num_parents; i++)
@@ -66,8 +65,10 @@ int ExplicitRKSolver(Link* link_i, GlobalVars* globals, int* assignments, bool p
             current_theta = (t_needed - curr_node[i]->t) / dt;
             curr_parent->method->dense_b(current_theta, curr_parent->method->b_theta);
 
-            //[num_stages][max_parents][dim]
-            double *parent_approx = workspace->stages_parents_approx + j * globals->max_parents * dim + i * dim;
+            //[num_stages][max_parents][max_dim] -> [max_dim]
+            double *parent_approx = workspace->stages_parents_approx
+                + j * globals->max_parents * globals->max_dim
+                + i * globals->max_dim;
 
             for (unsigned int m = 0; m < curr_parent->num_dense; m++)
             {
@@ -106,15 +107,15 @@ int ExplicitRKSolver(Link* link_i, GlobalVars* globals, int* assignments, bool p
 
         link_i->check_consistency(sum, link_i->dim, globals->global_params, globals->num_global_params, link_i->params, link_i->num_params, link_i->user);
 
-        //[num_stages][max_parents][dim]
-        double *y_p = workspace->stages_parents_approx + i * globals->max_parents * link_i->dim;
+        //[num_stages][max_parents][max_dim]
+        double *y_p = workspace->stages_parents_approx + i * globals->max_parents * globals->max_dim;
 
         double dt = c[i] * h;
 
         link_i->differential(
             t + dt,
             sum, link_i->dim,
-            y_p, link_i->num_parents,
+            y_p, link_i->num_parents, globals->max_dim,
             globals->global_params,
             link_i->params,
             link_i->my->forcing_values,
@@ -183,7 +184,7 @@ int ExplicitRKSolver(Link* link_i, GlobalVars* globals, int* assignments, bool p
         //Save the new data
         link_i->last_t = t + h;
         link_i->current_iterations++;
-        store_k(workspace->temp_k, link_i->dim, new_node->k, num_stages, dense_indices, num_dense);
+        store_k(workspace->temp_k, globals->max_dim, new_node->k, num_stages, dense_indices, num_dense);
 
         //Check if new data should be written to disk
         if (print_flag)

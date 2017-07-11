@@ -573,14 +573,7 @@ int Partition_Network(
     Link*** my_sys, unsigned int* my_N, int** assignments,
     TransData** my_data, short int** getting, AsynchModel* model)
 {
-    Link *current, *prev;//**upstream_order = (Link**) malloc(N*sizeof(Link*));
-
-/*
-    //Order the links by upstream area
-    for(i=0;i<N;i++)
-        upstream_order[i] = system[i];
-    merge_sort(upstream_order,N,globals->area_idx);
-*/
+    Link *current, *prev;
 
     //Perform a DFS to sort the leaves
     Link** stack = malloc(N * sizeof(Link*)); //Holds the index in system
@@ -782,20 +775,20 @@ int Build_RKData(
             Link *current = &system[i];
             if (assignments[i] == my_rank || getting[i])
             {
-                current->my->error_data.abstol = calloc(num_states, sizeof(double));
-                current->my->error_data.reltol = calloc(num_states, sizeof(double));
-                current->my->error_data.abstol_dense = calloc(num_states, sizeof(double));
-                current->my->error_data.reltol_dense = calloc(num_states, sizeof(double));
-                current->my->error_data.facmax = error_data->facmax;
-                current->my->error_data.facmin = error_data->facmin;
-                current->my->error_data.fac = error_data->fac;
+                current->my->error_data->abstol = calloc(num_states, sizeof(double));
+                current->my->error_data->reltol = calloc(num_states, sizeof(double));
+                current->my->error_data->abstol_dense = calloc(num_states, sizeof(double));
+                current->my->error_data->reltol_dense = calloc(num_states, sizeof(double));
+                current->my->error_data->facmax = error_data->facmax;
+                current->my->error_data->facmin = error_data->facmin;
+                current->my->error_data->fac = error_data->fac;
 
                 for (unsigned int j = 0; j < num_states; j++)
                 {
-                    current->my->error_data.abstol[j] = filedata_abs[i*num_states + j];
-                    current->my->error_data.reltol[j] = filedata_rel[i*num_states + j];
-                    current->my->error_data.abstol_dense[j] = filedata_abs_dense[i*num_states + j];
-                    current->my->error_data.reltol_dense[j] = filedata_rel_dense[i*num_states + j];
+                    current->my->error_data->abstol[j] = filedata_abs[i*num_states + j];
+                    current->my->error_data->reltol[j] = filedata_rel[i*num_states + j];
+                    current->my->error_data->abstol_dense[j] = filedata_abs_dense[i*num_states + j];
+                    current->my->error_data->reltol_dense[j] = filedata_rel_dense[i*num_states + j];
                 }
                 current->method = &rk_methods[rk_methods_idx[i]];
             }
@@ -808,7 +801,7 @@ int Build_RKData(
             Link *current = &system[i];
             if (assignments[i] == my_rank || getting[i])
             {
-                memcpy(&current->my->error_data, error_data, sizeof(ErrorData));
+                current->my->error_data = error_data;
                 current->method = &rk_methods[globals->method];
             }
         }
@@ -1008,7 +1001,11 @@ static int Load_Initial_Conditions_Ini(
             if (system[loc].my)
             {
                 if (model && model->initialize_eqs)
-                    system[i].state = model->initialize_eqs(globals->global_params, system[loc].params, y_0, system[loc].user);
+                    system[i].state = model->initialize_eqs(
+                        globals->global_params, globals->num_global_params,
+                        system[loc].params, globals->num_params,
+                        y_0, system[loc].dim,
+                        system[loc].user);
                 else
                     system[i].state = ReadInitData(
                         globals->global_params, globals->num_global_params,
@@ -1072,7 +1069,11 @@ static int Load_Initial_Conditions_Ini(
                 MPI_Recv(y_0 + diff_start, no_ini_start - diff_start, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
                 if (model && model->initialize_eqs)
-                    system[i].state = model->initialize_eqs(globals->global_params, system[loc].params, y_0, system[loc].user);
+                    system[i].state = model->initialize_eqs(
+                        globals->global_params, globals->num_global_params,
+                        system[loc].params, globals->num_params,
+                        y_0, system[loc].dim,
+                        system[loc].user);
                 else
                     system[i].state = ReadInitData(
                         globals->global_params, globals->num_global_params,
@@ -1185,7 +1186,11 @@ static int Load_Initial_Conditions_Uini(
                 y_0[j] = y_0_backup[j - diff_start];
 
             if (model && model->initialize_eqs)
-                system[i].state = model->initialize_eqs(globals->global_params, system[i].params, y_0, system[i].user);
+                system[i].state = model->initialize_eqs(
+                    globals->global_params, globals->num_global_params,
+                    system[i].params, globals->num_params,
+                    y_0, system[i].dim,
+                    system[i].user);
             else
                 system[i].state = ReadInitData(
                     globals->global_params, globals->num_global_params,
@@ -1445,7 +1450,7 @@ static int Load_Initial_Conditions_Dbc(
         //Clean up
         PQclear(res);
         DisconnectPGDB(&db_connections[ASYNCH_DB_LOC_INIT]);
-        free(&y_0);
+        free(y_0);
         free(who_needs);
     }
     else
@@ -1478,7 +1483,7 @@ static int Load_Initial_Conditions_Dbc(
         }
 
         //Clean up
-        free(&y_0);
+        free(y_0);
     }
 
 #else //HAVE_POSTGRESQL
@@ -1627,7 +1632,7 @@ static int Load_Initial_Conditions_H5(
             if (my_need)
             {
                 unsigned int dim = system[loc].dim;
-
+                
                 if (assignments[loc] == my_rank)
                     MPI_Send(&dim, 1, MPI_UNSIGNED, 0, 1, MPI_COMM_WORLD);
 
@@ -2139,7 +2144,7 @@ int Load_Forcings(
             if (forcings[l].flag == 9)	//Download some extra data if the first_file is not on a timestamp with a forcing
                 forcings[l].next_timestamp = forcings[l].good_timestamp;	//!!!! Could probably do something similar for flag 3 !!!!
 
-            //Allocate space
+                                                                            //Allocate space
             for (unsigned int i = 0; i < N; i++)
             {
                 if (assignments[i] == my_rank)
@@ -3241,4 +3246,3 @@ int FindFilename(char* fullpath, char* filename)
     sprintf(filename, "%s", &(fullpath[i]));
     return 0;
 }
-

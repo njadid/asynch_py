@@ -4,6 +4,7 @@
 #include <config_msvc.h>
 #endif
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -272,6 +273,18 @@ void SetParamSizes(
         globals->convertarea_flag = 0;
         globals->num_forcings = 6;
         break;
+		//--------------------------------------------------------------------------------------------
+    case 195:	num_global_params = 5;
+        globals->uses_dam = 0;
+        globals->num_params = 6;
+        globals->dam_params_size = 0;
+        globals->area_idx = 0;
+        globals->areah_idx = 2;
+        globals->num_disk_params = 3;
+        globals->convertarea_flag = 0;
+        globals->num_forcings = 3;
+        globals->min_error_tolerances = 3;
+        break;
         //--------------------------------------------------------------------------------------------
     case 200:	num_global_params = 10;
         globals->uses_dam = 0;
@@ -355,6 +368,30 @@ void SetParamSizes(
         globals->convertarea_flag = 0;
         globals->num_forcings = 3;
         globals->min_error_tolerances = 5;
+        break;
+        //--------------------------------------------------------------------------------------------
+    case 256:   num_global_params = 13;
+        globals->uses_dam = 0;
+        globals->num_params = 8;
+        globals->dam_params_size = 0;
+        globals->area_idx = 0;
+        globals->areah_idx = 2;
+        globals->num_disk_params = 3;
+        globals->convertarea_flag = 0;
+        globals->num_forcings = 3;
+        globals->min_error_tolerances = 8;
+        break;
+        //--------------------------------------------------------------------------------------------
+    case 257:   num_global_params = 31;
+        globals->uses_dam = 0;
+        globals->num_params = 9;
+        globals->dam_params_size = 0;
+        globals->area_idx = 0;
+        globals->areah_idx = 2;
+        globals->num_disk_params = 4;
+        globals->convertarea_flag = 0;
+        globals->num_forcings = 3;
+        globals->min_error_tolerances = 8;
         break;
         //--------------------------------------------------------------------------------------------
     case 260:	num_global_params = 11;
@@ -472,7 +509,7 @@ void ConvertParams(
         params[1] *= 1000;	//L: km -> m
         params[2] *= 1e6;	//A_h: km^2 -> m^2
     }
-    else if (model_uid == 190 || model_uid == 191)
+    else if (model_uid == 190 || model_uid == 191 || model_uid == 195)
     {
         params[1] *= 1000;	//L: km -> m
         params[2] *= 1e6;	//A_h: km^2 -> m^2
@@ -550,17 +587,7 @@ void ConvertParams(
         params[2] *= 1e6;		//A_h: km^2 -> m^2
         params[4] *= .001;		//H_h: mm -> m
     }
-    else if (model_uid == 252 || model_uid == 260 || model_uid == 254 || model_uid == 261 || model_uid == 262)
-    {
-        params[1] *= 1000;		//L_h: km -> m
-        params[2] *= 1e6;		//A_h: km^2 -> m^2
-    }
-    else if (model_uid == 253)
-    {
-        params[1] *= 1000;		//L_h: km -> m
-        params[2] *= 1e6;		//A_h: km^2 -> m^2
-    }
-    else if (model_uid == 255)
+    else if (model_uid == 252 || model_uid == 253 || model_uid == 254 || model_uid == 255 || model_uid == 256 || model_uid == 257 || model_uid == 260 || model_uid == 261 || model_uid == 262)
     {
         params[1] *= 1000;		//L_h: km -> m
         params[2] *= 1e6;		//A_h: km^2 -> m^2
@@ -905,6 +932,22 @@ void InitRoutines(
         link->check_state = NULL;
         link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
     }
+	else if (model_uid == 195)
+    {
+		// adlz: so far, a copy of 190
+        link->dim = 4;
+        link->no_ini_start = 3;
+        link->diff_start = 0;
+
+        link->num_dense = 1;
+        link->dense_indices = (unsigned int*)realloc(link->dense_indices, link->num_dense * sizeof(unsigned int));
+        link->dense_indices[0] = 0;
+
+        link->differential = &LinearHillslope_MonthlyEvap_OnlyRouts;
+        link->algebraic = NULL;
+        link->check_state = NULL;
+        link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
+    }
     else if (model_uid == 200)	//This is for use with SIMPLE only
     {
         link->dim = 2;
@@ -1029,6 +1072,50 @@ void InitRoutines(
         }
         link->algebraic = &dam_TopLayerHillslope_variable;
         link->check_state = &dam_check_qvs;
+        link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
+    }
+    else if (model_uid == 256)
+    {
+        link->dim = 8;
+        link->no_ini_start = 4;
+        link->diff_start = 0;
+
+        link->num_dense = 2;
+        link->dense_indices = (unsigned int*)realloc(link->dense_indices, link->num_dense * sizeof(unsigned int));
+        link->dense_indices[0] = 0;
+        link->dense_indices[1] = 6;
+
+        if (link->has_res)
+        {
+            link->differential = &TopLayerHillslope_Reservoirs;
+            link->solver = &ForcedSolutionSolver;
+        }
+        else		
+            link->differential = &TopLayerHillslope_even_more_extras;
+        link->algebraic = NULL;
+        link->check_state = NULL;
+        link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
+    }
+    else if (model_uid == 257)
+    {
+        link->dim = 8;
+        link->no_ini_start = 4;
+        link->diff_start = 0;
+
+        link->num_dense = 2;
+        link->dense_indices = (unsigned int*)realloc(link->dense_indices, link->num_dense * sizeof(unsigned int));
+        link->dense_indices[0] = 0;
+        link->dense_indices[1] = 6;
+
+        if (link->has_res)
+        {
+            link->differential = &TopLayerHillslope_Reservoirs;
+            link->solver = &ForcedSolutionSolver;
+        }
+        else
+            link->differential = &TopLayerHillslope_spatial_velocity;
+        link->algebraic = NULL;
+        link->check_state = NULL;
         link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
     }
     else if (model_uid == 260)
@@ -1201,7 +1288,7 @@ void Precalculations(
         vals[6] = RC*(0.001 / 60.0);		//(mm/hr->m/min)  c_1
         vals[7] = (1.0 - RC)*(0.001 / 60.0);	//(mm/hr->m/min)  c_2
     }
-    else if (model_uid == 190 || model_uid == 191)
+    else if ((model_uid == 190) || (model_uid == 191))
     {
         //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
         //The numbering is:	0   1   2   3  4    5    6   7
@@ -1224,6 +1311,26 @@ void Precalculations(
         vals[6] = RC*(0.001 / 60.0);		//(mm/hr->m/min)  c_1
         vals[7] = (1.0 - RC)*(0.001 / 60.0);	//(mm/hr->m/min)  c_2
     }
+	else if (model_uid == 195)
+    {
+        //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
+        //The numbering is:	0   1   2   3  4    5    6   7
+        //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g (,v_B)
+        //The numbering is:        0      1        2     3  4   5     6
+        double* vals = params;
+        double A_i = params[0];
+        double L_i = params[1];
+        double A_h = params[2];
+        double v_r = global_params[0];
+        double lambda_1 = global_params[1];
+        double lambda_2 = global_params[2];
+        double v_h = global_params[3];
+        double v_g = global_params[4];
+
+        vals[3] = v_h * L_i / A_h * 60.0;	//[1/min]  k2
+        vals[4] = v_g * L_i / A_h * 60.0;	//[1/min]  k3
+        vals[5] = 60.0*v_r*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
+    }
     else if (model_uid == 20)
     {
         //Order of parameters: A_i,L_i,A_h,invtau,c_1,c_2
@@ -1241,51 +1348,51 @@ void Precalculations(
 
         vals[3] = 60.0*v_r*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i); //[1/min]  invtau
 
-                                                                        /*
-                                                                        //For gamma
-                                                                        double k_p = global_params[4];
-                                                                        double k_a = global_params[5];
-                                                                        double theta_p = global_params[6];
-                                                                        double theta_a = global_params[7];
-                                                                        vals[4] = 1.0/(tgamma(k_p)*pow(theta_p,k_p)); //c_1
-                                                                        vals[5] = 1.0/(tgamma(k_a)*pow(theta_a,k_a)); //c_2
-                                                                        */
-                                                                        /*
-                                                                        //For log normal
-                                                                        double mu = global_params[3];
-                                                                        double sigma2 = global_params[4];
-                                                                        double scale = global_params[5];
-                                                                        vals[4] = scale/(pow(2.0*3.141592653589*sigma2,0.5));
-                                                                        vals[5] = 0.0;
-                                                                        */
+        /*
+        //For gamma
+        double k_p = global_params[4];
+        double k_a = global_params[5];
+        double theta_p = global_params[6];
+        double theta_a = global_params[7];
+        vals[4] = 1.0/(tgamma(k_p)*pow(theta_p,k_p)); //c_1
+        vals[5] = 1.0/(tgamma(k_a)*pow(theta_a,k_a)); //c_2
+        */
+        /*
+        //For log normal
+        double mu = global_params[3];
+        double sigma2 = global_params[4];
+        double scale = global_params[5];
+        vals[4] = scale/(pow(2.0*3.141592653589*sigma2,0.5));
+        vals[5] = 0.0;
+        */
 
-                                                                        //Set some random values
-                                                                        //vals[4] = (double)(rand()%996) / 10.0 + 0.5;	//0.5 to 100.0
-                                                                        //vals[5] = (double)(rand()%991) + 10.0;	//10 to 1000
+        //Set some random values
+        //vals[4] = (double)(rand()%996) / 10.0 + 0.5;	//0.5 to 100.0
+        //vals[5] = (double)(rand()%991) + 10.0;	//10 to 1000
 
-                                                                        /*
-                                                                        //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
-                                                                        //The numbering is:	0   1   2   3  4    5    6   7
-                                                                        //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
-                                                                        //The numbering is:        0      1        2     3  4   5
-                                                                        double* vals = params;
-                                                                        double A_i = params[0];
-                                                                        double L_i = params[1];
-                                                                        double A_h = params[2];
-                                                                        double v_r = global_params[0];
-                                                                        double lambda_1 = global_params[1];
-                                                                        double lambda_2 = global_params[2];
-                                                                        double RC = global_params[3];
-                                                                        double v_h = global_params[4];
-                                                                        double v_g = global_params[5];
-                                                                        double F_et = 0.05;
+        /*
+        //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
+        //The numbering is:	0   1   2   3  4    5    6   7
+        //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g
+        //The numbering is:        0      1        2     3  4   5
+        double* vals = params;
+        double A_i = params[0];
+        double L_i = params[1];
+        double A_h = params[2];
+        double v_r = global_params[0];
+        double lambda_1 = global_params[1];
+        double lambda_2 = global_params[2];
+        double RC = global_params[3];
+        double v_h = global_params[4];
+        double v_g = global_params[5];
+        double F_et = 0.05;
 
-                                                                        vals[3] = v_h * L_i / A_h * 60.0;	//[1/min]  k2
-                                                                        vals[4] = v_g * L_i / A_h * 60.0;	//[1/min]  k3
-                                                                        vals[5] = 60.0*v_r*pow(A_i,lambda_2) / ((1.0-lambda_1)*L_i);	//[1/min]  invtau
-                                                                        vals[6] = RC*(0.001/60.0);		//(mm/hr->m/min)  c_1
-                                                                        vals[7] = F_et*(1.0-RC)*(0.001/60.0);	//(mm/hr->m/min)  c_2
-                                                                        */
+        vals[3] = v_h * L_i / A_h * 60.0;	//[1/min]  k2
+        vals[4] = v_g * L_i / A_h * 60.0;	//[1/min]  k3
+        vals[5] = 60.0*v_r*pow(A_i,lambda_2) / ((1.0-lambda_1)*L_i);	//[1/min]  invtau
+        vals[6] = RC*(0.001/60.0);		//(mm/hr->m/min)  c_1
+        vals[7] = F_et*(1.0-RC)*(0.001/60.0);	//(mm/hr->m/min)  c_2
+        */
     }
     else if (model_uid == 60)
     {
@@ -1594,7 +1701,7 @@ void Precalculations(
         vals[6] = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
         vals[7] = A_h / 60.0;	//  c_2
     }
-    else if (model_uid == 254)
+    else if (model_uid == 254 || model_uid == 256)
     {
         //Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
         //The numbering is:	0   1   2    3     4   5   6   7 
@@ -1639,6 +1746,31 @@ void Precalculations(
         vals[13] = vals[12] * k_i_factor;	//[1/min] k_i
         vals[14] = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
         vals[15] = A_h / 60.0;	//  c_2
+    }
+    else if (model_uid == 257)
+    {
+        //Order of parameters: A_i,L_i,A_h,horder,invtau,k_2,k_i,c_1,c_2
+        //The numbering is:    0   1   2   3      4      5   6   7...8
+        //Order of global_params: v_0_0,...,v_0_9,lambda_1_0,...,lambda_1_9,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A ,B, exponent,v_B,k_tl
+        //The numbering is:       0         9     10,            19         20       21  22  23         24  25  26 27 28       29  30
+        double* vals = params;
+        double A_i = params[0];
+        double L_i = params[1];
+        double A_h = params[2];
+        int h_order = (int) params[3];
+        assert(h_order < 10);
+
+        double v_0 = global_params[h_order - 1];
+        double lambda_1 = global_params[10 + h_order - 1];
+        double lambda_2 = global_params[20];
+        double v_h = global_params[21];
+        double k_i_factor = global_params[23];
+
+        vals[4] = 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
+        vals[5] = v_h * L_i / A_h * 60.0;	//[1/min] k_2
+        vals[6] = vals[4] * k_i_factor;	//[1/min] k_i
+        vals[7] = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
+        vals[8] = A_h / 60.0;	//  c_2
     }
     else if (model_uid == 260)
     {
@@ -1926,6 +2058,11 @@ int ReadInitData(
         y_0[4] = 0.0;
         y_0[5] = y_0[0];	//I'm not really sure what to use here...
     }
+	else if (model_uid == 195)
+	{
+		//For this model_uid, the extra states need to be set (3)
+		y_0[3] = 0.0;
+	}
     else if (model_uid == 200)
     {
         //For model_uid 200, only the discharge has been set. Need to set the storage.
@@ -1985,6 +2122,22 @@ int ReadInitData(
             y_0[1] = tau_in_secs / (1.0 - lambda_1) * pow(y_0[0], 1.0 - lambda_1);
             return -1;
         }
+    }
+    else if (model_uid == 256)
+    {
+        //For this model_uid, the extra states need to be set (4,5,6,7)
+        y_0[4] = 0.0;
+        y_0[5] = 0.0;
+        y_0[6] = 0.0;
+        y_0[7] = y_0[0];
+    }
+    else if (model_uid == 257)
+    {
+        //For this model_uid, the extra states need to be set (4,5,6,7)
+        y_0[4] = 0.0;
+        y_0[5] = 0.0;
+        y_0[6] = 0.0;
+        y_0[7] = y_0[0];
     }
     else if (model_uid == 261)
     {
