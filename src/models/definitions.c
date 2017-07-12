@@ -1768,7 +1768,7 @@ void Precalculations(
 
         vals[4] = 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
         vals[5] = v_h * L_i / A_h * 60.0;	//[1/min] k_2
-        vals[6] = vals[4] * k_i_factor;	//[1/min] k_i
+        vals[6] = vals[5] * k_i_factor;	//[1/min] k_i
         vals[7] = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
         vals[8] = A_h / 60.0;	//  c_2
     }
