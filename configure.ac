@@ -1,4 +1,4 @@
-AC_INIT([asynch], [1.4.0], [samuel-debionne@uiowa.edu])
+AC_INIT([asynch], [1.4.1], [samuel-debionne@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
