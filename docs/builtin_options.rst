@@ -1,4 +1,4 @@
-Built-In Options
+Built-in Options
 ================
 
 Through a global file, many options are selected, including which model to use, what time series to output, and how to calculate peakflows. Each of these can be customized by the user. However, several precreated options do exist. This section provides a list of these options.

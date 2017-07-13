@@ -77,7 +77,11 @@ if USE_PETSC
 libasynch_a_SOURCES += \
   assim/ancillary.c \
   assim/linear_least_squares.c \
-  assim/models.c
+  assim/models.c \
+  assim/ancillary.h \
+  assim/linear_least_squares.h \
+  assim/models.h \
+  assim/structs.h
 
 bin_PROGRAMS += assim
 
