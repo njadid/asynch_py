@@ -1083,7 +1083,7 @@ void InitRoutines(
         link->num_dense = 2;
         link->dense_indices = (unsigned int*)realloc(link->dense_indices, link->num_dense * sizeof(unsigned int));
         link->dense_indices[0] = 0;
-        link->dense_indices[1] = 6;
+        link->dense_indices[1] = 7;
 
         if (link->has_res)
         {
@@ -1105,7 +1105,7 @@ void InitRoutines(
         link->num_dense = 2;
         link->dense_indices = (unsigned int*)realloc(link->dense_indices, link->num_dense * sizeof(unsigned int));
         link->dense_indices[0] = 0;
-        link->dense_indices[1] = 6;
+        link->dense_indices[1] = 7;
 
         if (link->has_res)
         {
