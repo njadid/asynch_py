@@ -71,6 +71,7 @@ void asynch_onexit(void)
 int main(int argc, char* argv[])
 {
     int res;
+	int print_level = 1;
 
     //Initialize MPI stuff
     res = MPI_Init(&argc, &argv);
@@ -90,6 +91,7 @@ int main(int argc, char* argv[])
     bool debug = false;    
     bool help = false;
     bool version = false;
+	bool more = false;
 
     //Parse command line
     struct optparse options;
@@ -99,6 +101,7 @@ int main(int argc, char* argv[])
         { "debug", 'd', OPTPARSE_NONE },        
         { "help", 'h', OPTPARSE_NONE },
         { "version", 'v', OPTPARSE_NONE },
+		{ "more", 'm', OPTPARSE_NONE },
         { 0 }
     };
     int option;
@@ -116,6 +119,9 @@ int main(int argc, char* argv[])
         case 'v':
             version = true;
             break;
+		case 'm':
+			more = true;
+			break;
         case '?':
             print_err("%s: %s\n", argv[0], options.errmsg);
             exit(EXIT_FAILURE);
@@ -123,16 +129,32 @@ int main(int argc, char* argv[])
     }
 
     if (version) print_out("This is %s\n", PACKAGE_STRING);
+	if ((version) && (more))
+	{
+		print_out("Compiled under:\n");
+		print_out("- O.S.:       %s\n", OS_VERSION);
+		print_out("- Compiler:   %s\n", CC_VERSION);
+		print_out("- HDF5 lib:   %s\n", H5_VERSION);
+		print_out("- SZip:       %s\n", SZ_VERSION);
+		print_out("- ZLib:       %s\n", ZL_VERSION);
+		print_out("- PostGreSQL: %s\n", PQ_VERSION);
+	}
     if (help)
     {
         print_out("Usage: asynch <global file>\n", PACKAGE_STRING);
         print_out(
             "  -d [--debug]   : Wait for the user input at the begining of the program (useful" \
             "                   for attaching a debugger)\n" \
-            "  -v [--version] : Print the current version of ASYNCH\n");
+            "  -v [--version] : Print the current version of ASYNCH\n" \
+			"  -m [--more]    : Print extra information regarding the process steps.\n");
         exit(EXIT_SUCCESS);
     }
     if (version || help) exit(EXIT_SUCCESS);
+	if (more)
+	{
+		print_out("Starting %s...\n", PACKAGE_STRING);
+		print_level = 2;
+	}
 
     //Parse remaining arguments
     char *global_filename = optparse_arg(&options);
@@ -165,41 +187,127 @@ int main(int argc, char* argv[])
     }
 
     //Declare variables
-    double start, stop;
+    double start, stop, last, current;
     double total_time;
 
     print_out("\nBeginning initialization...\n*****************************\n");
     MPI_Barrier(MPI_COMM_WORLD);
     start = MPI_Wtime();
+	if (more)
+		last = MPI_Wtime();
 
     //Init asynch object and the river network
     AsynchSolver *asynch = Asynch_Init(MPI_COMM_WORLD, false);
-    print_out("Reading global file...\n");
+    
+	print_out("Reading global file...");
     Asynch_Parse_GBL(asynch, global_filename);
-    print_out("Loading network...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nLoading network...");
     Asynch_Load_Network(asynch);
-    print_out("Partitioning network...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nPartitioning network...");
     Asynch_Partition_Network(asynch);
-    print_out("Loading parameters...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nLoading parameters...");
     Asynch_Load_Network_Parameters(asynch);
-    print_out("Reading dam and reservoir data...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nReading dam and reservoir data...");
     Asynch_Load_Dams(asynch);
-    print_out("Setting up numerical error data...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nSetting up numerical error data...");
     Asynch_Load_Numerical_Error_Data(asynch);
-    print_out("Initializing model...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nInitializing model...");
     Asynch_Initialize_Model(asynch);
-    print_out("Loading initial conditions...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nLoading initial conditions...");
     Asynch_Load_Initial_Conditions(asynch);
-    print_out("Loading forcings...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nLoading forcings...");
     Asynch_Load_Forcings(asynch);
-    print_out("Loading output data information...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nLoading output data information...");
     Asynch_Load_Save_Lists(asynch);
-    print_out("Finalizing network...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nFinalizing network...");
     Asynch_Finalize_Network(asynch);
-    print_out("Calculating initial step sizes...\n");
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
+    
+	print_out("\nCalculating initial step sizes...");
     Asynch_Calculate_Step_Sizes(asynch);
+	if (more)
+	{
+		current = MPI_Wtime();
+		print_out("in %f seconds.", current - last);
+		last = current;
+	}
 
-    print_out("\nModel type is %u.\n", Asynch_Get_Model_Type(asynch));
+    print_out("\n\nModel type is %u.\n", Asynch_Get_Model_Type(asynch));
 
     //Prepare output files
     Asynch_Prepare_Temp_Files(asynch);
@@ -223,7 +331,7 @@ int main(int argc, char* argv[])
 
     //Perform the calculations
     start = MPI_Wtime();
-    Asynch_Advance(asynch, 1);
+    Asynch_Advance(asynch, print_level);
     MPI_Barrier(MPI_COMM_WORLD);
     stop = MPI_Wtime();
 

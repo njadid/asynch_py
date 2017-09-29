@@ -1819,7 +1819,7 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
     unsigned int res = 0;
 
     const hsize_t chunk_size = 512;   // Chunk size, in number of table entries per chunk
-    const int compression = 5;      // Compression level, a value of 0 through 9.
+    const int compression = 5;        // Compression level, a value of 0 through 9.
 
     if (my_rank == 0)
     {
@@ -1827,8 +1827,8 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
         unsigned int unix_time = 0;
         char dump_loc_filename[ASYNCH_MAX_PATH_LENGTH];
         if (globals->dump_loc_flag == 4)
-            {
-                char timestamp[ASYNCH_MAX_TIMESTAMP_LENGTH + 1];
+        {
+            char timestamp[ASYNCH_MAX_TIMESTAMP_LENGTH + 1];
             unix_time = (unsigned int)(globals->begin_time + globals->t * 60);
             sprintf(timestamp, "%u", unix_time);
             snprintf(dump_loc_filename, ASYNCH_MAX_PATH_LENGTH, "%s_%s.h5", globals->dump_loc_filename, timestamp);
@@ -1838,7 +1838,6 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
             unix_time = (unsigned int)globals->end_time;
             snprintf(dump_loc_filename, ASYNCH_MAX_PATH_LENGTH, "%s", globals->dump_loc_filename);
         }
-
 
         hid_t file_id = H5Fcreate(dump_loc_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
         if (file_id < 0)
@@ -1863,15 +1862,14 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
             i++;
 
         //Assume that every links have the same dimension
-        //unsigned int dim = sys[i].dim;
-        unsigned int dim = 4;
+        unsigned int dim = sys[i].dim;
 
         size_t line_size = sizeof(unsigned int) + dim * sizeof(double);
 
         //Create compound type
         hid_t compound_id = H5Tcreate(H5T_COMPOUND, line_size);
         herr_t status = H5Tinsert(compound_id, "link_id", 0, H5T_NATIVE_UINT);
-
+		
         size_t offset = sizeof(unsigned int);
         for (unsigned int i = 0; i < dim; i++)
         {
@@ -1881,7 +1879,7 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
             herr_t status = H5Tinsert(compound_id, name, offset, H5T_NATIVE_DOUBLE);
             offset += sizeof(double);
         }
-
+		
         // Create packet file
         hid_t packet_file_id = H5PTcreate_fl(file_id, "snapshot", compound_id, chunk_size, compression);
         if (packet_file_id < 0)
@@ -1889,7 +1887,7 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
             printf("Error: could not initialize h5 packet file %s.\n", dump_loc_filename);
             return 2;
         }
-        
+		
         char *data_storage = malloc(N * line_size);
 
         for (i = 0; i < N; i++)
@@ -1918,13 +1916,13 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
     }
     //Sending data to proc 0
     else
-    {
+    {	
         //Check for error while opening the file
         MPI_Bcast(&res, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
         if (res)
             return 1;
 
-        unsigned int dim = 4;
+        unsigned int dim = 4;  // adlzanchetta: I have no idea why this was hardcoded
 
         for (i = 0; i < N; i++)
         {
