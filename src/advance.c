@@ -24,7 +24,7 @@ void Advance(
     Forcing* forcings,
     ConnData* db_connections,
     TransData* my_data,
-    bool print_flag,
+    int print_level,
     FILE* outputfile)
 {
     //Initialize remaining data
@@ -34,8 +34,14 @@ void Advance(
     unsigned int last_idx, curr_idx, around;
     unsigned int two_my_N = 2 * my_N;
     int error_code;
+	bool print_flag = false;
 
+	if (print_level >= 1)
+		print_flag = true;
+	
     //Initialize values for forcing data
+	if ((print_level >= 2) && (my_rank == 0))
+		printf("[%i] Initializing forcings values...", my_rank);
     for (unsigned int i = 0; i < globals->num_forcings; i++)
     {
         if (forcings[i].active)
@@ -45,6 +51,8 @@ void Advance(
             //printf("Before: %u, %u, %u\n",i,forcings[i].passes,passes);
         }
     }
+	if ((print_level >= 2) && (my_rank == 0))
+		printf("done.\n");
 
     ////Snapshot passes
     //if (globals->dump_loc_flag == 4)
@@ -60,17 +68,24 @@ void Advance(
 
         //Advance the current time
         globals->t = my_sys[0]->last_t;
+		if ((print_level >= 2) && (my_rank == 0))
+			printf("[%i] Solver at %0.2f of %0.2f minutes.\n", my_rank, globals->t, globals->maxtime);
         
         memset(done, 0, my_N * sizeof(short int));
 
         //Read in next set of forcing data
+		if ((print_level >= 2) && (my_rank == 0))
+		{
+			printf("[%i] Reading next set of forging data...", my_rank);
+			fflush(stdout);
+		}
         double maxtime = globals->maxtime;
         for (unsigned int i = 0; i < globals->num_forcings; i++)
         {
             if (forcings[i].active)
             {
                 //printf("Forcing %u is active  %e %e\n",i,sys[my_sys[0]]->last_t,forcings[i].maxtime);
-                if (fabs(globals->t - forcings[i].maxtime) < 1e-14)
+                if ((fabs(globals->t - forcings[i].maxtime) < 1e-14)  && (forcings[i].iteration < forcings[i].passes))
                 {
                     forcings[i].maxtime = forcings[i].GetNextForcing(sys, N, my_sys, my_N, assignments, globals, &forcings[i], db_connections, id_to_loc, i);
                     //(forcings[i].iteration)++;	if flag is 3 (dbc), this happens in GetNextForcing
@@ -79,8 +94,12 @@ void Advance(
                 maxtime = min(maxtime, forcings[i].maxtime);
             }
         }
-
-        //Check shapshot next time
+		if ((print_level >= 2) && (my_rank == 0))
+		{
+			printf("done.\n[%i] Check shapshot next time...", my_rank);
+			fflush(stdout);
+		}
+		//Check shapshot next time
         if (globals->dump_loc_flag == 4)
         {
             double next_time = fmod(globals->t, globals->dump_time);
@@ -90,14 +109,23 @@ void Advance(
                 next_time = globals->t + globals->dump_time;
             }
             else
+			{
                 next_time = ceil(globals->t / globals->dump_time) * globals->dump_time;
+			}
 
             maxtime = min(maxtime, next_time);
         }
+		if ((print_level >= 2) && (my_rank == 0))
+			printf("done.\n");
 
         //If a state forcing is used, previously outputted data may need to be rewritten
         if (globals->res_flag)
         {
+            if ((print_level >= 2) && (my_rank == 0))
+            {
+                printf("[%i] Considering reservoir timeseries...", my_rank);
+                fflush(stdout);
+            }
             for (unsigned int i = 0; i < my_N; i++)	//!!!! Can we loop over just the links with reservoirs? Improve id_to_loc. !!!!
             {
                 current = my_sys[i];
@@ -115,10 +143,23 @@ void Advance(
                     }
                 }
             }
+            if ((print_level >= 2) && (my_rank == 0))
+                printf("done.\n");
         }
         
         // Update forcing
+		if ((print_level >= 2) && (my_rank == 0))
+		{
+			printf("[%i] Updating forcings...", my_rank);
+			fflush(stdout);
+		}
         Exchange_InitState_At_Forced(sys, N, assignments, getting, res_list, res_size, id_to_loc, globals);
+		
+		if ((print_level >= 2) && (my_rank == 0))
+		{
+			printf("done.\n[%i] Solving...", my_rank);
+			fflush(stdout);
+		}
         
         for (unsigned int i = 0; i < my_N; i++)
         {
@@ -153,16 +194,32 @@ void Advance(
                     //If the current link is not too far ahead, it can compute some iterations
                     if (current->current_iterations < globals->iter_limit)
                     {
+						// adlz
+						// if ((print_level >= 2) && (my_rank == 0))
+						//	printf("       ...computting iteration %i (max %i).\n", current->current_iterations, globals->iter_limit);
                         //Solve a few steps of the current link
                         if (current->num_parents == 0)	//Leaf
                         {
+							// adlz
+							// if ((print_level >= 2) && (my_rank == 0))
+							//	printf("       ...solving a leaf...\n");
                             while (current->last_t + current->h < maxtime && current->current_iterations < globals->iter_limit)
                             {
+								// adlz
+								// if ((print_level >= 2) && (my_rank == 0))
+								// {
+								//	printf("       ...iterating 1 (%i of %i)...\n", current->current_iterations, globals->iter_limit);
+								//	printf("         as %f + %f (%f) < %f.\n", current->last_t, current->h, current->last_t + current->h, maxtime);
+								// }
                                 for (unsigned int i = 0; i < globals->num_forcings; i++)		//!!!! Put this in solver !!!!
                                     if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
                                         current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
                                 current->rejected = current->solver(current, globals, assignments, print_flag, outputfile, &db_connections[ASYNCH_DB_LOC_HYDRO_OUTPUT], forcings, workspace);
                             }
+
+							// adlz
+							//if ((print_level >= 2) && (my_rank == 0))
+							//	printf("       ...iterating 1 done.\n");
 
                             if (current->last_t + current->h >= maxtime  && current->current_iterations < globals->iter_limit && current->last_t < maxtime)	//If less than a full step is needed, just finish up
                             {
@@ -175,7 +232,7 @@ void Advance(
 
                                 while (current->rejected == 0)
                                 {
-                                    for (unsigned int i = 0; i < globals->num_forcings; i++)
+									for (unsigned int i = 0; i < globals->num_forcings; i++)
                                         if (forcings[i].active && current->last_t < current->my->forcing_change_times[i])
                                             current->h = min(current->h, current->my->forcing_change_times[i] - current->last_t);
                                     current->h = min(current->h, maxtime - current->last_t);
@@ -186,7 +243,7 @@ void Advance(
                         }
                         else	//Has parents
                         {
-                            parentsval = 0;
+							parentsval = 0;
                             for (unsigned int i = 0; i < current->num_parents; i++)
                                 parentsval += (current->last_t + current->h <= current->parents[i]->last_t);
 
@@ -315,6 +372,10 @@ void Advance(
                         while (done[last_idx] == 1 && last_idx > 0)
                             last_idx--;
 
+						// adlz
+						//if ((print_level >= 2) && (my_rank == 0))
+						//	printf("       about to trash...\n");
+
                         //If current is a root link, trash its data
                         if (current->child == NULL)
                         {
@@ -332,6 +393,12 @@ void Advance(
             }//endwhile
         }
 
+		if ((print_level >= 2) && (my_rank == 0))
+		{
+			printf("done.\n[%i] Synchronizing...", my_rank);
+			fflush(stdout);
+		}
+
         Transfer_Data_Finish(my_data, sys, assignments, globals);
 
         //Ensure all data is received !!!! This is sloppy. Transfer_Data_Finish should handle this. !!!!
@@ -341,6 +408,12 @@ void Advance(
         //if((rain_flag == 2 || rain_flag == 3) && my_rank == 0)
 //		if(my_rank == 0)
 //			printf("%i: Going to next set of forcing data, k is %i/%i\n",my_rank,k,passes-1);
+
+		if ((print_level >= 2) && (my_rank == 0))
+		{
+			printf("done.\n[%i] * * * * * * * * * * * * * * * *\n", my_rank);
+			fflush(stdout);
+		}
     }
 
     if (my_rank == 0)
