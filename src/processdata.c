@@ -1922,7 +1922,9 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
         if (res)
             return 1;
 
-        unsigned int dim = 4;  // adlzanchetta: I have no idea why this was hardcoded
+        // when testing Data Assimilation, it may be a good idea to use only the first
+        // four states of model 252
+        // unsigned int dim = 4;
 
         for (i = 0; i < N; i++)
         {
