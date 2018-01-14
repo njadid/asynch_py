@@ -590,6 +590,101 @@ void TopLayerHillslope_spatial_velocity(double t, const double * const y_i, unsi
     ans[7] *= v_B / L;
 }
 
+//Type 258
+//Contains 3 layers on hillslope: ponded, top layer, soil. Also has 3 extra states: total precip, total runoff, base flow
+//Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
+//The numbering is:	    0   1   2     3    4   5   6  7
+//Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,v_B
+//The numbering is:        0      1        2     3   4      5       6   7   8
+void OfflineTopLayerHillslope(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    unsigned short i;
+
+    double lambda_1 = global_params[1];
+    double k_3 = global_params[4];	                               // [1/min]
+    double h_b = global_params[6];	                               // [m]
+    double S_L = global_params[7];	                               // [m]
+    double v_B = global_params[8];
+    double e_pot = forcing_values[2] * (1e-3 / (30.0*24.0*60.0));  // [mm/month] -> [m/min]
+
+    double L = params[1];	                                       // [m]
+    double A_h = params[2];	                                       // [m^2]
+    double invtau = params[3];	                                   // [1/min]
+    double k_2 = params[4];	                                       // [1/min]
+    double k_i = params[5];	                                       // [1/min]
+    double c_1 = params[6];
+    double c_2 = params[7];
+
+    double q = y_i[0];		//[m^3/s]
+    double s_p = y_i[1];	//[m]
+    double s_t = y_i[2];	//[m]
+    double s_s = y_i[3];	//[m]
+                            //double s_precip = y_i[4];	//[m]
+                            //double V_r = y_i[5];	//[m^3]
+    double q_b = y_i[6];	//[m^3/s]
+
+                            //Evaporation
+    double e_p, e_t, e_s;
+    double Corr = s_p + s_t / S_L + s_s / (h_b - S_L);
+    if (e_pot > 0.0 && Corr > 1e-12)
+    {
+        e_p = s_p * 1e3 * e_pot / Corr;
+        e_t = s_t / S_L * e_pot / Corr;
+        e_s = s_s / (h_b - S_L) * e_pot / Corr;
+    }
+    else
+    {
+        e_p = 0.0;
+        e_t = 0.0;
+        e_s = 0.0;
+    }
+
+    // fluxes precip->ponds and ponds-> links
+    double q_ra_po = forcing_values[0] * c_1;             // (mm/hr -> m/min)
+    double q_po_li = k_2 * s_p;                           // (1/min * m)
+
+    // fluxes precip->top and top->subsurface
+    double q_ra_to = forcing_values[1] * c_1;             // (mm/hr -> m/min)
+    double q_to_ss = k_i * s_t;
+    
+    // flux subsurface -> link
+    double q_ss_li = k_3 * s_s;                           // (1/min * m)
+
+    //Discharge
+    ans[0] = -q + (q_po_li + q_ss_li) * c_2;              // main streamflow
+    for (i = 0; i<num_parents; i++)
+        ans[0] += y_p[i * dim];
+    ans[0] = invtau * pow(q, lambda_1) * ans[0];
+
+    //Hillslope
+    ans[1] = q_ra_po - q_po_li - e_p;                     // ponds
+    ans[2] = q_ra_to - q_to_ss - e_t;                     // top layer
+    ans[3] = q_to_ss - q_ss_li - e_s;                     // sub surface
+
+    //Additional states
+    ans[4] = q_ra_po + q_ra_to;                           // acc precip
+    ans[5] = q_ra_po;                                     // acc runoff
+    ans[6] = e_pot;                                       // acc evaporation
+    ans[7] = q_ss_li * A_h - q_b*60.0;                    // base flow
+    for (i = 0; i<num_parents; i++)
+        ans[7] += y_p[i * dim + 6] * 60.0;
+    ans[7] *= v_B / L;
+}
+
+//Type 258
+//Contains 3 layers on hillslope: ponded, top layer, soil
+//Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
+//The numbering is:	0   1   2     3    4   5   6   7
+//Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent
+//The numbering is:        0      1        2     3   4     5        6   7  8 9  10
+void OfflineTopLayerHillslope_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    ans[0] = forcing_values[3];
+    ans[1] = 0.0;
+    ans[2] = 0.0;
+    ans[3] = 0.0;
+}
+
 //Type 260
 //Contains 3 layers on hillslope: ponded, top layer, soil
 //Order of parameters: A_i,L_i,A_h | invtau,c_1,c_2
@@ -1114,6 +1209,15 @@ void LinearHillslope_MonthlyEvap(double t, const double * const y_i, unsigned in
     //Hillslope
     ans[1] = forcing_values[0] * c_1 - q_pl - e_p;
     ans[2] = forcing_values[0] * c_2 - q_al - e_a;
+
+    /*
+    if ((s_p > 0.000010) && (s_p < 0.000012) && (t < 200)) {
+        printf("time: %f\n", t);
+        printf(" forc: %f %f\n", forcing_values[0], forcing_values[1]);
+        printf(" flux: %f %f\n", ans[1], ans[2]);
+        printf(" state: %f %f %f\n", q, s_p, s_a);
+    }
+    */
 }
 
 
@@ -1339,6 +1443,18 @@ void LinearHillslope_MonthlyEvap_OnlyRouts(double t, const double * const y_i, u
 
 	//Accumulated precip
 	ans[3] = q_rp + q_ra;
+
+    /*
+    if (t < 0.030) {
+        printf("time: %f\n", t);
+    } else if ((t > 0.030) && (t < 0.035)) {
+        printf("time: %f\n", t);
+        printf(" forc: %f %f %f\n", forcing_values[0], forcing_values[1], forcing_values[2]);
+        printf(" semi: %f %f\n", q_rp, q_ra);
+        printf(" flux: %f %f\n", ans[1], ans[2]);
+        printf(" state: %f %f %f %f\n", q, s_p, s_a, acc);
+    }
+    */
 }
 
 
@@ -1409,6 +1525,7 @@ void LinearHillslope_MonthlyEvap_OnlyRouts_NotReservoir(double t, const double *
 	//Accumulated runoff
 	ans[4] = q_rp;
 }
+
 
 //Type 196
 //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
