@@ -1188,7 +1188,7 @@ void LinearHillslope_MonthlyEvap_extras(double t, const double * const y_i, unsi
 }
 
 
-//Type 191
+//Type 191 and 192
 //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
 //The numbering is:	0   1   2   3  4    5    6   7
 //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g,v_B
@@ -1202,6 +1202,79 @@ void LinearHillslope_Reservoirs_extras(double t, const double * const y_i, unsig
     ans[4] = 0.0;
     ans[5] = 0.0;
     ans[6] = 0.0;
+}
+
+//Type 192
+//Order of parameters: A_i,L_i,A_h,k_2,k_i,invtau,c_1
+//The numbering is:     0   1   2   3   4    5     6
+//Order of global_params: v_r,lambda_1,lambda_2,k_I_factor,v_h,k_3,v_B
+//The numbering is:        0      1        2        3       4   5   6
+void LinearHillslope_MonthlyEvap_kI_extras(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    double lambda_1 = global_params[1];
+    double v_B = global_params[6];
+
+    double L = params[1];
+    double A_h = params[2];
+    double k_2 = params[3];
+    double k_i = params[4];
+    double k_3 = global_params[5];
+    double invtau = params[5];
+
+    double c_1 = params[6];
+
+    double q = y_i[0];	    // [m^3/s]
+    double s_p = y_i[1];    // [m]
+    double s_a = y_i[2];    // [m]
+    double q_b = y_i[5];    // [m^3/s]
+
+    //Fluxes
+    double q_pl = k_2 * s_p;
+    double q_pa = k_i * s_p;
+    double q_al = k_3 * s_a;
+
+    //Evaporation
+    double C_p, C_a, C_T, Corr_evap;
+    //double e_pot = forcing_values[1] * (1e-3/60.0);
+    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));	//[mm/month] -> [m/min]
+
+    if (e_pot > 0.0)
+    {
+        C_p = s_p / e_pot;
+        C_a = s_a / e_pot;
+        C_T = C_p + C_a;
+    }
+    else
+    {
+        C_p = 0.0;
+        C_a = 0.0;
+        C_T = 0.0;
+    }
+
+    //Corr_evap = (!state && C_T > 0.0) ? 1.0/C_T : 1.0;
+    Corr_evap = (C_T > 1.0) ? 1.0 / C_T : 1.0;
+
+    double e_p = Corr_evap * C_p * e_pot;
+    double e_a = Corr_evap * C_a * e_pot;
+
+    //Discharge
+    ans[0] = -q + (q_pl + q_al) * A_h / 60.0;
+    for (unsigned short i = 0; i<num_parents; i++)
+        ans[0] += y_p[i * dim];
+    ans[0] = invtau * pow(q, lambda_1) * ans[0];
+
+    //Hillslope
+    ans[1] = (forcing_values[0] * c_1) - q_pa - q_pl - e_p;
+    ans[2] = q_pa - q_al - e_a;
+
+    //Additional states
+    ans[3] = forcing_values[0] * c_1;
+    ans[4] = q_pl;
+    ans[5] = q_al * A_h - q_b * 60.0;
+    for (unsigned short i = 0; i<num_parents; i++)
+        ans[5] += y_p[i * dim + 5] * 60.0;
+    //ans[5] += k3*y_p[i].ve[2]*A_h;
+    ans[5] *= v_B / L;
 }
 
 //Type 195
