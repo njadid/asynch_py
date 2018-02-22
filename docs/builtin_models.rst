@@ -337,7 +337,7 @@ Seven states are modeled at every link:
 +-----------------------+-------------------------------------------------------------------------------------+
 | :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]           |
 +-----------------------+-------------------------------------------------------------------------------------+
-| :math:`V_r(t)`        | Total volume of water from runoff from time :math:`0` to :math:`t` [:math:`m^3`\ ]  |
+| :math:`V_r(t)`        | Total flux of water from runoff from time :math:`0` to :math:`t` [:math:`m^3/s`\ ]  |
 +-----------------------+-------------------------------------------------------------------------------------+
 | :math:`q_b(t)`        | Channel discharge from baseflow [:math:`m^3/s`\ ]                                   |
 +-----------------------+-------------------------------------------------------------------------------------+
