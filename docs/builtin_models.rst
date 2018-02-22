@@ -18,9 +18,9 @@ Built-in Models
 +------------+---------------------------------------+--------------------------------------------------------------------------------------------------------------+
 | 254        | IFC toplayer model, with reservoirs   | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`V_r`, :math:`q_b`               |
 +------------+---------------------------------------+--------------------------------------------------------------------------------------------------------------+
-| 256        | 254 with interflow                    | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`,:math:`s_{et}`, :math:`V_r`, :math:`q_b`|
+| 256        | 254 with interflow                    | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`s_{et}', :math:`V_r`, :math:`q_b`|
 +------------+---------------------------------------+--------------------------------------------------------------------------------------------------------------+
-| 257        | 256 with stream-order velocity        | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`,:math:`s_{et}`, :math:`V_r`, :math:`q_b`|
+| 257        | 256 with stream-order velocity        | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`s_{et}`, :math:`V_r`, :math:`q_b`|
 +------------+---------------------------------------+--------------------------------------------------------------------------------------------------------------+
 
 In this section, a description of a few different models is presented to demonstrate the features described in Section [sec: model descriptions]. These models are already fully implemented in ``problems.c`` and ``definetype.c``, and may be used for simulations.
