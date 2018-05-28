@@ -1,7 +1,7 @@
-AC_INIT([asynch], [1.4.2], [samuel-debionne@uiowa.edu])
+AC_INIT([asynch], [1.4.3], [andre-zanchetta@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 
 # Check for programms
 AX_PROG_CC_MPI([], [], [AC_MSG_FAILURE([MPI compiler requested, but couldn't find MPI.])] )
