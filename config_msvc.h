@@ -58,24 +58,24 @@
 #define PACKAGE_NAME "asynch"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "asynch 1.4.2"
+#define PACKAGE_STRING "asynch 1.4.3"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "asynch"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.4.2"
+#define PACKAGE_VERSION "1.4.3"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "1.4.2"
+#define VERSION "1.4.3"
 
 /* Define the which libraries were used while compiling */
 #define OS_VERSION "Not specified"  // example: "CentOS 6.9 - Kernel 2.6.32" or "Windows 10"
 #define CC_VERSION "Not specified"  // example: "mpicc 1.8.1"
-#define H5_VERSION "Not specified"  // example: "1.8.18 static link"
+#define HDF5_VERSION "Not specified"  // example: "1.8.18 static link"
 #define SZ_VERSION "Not specified"  // example: "2.1.1 dynamic link"
 #define ZL_VERSION "Not specified"  // example: "1.2.11 dynamic link"
 #define PQ_VERSION "Not specified"  // example: "8.4.20 static link"
