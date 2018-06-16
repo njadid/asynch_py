@@ -37,6 +37,7 @@
 #include <hdf5_hl.h>
 #endif
 
+#include <models/output_constraints.h>
 #include <minmax.h>
 #include <outputs.h>
 #include <io.h>
@@ -1903,7 +1904,11 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
             if (assignments[i] != 0)
                 MPI_Recv(data, sys[i].dim, MPI_DOUBLE, assignments[i], i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             else
-                memcpy(data, sys[i].my->list.tail->y_approx, sys[i].dim * sizeof(double));
+            {
+                double* out = memcpy(data, sys[i].my->list.tail->y_approx, sys[i].dim * sizeof(double));
+                if (globals->OutputConstrainsHdf5)
+                    globals->OutputConstrainsHdf5(out);
+            }
         }
 
         // Append to the packet table
@@ -1922,9 +1927,7 @@ int DumpStateH5(Link* sys, unsigned int N, int* assignments, GlobalVars* globals
         if (res)
             return 1;
 
-        // when testing Data Assimilation, it may be a good idea to use only the first
-        // four states of model 252
-        // unsigned int dim = 4;
+        unsigned int dim = 4;  // adlzanchetta: I have no idea why this was hardcoded
 
         for (i = 0; i < N; i++)
         {
