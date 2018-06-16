@@ -502,6 +502,111 @@ void TopLayerHillslope_even_more_extras(double t, const double * const y_i, unsi
     ans[7] *= v_B / L;
 }
 
+//Type 263: similar to model 256, with distributed parameters
+//Contains 3 layers on hillslope: ponded, top layer, soil. Also has 3 extra states: total precip, total ET, total runoff, base flow
+//Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
+//The numbering is:	0   1   2     3    4   5   6   7
+//Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I_factor,h_b,S_L,A,B,exponent,v_B,k_tl
+//The numbering is:        0      1        2     3   4     5        6   7  8 9  10       11   12
+void model263(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    unsigned short i;
+
+    //double lambda_1 = global_params[1];
+	double A_i = params[0];
+	double L = params[1];
+	double A_h = params[2];
+    double v_0=params[3];
+    double lambda_1=params[4];
+    double lambda_2=params[5];
+    double invtau = 60.0 * v_0 * pow(A_i, lambda_2) / ((1.0 - lambda_1) * L);//[1/min]  invtau
+    double v_h=params[6];
+    double k_2=v_h * L / A_h * 60.0;	//[1/min] k_2
+    //double k_i_factor1 = params[7];
+    double k_i  = k_2*params[7];
+
+    //double k_3 = global_params[4];  //[1/min]
+    double k_3 = params[8];
+
+    //double h_b = global_params[6];  //[m]
+    double h_b = params[9];
+
+    //double S_L = global_params[7];  //[m]
+    double S_L = params[10];
+
+    double A = params[11];//global_params[8];
+    double B = params[12];//global_params[9];
+    double exponent = params[13];//global_params[10];
+    double v_B = params[14];//global_params[11];
+    double k_tl = params[15];//]global_params[12];
+    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));   //[mm/month] -> [m/min]
+
+    //double L = params[1];   //[m]
+    //double A_h = params[2]; //[m^2]
+                            //double h_r = params[3];	//[m]
+    //double invtau = params[3];  //[1/min]
+    //double k_2 = params[4];     //[1/min]
+    //double k_i = params[5];     //[1/min]
+    //double c_1 = params[6];
+    //double c_2 = params[7];
+	double c_1 = (0.001 / 60.0);		//(mm/hr->m/min)  c_1
+	double c_2 = A_h / 60.0;	//  c_2
+
+    double q = y_i[0];      //[m^3/s]
+    double s_p = y_i[1];    //[m]
+    double s_t = y_i[2];    //[m]
+    double s_s = y_i[3];    //[m]
+                            //double s_precip = y_i[4];	//[m]
+                            //double V_r = y_i[5];	//[m^3]
+    double q_b = y_i[7];    //[m^3/s]
+
+    //Evaporation
+    double e_p, e_t, e_s;
+    double Corr = s_p + s_t / S_L + s_s / (h_b - S_L);
+    if (e_pot > 0.0 && Corr > 1e-12)
+    {
+        e_p = s_p * 1e3 * e_pot / Corr;
+        e_t = s_t / S_L * e_pot / Corr;
+        e_s = s_s / (h_b - S_L) * e_pot / Corr;
+    }
+    else
+    {
+        e_p = 0.0;
+        e_t = 0.0;
+        e_s = 0.0;
+    }
+
+    double pow_term = (1.0 - s_t / S_L > 0.0) ? pow(1.0 - s_t / S_L, exponent) : 0.0;
+    double k_t = (A + B * pow_term) * k_2;
+
+    //Fluxes
+    double q_pl = k_2 * s_p;
+    double q_pt = k_t * s_p;
+    double q_ts = k_i * s_t;
+    double q_tl = k_tl * s_t;
+    double q_sl = k_3 * s_s;    //[m/min]
+
+    //Discharge
+    ans[0] = -q + (q_pl + q_tl + q_sl) * c_2;
+    for (i = 0; i < num_parents; i++)
+        ans[0] += y_p[i * dim];
+    ans[0] = invtau * pow(q, lambda_1) * ans[0];    // discharge[0]
+
+    //Hillslope
+    ans[1] = forcing_values[0] * c_1 - q_pl - q_pt - e_p;   // pond[1]
+    ans[2] = q_pt - q_ts - q_tl - e_t;                      // toplayer[2]
+    ans[3] = q_ts - q_sl - e_s;                             // subsurface[3]
+
+    //Additional states
+    ans[4] = forcing_values[0] * c_1;   // precip[4]
+    ans[5] = forcing_values[1] * c_1;   // et[5]
+    ans[6] = q_pl;                      // runoff[]6
+    ans[7] = q_sl * A_h - q_b*60.0;     // baseflow[7]
+    for (i = 0; i < num_parents; i++)
+        ans[7] += y_p[i * dim + 7] * 60.0;
+    ans[7] *= v_B / L;
+}
+
 //Type 257
 //Contains 3 layers on hillslope: ponded, top layer, soil. Also has 4 extra states: total precip, total ET, total runoff, base flow
 //Order of parameters: A_i,L_i,A_h,horder,invtau,k_2,k_i,c_1,c_2
@@ -683,6 +788,375 @@ void OfflineTopLayerHillslope_Reservoirs(double t, const double * const y_i, uns
     ans[1] = 0.0;
     ans[2] = 0.0;
     ans[3] = 0.0;
+}
+
+//Type 400
+//Tetis model structure for runoff generation + normal routing (NO stream order based velocity)
+//Four layers
+//Global parameters:
+//The numbering is:    0   1   2   3      4      5   6   7...8
+
+//y_i: vector with model states to be resolved by the solver
+//dim:scalar with number of dimensions (states?) of the model
+//y_p
+//num_parents: number of tributary links
+//max_dim
+//global_params: global parameters applied to all hillslopes. See Precalculations in definitions.c
+//params: distributed parameters per hillslope. see Precalculations in definitions.c
+//forcing_values:
+//qvs: unused
+//state: unused
+//user: unused
+//ans: unused
+void Tetis01(double t, \
+		const double * const y_i, \
+		unsigned int dim, \
+		const double * const y_p, \
+		unsigned short num_parents, \
+		unsigned int max_dim, \
+		const double * const global_params, \
+		const double * const params, \
+		const double * const forcing_values, \
+		const QVSData * const qvs, \
+		int state, \
+		void* user, \
+		double *ans)
+{
+
+	 	unsigned short i; //auxiliary variable for loops
+	    double L = params[1];   // Length of the channel [m]
+	    double A_h = params[2]; //Area of the hillslopes [m^2]
+	    double c_1 = params[4]; //factor .converts [mm/hr] to [m/min]
+	    double rainfall = forcing_values[0] * c_1; //rainfall. from [mm/hr] to [m/min]
+		//double snowmelt = forcing_values[2]; //we need to put it in [m/min]
+	    double x1 = rainfall; // x1 can be rainfall + snowmelt when last available
+	    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));//potential et[mm/month] -> [m/min]
+
+
+		//static storage
+		double h1 = y_i[1]; //static storage [m]
+		double Hu = global_params[3]; //max available storage in static tank [m]
+		double x2 = max(0,x1 + h1 - Hu ); //excedance flow to the second storage [m] [m/min] check units
+		//double x2 = (x1 + h1 -Hu>0.0) ? x1 + h1 -Hu : 0.0;
+		double d1 = x1 - x2; // the input to static tank [m/min]
+		double out1 = min(e_pot, h1); //evaporation from the static tank. it cannot evaporate more than h1 [m]
+		//double out1 = (e_pot > h1) ? e_pot : 0.0;
+		ans[1] = d1 - out1; //differential equation of static storage
+
+
+		//surface storage tank
+		double h2 = y_i[2];//water in the hillslope surface [m]
+		double infiltration = global_params[4]*c_1; //infiltration rate [m/min]
+		double x3 = min(x2, infiltration); //water that infiltrates to gravitational storage [m/min]
+		double d2 = x2 - x3; // the input to surface storage [m] check units
+		double alfa2 = global_params[5]; //between 0 and 1, function of slope, roughness, hill lenght.
+		double out2 = alfa2 * h2 ; //direct runoff [m/min]
+		ans[2] = d2 - out2; //differential equation of surface storage
+
+
+		// gravitational storage
+		double h3 = y_i[3]; //water in the gravitational storage in the upper part of soil
+		double percolation = global_params[6]*c_1; // percolation rate to aquifer [m/min]
+		double x4 = min(x3,percolation); //water that percolates to aquifer storage [m/min]
+		double d3 = x3 - x4; // input to gravitational storage [m/min]
+		double alfa3 = global_params[7];
+		double out3 = alfa3 * h3; //interflow [m/min]
+		ans[3] = d3 - out3; //differential equation for gravitational storage
+
+		//aquifer storage
+		double h4 = y_i[4]; //water in the aquifer storage
+		double deepinf = 0; //water loss to deeper aquifer [m]
+		//double x5 = min(x4,deepinf);
+		double x5 = 0;
+		double d4 = x4 - x5;
+		double alfa4 = global_params[8];
+		double out4 = alfa4 * h4 ; //base flow [m/min]
+		ans[4] = d4 - out4; //differential equation for aquifer storage
+
+		//channel storage
+
+		double lambda_1 = global_params[1];
+	    double invtau = params[3];// 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
+	    double q = y_i[0];      //[m^3/s]
+	    double q_b = y_i[7];    //[m^3/s]
+	    double v_B = global_params[9];
+	   	double c_2 = params[5];// = A_h / 60.0;	//  c_2
+
+	    ans[0] = -q + (out2 + out3 + out4) * c_2; //[m/min] to [m3/s]
+	    for (i = 0; i < num_parents; i++)
+	        ans[0] += y_p[i * dim];
+	    ans[0] = invtau * pow(q, lambda_1) * ans[0];    // discharge[0]
+
+	   ans[7] = out4 * A_h - q_b*60.0;     // baseflow[7] //[m3/min]
+	    for (i = 0; i < num_parents; i++)
+	        ans[7] += y_p[i * dim + 7] * 60.0;
+	    ans[7] *= v_B / L; //[m3/min] to [m3/s]
+
+
+
+	    //Additional states
+	    ans[5] = forcing_values[0] * c_1;   // precip[4]
+	//    ans[5] = forcing_values[1] * c_1;   // et[5]
+	    //ans[6] = out2;                      // runoff[]
+	    ans[6] = out1;                      // et[]
+}
+//Type 401
+void Tetis02(double t, \
+		const double * const y_i, \
+		unsigned int dim, \
+		const double * const y_p, \
+		unsigned short num_parents, \
+		unsigned int max_dim, \
+		const double * const global_params, \
+		const double * const params, \
+		const double * const forcing_values, \
+		const QVSData * const qvs, \
+		int state, \
+		void* user, \
+		double *ans)
+{
+
+	 	unsigned short i; //auxiliary variable for loops
+	    double L = params[1];   // Length of the channel [m]
+	    double A_h = params[2]; //Area of the hillslopes [m^2]
+	    double c_1 = (0.001 / 60.0); //params[10]; //factor .converts [mm/hr] to [m/min]
+	    double rainfall = forcing_values[0] * c_1; //rainfall. from [mm/hr] to [m/min]
+		//double snowmelt = forcing_values[2]; //we need to put it in [m/min]
+	    double x1 = rainfall; // x1 can be rainfall + snowmelt when last available
+	    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));//potential et[mm/month] -> [m/min]
+
+
+		//static storage
+		double h1 = y_i[1]; //static storage [m]
+		double Hu = params[3]; //max available storage in static tank [m]
+		double x2 = max(0,x1 + h1 - Hu ); //excedance flow to the second storage [m] [m/min] check units
+		//double x2 = (x1 + h1 -Hu>0.0) ? x1 + h1 -Hu : 0.0;
+		double d1 = x1 - x2; // the input to static tank [m/min]
+		double out1 = min(e_pot, h1); //evaporation from the static tank. it cannot evaporate more than h1 [m]
+		//double out1 = (e_pot > h1) ? e_pot : 0.0;
+		ans[1] = d1 - out1; //differential equation of static storage
+
+
+		//surface storage tank
+		double h2 = y_i[2];//water in the hillslope surface [m]
+		double infiltration = params[4]*c_1; //infiltration rate [m/min]
+		double x3 = min(x2, infiltration); //water that infiltrates to gravitational storage [m/min]
+		double d2 = x2 - x3; // the input to surface storage [m] check units
+		double alfa2 = params[5]; //between 0 and 1, function of slope, roughness, hill lenght.
+		double out2 = alfa2 * h2 ; //direct runoff [m/min]
+		ans[2] = d2 - out2; //differential equation of surface storage
+
+
+		// gravitational storage
+		double h3 = y_i[3]; //water in the gravitational storage in the upper part of soil
+		double percolation = params[6]*c_1; // percolation rate to aquifer [m/min]
+		double x4 = min(x3,percolation); //water that percolates to aquifer storage [m/min]
+		double d3 = x3 - x4; // input to gravitational storage [m/min]
+		double alfa3 = params[7];
+		double out3 = alfa3 * h3; //interflow [m/min]
+		ans[3] = d3 - out3; //differential equation for gravitational storage
+
+		//aquifer storage
+		double h4 = y_i[4]; //water in the aquifer storage
+		double deepinf = 0; //water loss to deeper aquifer [m]
+		//double x5 = min(x4,deepinf);
+		double x5 = 0;
+		double d4 = x4 - x5;
+		double alfa4 = params[8];
+		double out4 = alfa4 * h4 ; //base flow [m/min]
+		ans[4] = d4 - out4; //differential equation for aquifer storage
+
+		//channel storage
+
+		double lambda_1 = global_params[1];
+	    double invtau = params[9];// 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
+	    double q = y_i[0];      //[m^3/s]
+	    double q_b = y_i[7];    //[m^3/s]
+	    double v_B = global_params[3];
+	   	double c_2 = params[10];// = A_h / 60.0;	//  c_2
+
+	    ans[0] = -q + (out2 + out3 + out4) * c_2; //[m/min] to [m3/s]
+	    for (i = 0; i < num_parents; i++)
+	        ans[0] += y_p[i * dim];
+	    ans[0] = invtau * pow(q, lambda_1) * ans[0];    // discharge[0]
+
+
+
+	   ans[7] = out4 * A_h - q_b*60.0;     // baseflow[7] //[m3/min]
+	    for (i = 0; i < num_parents; i++)
+	        ans[7] += y_p[i * dim + 7] * 60.0;
+	    ans[7] *= v_B / L; //[m3/min] to [m3/s]
+
+
+
+	    //Additional states
+	    ans[5] = forcing_values[0] * c_1;   // precip[4]
+	//    ans[5] = forcing_values[1] * c_1;   // et[5]
+	    //ans[6] = out2;                      // runoff[]
+	    ans[6] = out1;                      // et[]
+}
+//Type 402
+void Tetis03(double t, \
+		const double * const y_i, \
+		unsigned int dim, \
+		const double * const y_p, \
+		unsigned short num_parents, \
+		unsigned int max_dim, \
+		const double * const global_params, \
+		const double * const params, \
+		const double * const forcing_values, \
+		const QVSData * const qvs, \
+		int state, \
+		void* user, \
+		double *ans)
+{
+
+	 	unsigned short i; //auxiliary variable for loops
+	    double L = params[1];   // Length of the channel [m]
+	    double A_h = params[2]; //Area of the hillslopes [m^2]
+	    double c_1 = (0.001 / 60.0); //params[10]; //factor .converts [mm/hr] to [m/min]
+	    double rainfall = forcing_values[0] * c_1; //rainfall. from [mm/hr] to [m/min]
+		//double snowmelt = forcing_values[2]; //we need to put it in [m/min]
+	    double x1 = rainfall; // x1 can be rainfall + snowmelt when last available
+	    double e_pot = forcing_values[1] * (1e-3 / (30.0*24.0*60.0));//potential et[mm/month] -> [m/min]
+
+
+		//static storage
+		double h1 = y_i[1]; //static storage [m]
+		double Hu = params[3]; //max available storage in static tank [m]
+		double x2 = max(0,x1 + h1 - Hu ); //excedance flow to the second storage [m] [m/min] check units
+		//double x2 = (x1 + h1 -Hu>0.0) ? x1 + h1 -Hu : 0.0;
+		double d1 = x1 - x2; // the input to static tank [m/min]
+		double out1 = min(e_pot, h1); //evaporation from the static tank. it cannot evaporate more than h1 [m]
+		//double out1 = (e_pot > h1) ? e_pot : 0.0;
+		ans[1] = d1 - out1; //differential equation of static storage
+
+
+		//surface storage tank
+		double h2 = y_i[2];//water in the hillslope surface [m]
+		double infiltration = params[4]*c_1; //infiltration rate [m/min]
+		double x3 = min(x2, infiltration); //water that infiltrates to gravitational storage [m/min]
+		double d2 = x2 - x3; // the input to surface storage [m] check units
+		double alfa2 = params[5]; //between 0 and 1, function of slope, roughness, hill lenght.
+		double out2 = alfa2 * h2 ; //direct runoff [m/min]
+		ans[2] = d2 - out2; //differential equation of surface storage
+
+
+		// gravitational storage
+		double h3 = y_i[3]; //water in the gravitational storage in the upper part of soil
+		double percolation = params[6]*c_1; // percolation rate to aquifer [m/min]
+		double x4 = min(x3,percolation); //water that percolates to aquifer storage [m/min]
+		double d3 = x3 - x4; // input to gravitational storage [m/min]
+		double alfa3 = params[7];
+		double out3 = alfa3 * h3; //interflow [m/min]
+		ans[3] = d3 - out3; //differential equation for gravitational storage
+
+		//aquifer storage
+		double h4 = y_i[4]; //water in the aquifer storage
+		double deepinf = 0; //water loss to deeper aquifer [m]
+		//double x5 = min(x4,deepinf);
+		double x5 = 0;
+		double d4 = x4 - x5;
+		double alfa4 = params[8];
+		double out4 = alfa4 * h4 ; //base flow [m/min]
+		ans[4] = d4 - out4; //differential equation for aquifer storage
+
+		//channel storage
+
+		double lambda_1 = global_params[1];
+	    double invtau = params[9];// 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	//[1/min]  invtau
+	    double q = y_i[0];      //[m^3/s]
+	    double sto = y_i[8]; //[m^3] for QVS
+
+	    double q_b = y_i[7];    //[m^3/s]
+	    double v_B = global_params[3];
+	   	double c_2 = params[10];// = A_h / 60.0;	//  c_2
+
+	    //ans[0] = -q + (out2 + out3 + out4) * c_2; //[m/min] to [m3/s]
+	    //for (i = 0; i < num_parents; i++)
+	    //    ans[0] += y_p[i * dim];
+	    //ans[0] = invtau * pow(q, lambda_1) * ans[0];    // discharge[0]
+
+	    dam_Tetis03(y_i, dim, global_params, params, qvs, state, user, ans);	//For QVS
+	    double qm = ans[0] * 60.0;
+
+	    //Storage for QVS ponds
+	    ans[8] = (out2 + out3 + out4) * A_h - qm;
+	    for (i = 0; i<num_parents; i++)
+	        ans[8] += y_p[i * dim] * 60.0;
+
+
+	   ans[7] = out4 * A_h - q_b*60.0;     // baseflow[7] //[m3/min]
+	    for (i = 0; i < num_parents; i++)
+	        ans[7] += y_p[i * dim + 7] * 60.0;
+	    ans[7] *= v_B / L; //[m3/min] to [m3/s]
+
+
+
+	    //Additional states
+	    ans[5] = forcing_values[0] * c_1;   // precip[4]
+	//    ans[5] = forcing_values[1] * c_1;   // et[5]
+	    //ans[6] = out2;                      // runoff[]
+	    ans[6] = out1;                      // et[]
+}
+
+//Type 401
+//Contains 2 states in the channel: dischage, storage
+//Contains 3 layers on hillslope: ponded, top layer, soil
+//Order of parameters: A_i,L_i,A_h,S_h,T_L,eta,h_b,k_D,k_dry,k_i | invtau,c_1,c_2,k_2
+//The numbering is:	0   1   2   3   4   5   6   7   8     9  |   10    11  12  13
+//Order of global_params: v_0,lambda_1,lambda_2,N,phi,v_B
+//The numbering is:        0      1        2    3  4   5
+void dam_Tetis03(const double * const y_i,
+		unsigned int num_dof,
+		const double * const global_params,
+		const double * const params,
+		const QVSData * const qvs,
+		int state,
+		void* user,
+		double *ans)
+{
+    double q1, q2, S1, S2, S_max, q_max, S;
+
+    //Parameters
+    double lambda_1 = global_params[1];
+    double invtau = params[3];
+
+    //Find the discharge in [m^3/s]
+    if (state == -1)
+    {
+        S = (y_i[8] < 0.0) ? 0.0 : y_i[8];
+        //ans[0] = invtau/60.0*pow(S,1.0/(1.0-lambda_1));
+        ans[0] = pow((1.0 - lambda_1)*invtau / 60.0 * S, 1.0 / (1.0 - lambda_1));
+    }
+    else if (state == (int)qvs->n_values - 1)
+    {
+        S_max = qvs->points[qvs->n_values - 1][0];
+        q_max = qvs->points[qvs->n_values - 1][1];
+        ans[0] = q_max;
+    }
+    else
+    {
+        S = (y_i[8] < 0.0) ? 0.0 : y_i[8];
+        q2 = qvs->points[state + 1][1];
+        q1 = qvs->points[state][1];
+        S2 = qvs->points[state + 1][0];
+        S1 = qvs->points[state][0];
+        ans[0] = (q2 - q1) / (S2 - S1) * (S - S1) + q1;
+    }
+}
+//Type 402
+void Tetis03_Reservoirs(double t, const double * const y_i, unsigned int dim, const double * const y_p, unsigned short num_parents, unsigned int max_dim, const double * const global_params, const double * const params, const double * const forcing_values, const QVSData * const qvs, int state, void* user, double *ans)
+{
+    ans[0] = forcing_values[3];
+    ans[1] = 0.0;
+    ans[2] = 0.0;
+    ans[3] = 0.0;
+    ans[4] = 0.0;
+    ans[5] = 0.0;
+    ans[6] = 0.0;
+    ans[7] = 0.0;
+    ans[8] = 0.0;
 }
 
 //Type 260
@@ -1004,6 +1478,7 @@ void TopLayerNonlinearExpSoilvel_ConstEta(double t, const double * const y_i, un
         ans[7] += y_p[i * dim + 7] * 60.0;
     ans[7] *= v_B / L_i;
 }
+
 
 //Type 262
 //Contains 2 states in the channel: dischage, storage
