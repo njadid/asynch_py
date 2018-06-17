@@ -52,7 +52,7 @@
 #define PACKAGE "asynch"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "samuel-debionne@uiowa.edu"
+#define PACKAGE_BUGREPORT "andre-zanchetta@uiowa.edu"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "asynch"
