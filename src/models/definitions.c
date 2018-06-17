@@ -2775,16 +2775,7 @@ int ReadInitData(
             y_0[i] = 0.0;
 
         return 0;
-    }
-    else
-    {
-        //If not using algebraic variables, then everything is already set
-        return 0;
-    }
-
-    return 0;
-}
-	else if (model_uid == 261) {
+    } else if (model_uid == 261) {
 		//Discharges are initially read into y_0[1] when no dam is present. So y_0[1] is copied to y_0[0],
 		//then the corresponding storage is moved into y_0[1]. When a dam is present, y_0[1] will have the storage.
 		//So the discharge can be calculated and stored into y_0[0].
