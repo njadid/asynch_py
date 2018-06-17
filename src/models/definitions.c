@@ -432,6 +432,18 @@ case 20:	num_global_params = 9;
         globals->min_error_tolerances = 7;  //
         break;
         //--------------------------------------------------------------------------------------------
+    case 259:	num_global_params = 10;
+        globals->uses_dam = 0;
+        globals->num_params = 8;
+        globals->dam_params_size = 0;
+        globals->area_idx = 0;              //
+        globals->areah_idx = 2;             //
+        globals->num_disk_params = 3;       //
+        globals->convertarea_flag = 0;      //
+        globals->num_forcings = 4;          // runoff, infilt, evapot, reserv
+        globals->min_error_tolerances = 7;  //
+        break;
+        //--------------------------------------------------------------------------------------------
     case 260:	num_global_params = 11;
         globals->uses_dam = 0;
         globals->num_params = 6;
@@ -717,7 +729,7 @@ void ConvertParams(
         params[2] *= 1e6;		//A_h: km^2 -> m^2
         params[4] *= .001;		//H_h: mm -> m
     }
-    else if (model_uid == 252 || model_uid == 253 || model_uid == 254 || model_uid == 255 || model_uid == 256 || model_uid == 257 || model_uid == 258 || model_uid == 260 || model_uid == 261 || model_uid == 262 || model_uid == 263)
+    else if (model_uid == 252 || model_uid == 253 || model_uid == 254 || model_uid == 255 || model_uid == 256 || model_uid == 257 || model_uid == 258 || model_uid == 259 || model_uid == 260 || model_uid == 261 || model_uid == 262 || model_uid == 263)
     {
         params[1] *= 1000;		//L_h: km -> m
         params[2] *= 1e6;		//A_h: km^2 -> m^2
@@ -1291,7 +1303,7 @@ void InitRoutines(
         link->check_state = NULL;
         link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
     }
-    else if (model_uid == 258)
+    else if ((model_uid == 258)||(model_uid == 259))
     {
         link->dim = 8;
         link->no_ini_start = 4;
@@ -1302,12 +1314,30 @@ void InitRoutines(
         link->dense_indices[0] = 0;
         link->dense_indices[1] = 6;
 
-        if (link->has_res)
+        if(model_uid == 258)
         {
-            link->differential = &OfflineTopLayerHillslope_Reservoirs;
-            link->solver = &ForcedSolutionSolver;
+            if (link->has_res)
+            {
+                link->differential = &OfflineTopLayerHillslope_Reservoirs;
+                link->solver = &ForcedSolutionSolver;
+            }
+            else
+            {
+                link->differential = &OfflineTopLayerHillslope;
+            }
         }
-        else			link->differential = &OfflineTopLayerHillslope;
+        else if (model_uid == 259)
+        {
+            if (link->has_res)
+            {
+                link->differential = &OfflineTopLayerInterflowHillslope_Reservoirs;
+                link->solver = &ForcedSolutionSolver;
+            }
+            else
+            {
+                link->differential = &OfflineTopLayerInterflowHillslope;
+            }
+        }
         link->algebraic = NULL;
         link->check_state = NULL;
         link->check_consistency = &CheckConsistency_Nonzero_AllStates_q;
@@ -2133,6 +2163,29 @@ void Precalculations(
         vals[6] = (0.001 / 60.0);                                       // (mm/hr->m/min)  c_1
         vals[7] = A_h / 60.0;                                           // c_2
     }
+    else if (model_uid == 259)
+    {
+        //Order of parameters: A_i,L_i,A_h,invtau,k_2,k_i,c_1,c_2
+        //The numbering is:	    0   1   2    3     4   5   6   7 
+        //Order of global_params: v_0,lambda_1,lambda_2,v_h,k_3,k_I,h_b,S_L,v_B,k_tl
+        //The numbering is:        0      1        2     3   4   5   6   7   8   9
+        double* vals = params;
+        double A_i = params[0];
+        double L_i = params[1];
+        double A_h = params[2];
+
+        double v_0 = global_params[0];
+        double lambda_1 = global_params[1];
+        double lambda_2 = global_params[2];
+        double v_h = global_params[3];
+        double k_i_factor = global_params[5];
+
+        vals[3] = 60.0*v_0*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	// [1/min]  invtau
+        vals[4] = v_h * L_i / A_h * 60.0;                               // [1/min] k_2
+        vals[5] = vals[4] * k_i_factor;	                                // [1/min] k_i
+        vals[6] = (0.001 / 60.0);                                       // (mm/hr->m/min)  c_1
+        vals[7] = A_h / 60.0;                                           // c_2
+    }
     else if (model_uid == 260)
     {
         //Order of parameters: A_i,L_i,A_h | invtau,c_1,c_2
@@ -2636,7 +2689,7 @@ int ReadInitData(
         y_0[6] = 0.0;
         y_0[7] = y_0[0];
     }
-    else if (model_uid == 258)
+    else if ((model_uid == 258)||(model_uid == 259))
     {
         // For this model_uid, the extra states need to be set (4,5,6)
         y_0[4] = 0.0;
