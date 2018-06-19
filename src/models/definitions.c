@@ -299,8 +299,8 @@ case 20:	num_global_params = 9;
         globals->num_forcings = 3;
         globals->min_error_tolerances = 3;
         break;
-   //--------------------------------------------------------------------------------------------
-	  case 196:	num_global_params = 5;
+    //--------------------------------------------------------------------------------------------
+    case 196:	num_global_params = 5;
         globals->uses_dam = 0;
         globals->num_params = 6;
         globals->dam_params_size = 0;
@@ -309,8 +309,8 @@ case 20:	num_global_params = 9;
         globals->num_disk_params = 3;
         globals->convertarea_flag = 0;
         globals->num_forcings = 4;
-		    globals->min_error_tolerances = 5;
-		    break;
+        globals->min_error_tolerances = 5;
+        break;
     //--------------------------------------------------------------------------------------------
     case 200:	num_global_params = 10;
         globals->uses_dam = 0;
@@ -1641,8 +1641,8 @@ void Precalculations(
     {
         //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
         //The numbering is:	0   1   2   3  4    5    6   7
-        //Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,k_3 (,v_B)
-        //The numbering is:        0      1        2     3  4   5     6
+        //Order of global_params: v_r,lambda_1,lambda_2,v_h,k_3 (,v_B)
+        //The numbering is:        0      1        2     3   4     5
         double* vals = params;
         double A_i = params[0];
         double L_i = params[1];
@@ -1659,9 +1659,9 @@ void Precalculations(
     }
     else if (model_uid == 196)
     {
-        //Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
-        //The numbering is:	0   1   2   3  4    5    6   7
-        //Order of global_params: v_r,lambda_1,lambda_2,v_h,v_g (,v_B)
+        //Order of parameters: A_i,L_i,A_h,k_2,k_3,invtau,c_1,c_2
+        //The numbering is:	    0   1   2   3   4     5    6   7
+        //Order of global_params: v_r,lambda_1,lambda_2,v_h, k3 (,v_B)
         //The numbering is:        0      1        2     3   4     5
         double* vals = params;
         double A_i = params[0];
@@ -1674,31 +1674,9 @@ void Precalculations(
         double k3 = global_params[4];
 
         vals[3] = v_h * L_i / A_h * 60.0;	                            // [1/min]  k2
-                                                                        // vals[4] = v_g * L_i / A_h * 60.0;	                        // [1/min]  k3
         vals[4] = k3;                                                   // [1/min]  k3
         vals[5] = 60.0*v_r*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	// [1/min]  invtau
     }
-	else if (model_uid == 196)
-	{
-		//Order of parameters: A_i,L_i,A_h,k2,k3,invtau,c_1,c_2
-		//The numbering is:	0   1   2   3  4    5    6   7
-		//Order of global_params: v_r,lambda_1,lambda_2,RC,v_h,v_g (,v_B)
-		//The numbering is:        0      1        2     3  4   5     6
-		double* vals = params;
-		double A_i = params[0];
-		double L_i = params[1];
-		double A_h = params[2];
-		double v_r = global_params[0];
-		double lambda_1 = global_params[1];
-		double lambda_2 = global_params[2];
-		double v_h = global_params[3];
-		double v_g = global_params[4];
-    
-    vals[3] = v_h * L_i / A_h * 60.0;	                            // [1/min]  k2
-		vals[4] = v_g * L_i / A_h * 60.0;	                            // [1/min]  k3
-		vals[5] = 60.0*v_r*pow(A_i, lambda_2) / ((1.0 - lambda_1)*L_i);	// [1/min]  invtau
-
-  }
     else if (model_uid == 20)
     {
         //Order of parameters: A_i,L_i,A_h,invtau,c_1,c_2
@@ -2540,11 +2518,16 @@ int ReadInitData(
         y_0[4] = 0.0;
         y_0[5] = y_0[0];	//I'm not really sure what to use here...
     }
-	else if (model_uid == 195)
-	{
-		//For this model_uid, the extra states need to be set (3)
-		y_0[3] = 0.0;
-	} else if (model_uid == 200) {
+    else if (model_uid == 195)
+    {
+        //For this model_uid, the extra states need to be set (3)
+        y_0[3] = 0.0;
+    }
+    else if (model_uid == 196)
+    {
+        y_0[3] = 0.0;  // zero precip accumulation
+        y_0[4] = 0.0;  // zero runoff accumulation
+    } else if (model_uid == 200) {
 		//For model_uid 200, only the discharge has been set. Need to set the storage.
 		//Order of parameters: L_i,A_h,A_i,h_b,h_H,max_inf_rate,K_sat,S_h,eta,b_H,c_H,d_H,invtau,epsilon,c_1,c_2,c_3,c_4,c_5,c_6
 		//The numbering is:     0   1   2   3   4       5         6    7   8   9   10  11  12    13      14  15  16  17  18  19
@@ -2607,12 +2590,7 @@ int ReadInitData(
 		y_0[5] = 0.0;
 		y_0[6] = 0.0;
 		y_0[7] = y_0[0];
-	}
-	else if (model_uid == 196)
-	{
-		y_0[3] = 0.0;  // zero precip accumulation
-		y_0[4] = 0.0;  // zero runoff accumulation
-	}
+    }
     else if (model_uid == 200)
     {
         //For model_uid 200, only the discharge has been set. Need to set the storage.
