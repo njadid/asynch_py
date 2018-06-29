@@ -237,11 +237,9 @@ int Create_Rain_Data_Par_IBin(
             timestamp_set[k] = c_timestamp;
             stormdata = fopen(filename, "rb");
             if (stormdata == NULL) {
-                // printf("[%i]: Unable to open file %s\n", my_rank, filename);         // TODO - only when verbose
                 entry_counts = 0;
             }
             else {
-                // printf("[%i]: Opened file: %s\n", my_rank, filename);                // TODO - only when verbose
                 fread(&entry_counts, sizeof(int), 1, stormdata);
             }
 
@@ -260,7 +258,9 @@ int Create_Rain_Data_Par_IBin(
                     ibin_rain_intens_set[k][entry_index] = forcing_buffer;
                 }
             }
-            fclose(stormdata);
+            if (stormdata != NULL) {
+                fclose(stormdata);
+            }
         }
 
         // count total number of entries and broadcast it
