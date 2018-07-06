@@ -1,23 +1,37 @@
 Built-in Models
 ===============
 
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| Model Type | Description                           | States                                                                                            |
-+============+=======================================+===================================================================================================+
-| 21         | Linear reservoir model, with dams     | :math:`q`, :math:`S`, :math:`S_s`, :math:`S_g`                                                    |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| 40         | Linear reservoir model, with qvs dams | :math:`q`, :math:`S`, :math:`S_s`, :math:`S_g`                                                    |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| 190        | IFC model with constant runoff        | :math:`q`, :math:`s_p`, :math:`s_s`                                                               |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| 191        | IFC model with constant runoff        | :math:`q`, :math:`s_p`, :math:`s_s`, :math:`s_{precip}`, :math:`V_r`, :math:`q_b`                 |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| 252        | IFC toplayer model                    | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`                                                  |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| 253        | IFC toplayer model, with reservoirs   | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`                                                  |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
-| 254        | IFC toplayer model, with reservoirs   | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`V_r`, :math:`q_b`    |
-+------------+---------------------------------------+---------------------------------------------------------------------------------------------------+
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| Model Type | Description                           | States                                                                                                                  |
++============+=======================================+=========================================================================================================================+
+| 21         | Linear reservoir model, with dams     | :math:`q`, :math:`S`, :math:`S_s`, :math:`S_g`                                                                          |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 40         | Linear reservoir model, with qvs dams | :math:`q`, :math:`S`, :math:`S_s`, :math:`S_g`                                                                          |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 190        | IFC linear model with constant runoff | :math:`q`, :math:`s_p`, :math:`s_s`                                                                                     |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 191        | IFC linear model with constant runoff | :math:`q`, :math:`s_p`, :math:`s_s`, :math:`s_{precip}`, :math:`V_r`, :math:`q_b`                                       |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 192        | IFC linear model with variable runoff | :math:`q`, :math:`s_p`, :math:`s_s`, :math:`s_{precip}`, :math:`V_r`, :math:`q_b`                                       |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 195        | IFC linear model, offline precip.     | :math:`q`, :math:`s_p`, :math:`s_s`, :math:`s_{precip}`                                                                 |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 196        | IFC linear model, offline precip.     | :math:`q`, :math:`s_p`, :math:`s_s`, :math:`s_{precip}`, :math:`s_{runoff}`                                             |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 252        | IFC toplayer model                    | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`                                                                        |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 253        | IFC toplayer model, with reservoirs   | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`                                                                        |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 254        | IFC toplayer model, with reservoirs   | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`V_r`, :math:`q_b`                          |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 256        | IFC toplayer model with interflow     | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`s_{evap}`, :math:`s_{runoff}`, :math:`q_b` |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 257        | IFC toplayer model, variable velocity |                                                                                                                         |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 258        | IFC toplayer model, offline precip.   | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`s_{evap}`, :math:`s_{runoff}`, :math:`q_b` |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
+| 259        | IFC toplayer with offline, interflow  | :math:`q`, :math:`s_p`, :math:`s_t`, :math:`s_s`, :math:`s_{precip}`, :math:`s_{evap}`, :math:`s_{runoff}`, :math:`q_b` |
++------------+---------------------------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 In this section, a description of a few different models is presented to demonstrate the features described in Section [sec: model descriptions]. These models are already fully implemented in ``problems.c`` and ``definetype.c``, and may be used for simulations.
 
@@ -752,3 +766,146 @@ Three initial states must be determined in the routine :code:`ReadInitData`. The
   state = dam_check(y_0,global_params,params,qvs,dam);
   dam_q(y_0,global_params,params,qvs,state,y_0);
   return state;
+
+Additional models
+-----------------
+
+In this section it is presented descriptions of some models that are less popular, more specific or that are still under testing & revision phase.
+
+IFC linear model with constant runoff extended 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
+The model ``191`` can be seen as an extension of model ``190``, taking the same set of distributed parameters and being characterized by the same set of equations to describe the fluxes within the hillslope unit.
+
+One addition to this model is the support to artificailly controlled reservoirs, so that the set of forcings is given by:
+
++--------------------+---------------------------------------------------------------+
+| Forcing            | Description                                                   |
++====================+===============================================================+
+| :math:`p`          | Precipitation [:math:`TODO`]                                  |
++--------------------+---------------------------------------------------------------+
+| :math:`e`          | Potential evapotranspiration [:math:`TODO`]                   |
++--------------------+---------------------------------------------------------------+
+| :math:`Res.`       | Artificial reservoirs [:math:`TODO`]                          |
++--------------------+---------------------------------------------------------------+
+
+This model requires one more global parameter (:math:`v_B`) so that its set of global forcings is given by:
+
++--------------------+---------------------------------------------------------------+
+| Parameters         | Description                                                   |
++====================+===============================================================+
+| :math:`v_r`        | Channel reference velocity [:math:`m/s`\ ]                    |
++--------------------+---------------------------------------------------------------+
+| :math:`\lambda_1`  | Exponent of channel velocity discharge []                     |
++--------------------+---------------------------------------------------------------+
+| :math:`\lambda_2`  | Exponent of channel velocity area []                          |
++--------------------+---------------------------------------------------------------+
+| :math:`RC`         | Runoff coefficient []                                         |
++--------------------+---------------------------------------------------------------+
+| :math:`v_h`        | Velocity of water on the hillslope [:math:`m/s`\ ]            |
++--------------------+---------------------------------------------------------------+
+| :math:`v_g`        | Velocity of water in the subsurface [:math:`m/s`\ ]           |
++--------------------+---------------------------------------------------------------+
+| :math:`v_B`        | Channel baseflow velocity [:math:`m/s`\ ]                     |
++--------------------+---------------------------------------------------------------+
+
+It also presents three more states every link (:math:`s_{precip}`, :math:`V_r`, :math:`q_b`), so that its set of states is given by:
+
++-----------------------+------------------------------------------------------------------------------------+
+| State                 | Description                                                                        |
++=======================+====================================================================================+
+| :math:`q(t)`          | Channel discharge [:math:`m^3/s`\ ]                                                |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_p(t)`        | Water ponded on hillslope surface [:math:`m`\ ]                                    |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_s(t)`        | Effective water depth in hillslope subsurface [:math:`m`\ ]                        |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]          |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`V_r(t)`        | Total volume of water from runoff from time :math:`0` to :math:`t` [:math:`m^3`\ ] |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`q_b(t)`        | Channel discharge from baseflow [:math:`m^3/s`\ ]                                  |
++-----------------------+------------------------------------------------------------------------------------+
+
+IFC linear model with variable runoff
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``192`` is almost identical to model ``191``, with the difference that, instead of having the infiltration (:math:`\frac{ds_s}{dt}`) depending on :math:`RC` by:
+
+.. math::
+
+  c_2 &= (1-RC) \cdot (0.001/60) \\
+  \frac{ds_s}{dt} &= p(t) \cdot c_2 - q_{sc} - e_s.
+  
+the model has it depending on a new global parameter :math:`k_{Ifactor}` that replaces :math:`RC` by:
+
+.. math::
+
+  k_I &= k_{Ifactor} \cdot v_h \cdot L / A_h \cdot 60 \\
+  \frac{ds_s}{dt} &= k_I \cdot s_p - q_{sc} - e_s
+
+This way the set global parameters is given by:
+
++----------------------+---------------------------------------------------------------+
+| Parameters           | Description                                                   |
++======================+===============================================================+
+| :math:`v_r`          | Channel reference velocity [:math:`m/s`\ ]                    |
++----------------------+---------------------------------------------------------------+
+| :math:`\lambda_1`    | Exponent of channel velocity discharge []                     |
++----------------------+---------------------------------------------------------------+
+| :math:`\lambda_2`    | Exponent of channel velocity area []                          |
++----------------------+---------------------------------------------------------------+
+| :math:`k_{Ifactor}`  | TODO : (Equivalent to :math:`\beta` of model 254)             |
++----------------------+---------------------------------------------------------------+
+| :math:`v_h`          | Velocity of water on the hillslope [:math:`m/s`\ ]            |
++----------------------+---------------------------------------------------------------+
+| :math:`v_g`          | Velocity of water in the subsurface [:math:`m/s`\ ]           |
++----------------------+---------------------------------------------------------------+
+| :math:`v_B`          | Channel baseflow velocity [:math:`m/s`\ ]                     |
++----------------------+---------------------------------------------------------------+
+
+
+IFC linear model, offline precipitation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``195`` is very similar to models ``191`` and ``192``. The difference is that the rainfall forcing is removed and two other forcings are added: runoff and infiltration. This way, the partition of the rainfall into surface runoff and infiltration is not executed within Asynch, but it is expected to be performed as a pre-processing step.
+
+**TODO**: Write equations and add tables
+
+
+IFC linear model, offline precipitation extended
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``196`` can be seen as an extension to model ``195``. It presents the additions of :math:`S_runoff`\ state and support for Reservoir forcing.
+
+
+IFC toplayer model with interflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``256`` can be seen as an extension to model ``254``. It adds a new state (:math:`s_runoff`\) and a new flow, :math:`q_tl`\, from the top layer storage to the chanel storage, which is governed by an additional global parameter (:math:`k_tl`\). 
+
+**TODO**: Write equations and add tables
+
+
+IFC toplayer model, variable velocity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``257``...
+
+**TODO**: Write equations and add tables
+
+
+IFC toplayer model, offline precipitation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``258`` can be seen as a the model ``254`` with the forcings adopted by model ``195``.
+
+**TODO**: Write equations and add tables
+
+
+IFC toplayer with offline precipitation and interflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The model ``259`` can be seen as an extension of model ``258``, adding the concept interflow adopted by model ``256``. 
+
+**TODO**: Write equations and add tables
