@@ -35,8 +35,11 @@ Built-in Models
 
 In this section, a description of a few different models is presented to demonstrate the features described in Section [sec: model descriptions]. These models are already fully implemented in ``problems.c`` and ``definetype.c``, and may be used for simulations.
 
+Main models
+-----------
+
 Constant Runoff Hydrological Model
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This model describes a hydrological model with linear reservoirs used to describe the hillslope surrounding the channel. This is equivalent to a hillslope with a constant runoff. This model is implemented as model ``190``.
 
@@ -328,7 +331,7 @@ Each of these functions must also be declared in ``problems.h``:
 The routine :code:`ReadInitData` only needs to return a value of 0 for model ``190``. All states are initialized from through a global file, as no algebraic equations exist for this model, and *no\_ini\_start* is set to *dim*. No state discontinuities are used for this model, so a value of 0 is returned.
 
 Top Layer Hydrological Model
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This model describes a hydrological model with nonlinear reservoirs used to describe the hillslope surrounding the channel. It features a layer of topsoil to create a runoff coefficient that varies in time. This model is implemented as model 254. The setup of the top layer model is similar to that of the constant runoff model presented in Section :ref:`Constant Runoff Hydrological Model`. However, the top layer model does make use of additional features.
 
@@ -525,7 +528,7 @@ As mentioned earlier, the initial conditions for the last 3 states of the state 
 Clearly, these three states are all initialized to 0.
 
 Linear Reservoir Hydrological Model
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This model describes a hydrological model with linear reservoirs used to describe the hillslope surrounding the channel. This model includes the ability to replace channel routing with a model for a dam. This model is implemented as model 21.
 
@@ -775,21 +778,33 @@ In this section it is presented descriptions of some models that are less popula
 IFC linear model with constant runoff extended 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
-The model ``191`` can be seen as an extension of model ``190``, taking the same set of distributed parameters and being characterized by the same set of equations to describe the fluxes within the hillslope unit.
+The model ``191`` can be seen as an extension of model ``190`` but with three aditional states (:math:`s_{precip}(t)`, :math:`V_r(t)`, :math:`q_b(t)`):
 
-One addition to this model is the support to artificailly controlled reservoirs, so that the set of forcings is given by:
++-----------------------+------------------------------------------------------------------------------------+
+| State                 | Description                                                                        |
++=======================+====================================================================================+
+| :math:`q(t)`          | Channel discharge [:math:`m^3/s`\ ]                                                |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_p(t)`        | Water ponded on hillslope surface [:math:`m`\ ]                                    |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_s(t)`        | Effective water depth in hillslope subsurface [:math:`m`\ ]                        |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]          |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`V_r(t)`        | Total volume of water from runoff from time :math:`0` to :math:`t` [:math:`m^3`\ ] |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`q_b(t)`        | Channel discharge from baseflow [:math:`m^3/s`\ ]                                  |
++-----------------------+------------------------------------------------------------------------------------+
 
-+--------------------+---------------------------------------------------------------+
-| Forcing            | Description                                                   |
-+====================+===============================================================+
-| :math:`p`          | Precipitation [:math:`TODO`]                                  |
-+--------------------+---------------------------------------------------------------+
-| :math:`e`          | Potential evapotranspiration [:math:`TODO`]                   |
-+--------------------+---------------------------------------------------------------+
-| :math:`Res.`       | Artificial reservoirs [:math:`TODO`]                          |
-+--------------------+---------------------------------------------------------------+
+The states :math:`q(t)`, :math:`s_p(t)` and :math:`s_s(t)` are obtained as in ``191``. The new states are governed by:
 
-This model requires one more global parameter (:math:`v_B`) so that its set of global forcings is given by:
+.. math::
+
+  \frac{ds_{precip}}{dt} = p(t) \cdot c_1 \\
+  \frac{dV_{r}}{dt} = q_{pc} \\
+  \frac{dq_{b}}{dt} = ((q_{sc} \cdot A_h)-(q_b \cdot 60.0)) \cdot ( \frac{v_B}{L} ) .
+
+in which :math:`p(t)`, :math:`c_1`, :math:`q_{pc}`, :math:`q_{sc}`, :math:`A_h` and :math:`L` are defined in the description of model ``190``, and :math:`v_B` is an additional global parameter, so that se set of global parameters for this model is given by:
 
 +--------------------+---------------------------------------------------------------+
 | Parameters         | Description                                                   |
@@ -809,28 +824,22 @@ This model requires one more global parameter (:math:`v_B`) so that its set of g
 | :math:`v_B`        | Channel baseflow velocity [:math:`m/s`\ ]                     |
 +--------------------+---------------------------------------------------------------+
 
-It also presents three more states every link (:math:`s_{precip}`, :math:`V_r`, :math:`q_b`), so that its set of states is given by:
+One addition of this model is the support to artificailly controlled reservoirs, so that the set of forcings is given by:
 
-+-----------------------+------------------------------------------------------------------------------------+
-| State                 | Description                                                                        |
-+=======================+====================================================================================+
-| :math:`q(t)`          | Channel discharge [:math:`m^3/s`\ ]                                                |
-+-----------------------+------------------------------------------------------------------------------------+
-| :math:`s_p(t)`        | Water ponded on hillslope surface [:math:`m`\ ]                                    |
-+-----------------------+------------------------------------------------------------------------------------+
-| :math:`s_s(t)`        | Effective water depth in hillslope subsurface [:math:`m`\ ]                        |
-+-----------------------+------------------------------------------------------------------------------------+
-| :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]          |
-+-----------------------+------------------------------------------------------------------------------------+
-| :math:`V_r(t)`        | Total volume of water from runoff from time :math:`0` to :math:`t` [:math:`m^3`\ ] |
-+-----------------------+------------------------------------------------------------------------------------+
-| :math:`q_b(t)`        | Channel discharge from baseflow [:math:`m^3/s`\ ]                                  |
-+-----------------------+------------------------------------------------------------------------------------+
++--------------------+---------------------------------------------------------------+
+| Forcing            | Description                                                   |
++====================+===============================================================+
+| :math:`p(t)`       | Precipitation [:math:`mm/hour`]                               |
++--------------------+---------------------------------------------------------------+
+| :math:`e_{pot}(t)` | Potential evapotranspiration [:math:`mm/hour`]                |
++--------------------+---------------------------------------------------------------+
+| :math:`Res(t)`     | Artificial reservoirs [:math:`m^3/s`]                         |
++--------------------+---------------------------------------------------------------+
 
 IFC linear model with variable runoff
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The model ``192`` is almost identical to model ``191``, with the difference that, instead of having the infiltration (:math:`\frac{ds_s}{dt}`) depending on :math:`RC` by:
+The model ``192`` is almost identical to model ``191``, with both presenting the same states (:math:`q(t)`, :math:`s_p(t)`, :math:`s_s(t)`, :math:`s_{precip}(t)`, :math:`V_r(t)`, :math:`q_b(t)`), same set of local parameters (:math:`A`, :math:`L`, :math:`A_h`) and forcings (:math:`p(t)`, :math:`e_{pot}(t)`, :math:`Res(t)`). The difference is that, instead of having the infiltration governed by :math:`RC` as:
 
 .. math::
 
@@ -855,7 +864,7 @@ This way the set global parameters is given by:
 +----------------------+---------------------------------------------------------------+
 | :math:`\lambda_2`    | Exponent of channel velocity area []                          |
 +----------------------+---------------------------------------------------------------+
-| :math:`k_{Ifactor}`  | TODO : (Equivalent to :math:`\beta` of model 254)             |
+| :math:`k_{Ifactor}`  | Multiplicative factor for infiltration process []             |
 +----------------------+---------------------------------------------------------------+
 | :math:`v_h`          | Velocity of water on the hillslope [:math:`m/s`\ ]            |
 +----------------------+---------------------------------------------------------------+
@@ -864,48 +873,241 @@ This way the set global parameters is given by:
 | :math:`v_B`          | Channel baseflow velocity [:math:`m/s`\ ]                     |
 +----------------------+---------------------------------------------------------------+
 
-
 IFC linear model, offline precipitation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The model ``195`` is very similar to models ``191`` and ``192``. The difference is that the rainfall forcing is removed and two other forcings are added: runoff and infiltration. This way, the partition of the rainfall into surface runoff and infiltration is not executed within Asynch, but it is expected to be performed as a pre-processing step.
+The model ``195`` is very similar to models ``191`` and ``192``, with the same local parameters (:math:`A`, :math:`L`, :math:`A_h`). The same set of states is similar, except by the removal of :math:`V_r(t)` (being: :math:`q(t)`, :math:`s_p(t)`, :math:`s_s(t)`, :math:`s_{precip}(t)`, :math:`q_b(t)`).
 
-**TODO**: Write equations and add tables
+The difference is that the precipitation forcing :math:`p(t)` is replaced by two other forcings: surface runoff (:math:`r(t)`) and :math:`i(t)`. This way, the partition of the rainfall into surface runoff and infiltration is not executed within Asynch, but it is expected to be performed as a pre-processing step. Thus, the forcings can be summarized as:
 
++--------------------+---------------------------------------------------------------+
+| Forcing            | Description                                                   |
++====================+===============================================================+
+| :math:`r(t)`       | Surface Runoff [:math:`mm/hr`]                                |
++--------------------+---------------------------------------------------------------+
+| :math:`i(t)`       | Infiltration [:math:`mm/hr`]                                  |
++--------------------+---------------------------------------------------------------+
+| :math:`e_{pot}(t)` | Potential evapotranspiration [:math:`mm/month`]               |
++--------------------+---------------------------------------------------------------+
+
+and the affected differential equations are given by:
+
+.. math::
+
+  \frac{ds_p}{dt} &= r(t) \cdot (\frac{0.001}{60.0}) - q_{pc} \\
+  \frac{ds_s}{dt} &= i(t) \cdot (\frac{0.001}{60.0}) - q_{sc} - e_s.
+
+As no parameter is necessary to manipulate the separation of precipitation into surface runoff and infiltration, :math:`k_{RC}` and :math:`k_{Ifactor}` are absent, so that the global parameters are given by:
+
++----------------------+---------------------------------------------------------------+
+| Parameters           | Description                                                   |
++======================+===============================================================+
+| :math:`v_r`          | Channel reference velocity [:math:`m/s`\ ]                    |
++----------------------+---------------------------------------------------------------+
+| :math:`\lambda_1`    | Exponent of channel velocity discharge []                     |
++----------------------+---------------------------------------------------------------+
+| :math:`\lambda_2`    | Exponent of channel velocity area []                          |
++----------------------+---------------------------------------------------------------+
+| :math:`v_h`          | Velocity of water on the hillslope [:math:`m/s`\ ]            |
++----------------------+---------------------------------------------------------------+
+| :math:`v_g`          | Velocity of water in the subsurface [:math:`m/s`\ ]           |
++----------------------+---------------------------------------------------------------+
+| :math:`v_B`          | Channel baseflow velocity [:math:`m/s`\ ]                     |
++----------------------+---------------------------------------------------------------+
 
 IFC linear model, offline precipitation extended
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The model ``196`` can be seen as an extension to model ``195``. It presents the additions of :math:`S_runoff`\ state and support for Reservoir forcing.
+The model ``196`` can be seen as an extension to model ``195``. All local parameters and global parameters are the same. A new state (:math:`s_{runoff}`\) is added, so that the set of states is given by:
 
++-----------------------+------------------------------------------------------------------------------------+
+| State                 | Description                                                                        |
++=======================+====================================================================================+
+| :math:`q(t)`          | Channel discharge [:math:`m^3/s`\ ]                                                |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_p(t)`        | Water ponded on hillslope surface [:math:`m`\ ]                                    |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_s(t)`        | Effective water depth in hillslope subsurface [:math:`m`\ ]                        |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]          |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`s_{runoff}(t)` | Total column of water from runoff from time :math:`0` to :math:`t` [:math:`m`\ ]   |
++-----------------------+------------------------------------------------------------------------------------+
+| :math:`q_b(t)`        | Channel discharge from baseflow [:math:`m^3/s`\ ]                                  |
++-----------------------+------------------------------------------------------------------------------------+
+
+With the differential equation of the new state being given by:
+
+.. math::
+
+  \frac{ds_{runoff}}{dt} = r(t) \cdot (\frac{0.001}{60.0})
+
+It also includes support for Reservoirs forcing, so that the set of forcings is given by:
+
++--------------------+---------------------------------------------------------------+
+| Forcing            | Description                                                   |
++====================+===============================================================+
+| :math:`r(t)`       | Surface Runoff [:math:`mm/hr`]                                |
++--------------------+---------------------------------------------------------------+
+| :math:`i(t)`       | Infiltration [:math:`mm/hr`]                                  |
++--------------------+---------------------------------------------------------------+
+| :math:`e_{pot}(t)` | Potential evapotranspiration [:math:`mm/month`]               |
++--------------------+---------------------------------------------------------------+
+| :math:`Res(t)`     | Artificial reservoirs [:math:`m^3/s`]                         |
++--------------------+---------------------------------------------------------------+
 
 IFC toplayer model with interflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The model ``256`` can be seen as an extension to model ``254``. It adds a new state (:math:`s_runoff`\) and a new flow, :math:`q_tl`\, from the top layer storage to the chanel storage, which is governed by an additional global parameter (:math:`k_tl`\). 
+The model ``256`` can be seen as an extension to model ``254``. One more state (:math:`s_{evap}`\) is present, so that the set of states is given by: 
 
-**TODO**: Write equations and add tables
++-----------------------+-------------------------------------------------------------------------------------+
+| State                 | Description                                                                         |
++=======================+=====================================================================================+
+| :math:`q(t)`          | Channel discharge [:math:`m^3/s`\ ]                                                 |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`s_p(t)`        | Water ponded on hillslope surface [:math:`m`\ ]                                     |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`s_t(t)`        | Effective water depth in the top soil layer [:math:`m`\ ]                           |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`s_s(t)`        | Effective water depth in hillslope subsurface [:math:`m`\ ]                         |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`s_{precip}(t)` | Total fallen precipitation from time :math:`0` to :math:`t` [:math:`m`\ ]           |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`s_{evap}(t)`   | Total evaporation estimated from time :math:`0` to :math:`t` [:math:`m`\ ]          |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`V_r(t)`        | Total volume of water from runoff from time :math:`0` to :math:`t` [:math:`m^3`\ ]  |
++-----------------------+-------------------------------------------------------------------------------------+
+| :math:`q_b(t)`        | Channel discharge from baseflow [:math:`m^3/s`\ ]                                   |
++-----------------------+-------------------------------------------------------------------------------------+
 
+The differential equation that were modified of added (when compared to model ``254``) are given by:
 
-IFC toplayer model, variable velocity
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. math::
 
-The model ``257``...
+  \frac{dq}{dt} &= \frac{1}{\tau} \left(\frac{q}{q_r}\right)^{\lambda_1} \left( -q + c_2 \cdot (q_{pc} + q_{tc} + q_{sc}) + q_{in}(t) \right) \\
+  \frac{ds_{evap}}{dt} &= q_{pt} - q_{tc} - q_{ts} - e_t \\
+  \frac{ds_{evap}}{dt} &= e_{pot}(t) * \frac{0.001}{60.0}
 
-**TODO**: Write equations and add tables
+As it can be observed, a new flow is added (:math:`q_{tc}`\). This flow received the name of *interflow* and is given by:
+
+.. math::
+
+   q_{tc} = k_{tc} * s_t
+   
+in which :math:`k_{tc}`\ is an additional global parameter. Thus, the set of global parameters is given by:
+
++--------------------+---------------------------------------------------------------+
+| Parameters         | Description                                                   |
++====================+===============================================================+
+| :math:`v_r`        | Channel reference velocity [:math:`m/s`\ ]                    |
++--------------------+---------------------------------------------------------------+
+| :math:`\lambda_1`  | Exponent of channel velocity discharge []                     |
++--------------------+---------------------------------------------------------------+
+| :math:`\lambda_2`  | Exponent of channel velocity area []                          |
++--------------------+---------------------------------------------------------------+
+| :math:`v_h`        | Velocity of water on the hillslope [:math:`m/s`\ ]            |
++--------------------+---------------------------------------------------------------+
+| :math:`k_3`        | Infiltration from subsurface to channel [:math:`1/min`\ ]     |
++--------------------+---------------------------------------------------------------+
+| :math:`\beta`      | Percentage of infiltration from top soil to subsurface []     |
++--------------------+---------------------------------------------------------------+
+| :math:`h_b`        | Total hillslope depth [:math:`m`\ ]                           |
++--------------------+---------------------------------------------------------------+
+| :math:`S_L`        | Total topsoil depth [:math:`m`\ ]                             |
++--------------------+---------------------------------------------------------------+
+| :math:`A`          | Surface to topsoil infiltration, additive factor []           |
++--------------------+---------------------------------------------------------------+
+| :math:`B`          | Surface to topsoil infiltration, multiplicative factor []     |
++--------------------+---------------------------------------------------------------+
+| :math:`\alpha`     | Surface to topsoil infiltration, exponent factor []           |
++--------------------+---------------------------------------------------------------+
+| :math:`v_B`        | Channel baseflow velocity [:math:`m/s`\ ]                     |
++--------------------+---------------------------------------------------------------+
+| :math:`k_{tc}`     | Interflow coefficient [:math:`1/min`\ ]                       |
++--------------------+---------------------------------------------------------------+
+
+The local parameters of each hillslope and the forcings are the same as in ``254``.
 
 
 IFC toplayer model, offline precipitation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The model ``258`` can be seen as a the model ``254`` with the forcings adopted by model ``195``.
+The model ``258`` can be seen as a the model ``254`` with the forcings adopted by model ``195``. It presents the same states as in model ``257`` (:math:`q(t)` , :math:`s_p(t)`, :math:`s_t(t)`, :math:`s_s(t)`, :math:`s_{precip}(t)`, :math:`s_{evap}(t)`, :math:`V_r(t)`, :math:`q_b(t)`), but with a slightly difference in the order (:math:`q(t)`, :math:`s_p(t)`, :math:`s_t(t)`, :math:`s_s(t)`, :math:`s_{precip}(t)`, :math:`V_r(t)`, :math:`s_{evap}(t)`, :math:`q_b(t)`). 
 
-**TODO**: Write equations and add tables
+The differential equations are the same as for model ``254``, except by:
+
+.. math::
+
+  \frac{ds_p}{dt} &= (r(t) \cdot \frac{0.001}{60}) - q_{pc} - e_p \\
+  \frac{ds_t}{dt} &= (i(t) \cdot \frac{0.001}{60}) - q_{ts} - e_t \\
+  
+And the forcings are the same as for model ``196``, it is:
+
++--------------------+---------------------------------------------------------------+
+| Forcing            | Description                                                   |
++====================+===============================================================+
+| :math:`r(t)`       | Surface Runoff [:math:`mm/hr`]                                |
++--------------------+---------------------------------------------------------------+
+| :math:`i(t)`       | Infiltration [:math:`mm/hr`]                                  |
++--------------------+---------------------------------------------------------------+
+| :math:`e_{pot}(t)` | Potential evapotranspiration [:math:`mm/month`]               |
++--------------------+---------------------------------------------------------------+
+| :math:`Res(t)`     | Artificial reservoirs [:math:`m^3/s`]                         |
++--------------------+---------------------------------------------------------------+
+
+While the set of local parameters are kept the same (:math:`A`, :math:`L`, :math:`A_h`), the set of global parameters is given by:
+
++--------------------+------------------------------------------------------------+
+| Parameters         | Description                                                |
++====================+============================================================+
+| :math:`v_r`        | Channel reference velocity [:math:`m/s`\ ]                 |
++--------------------+------------------------------------------------------------+
+| :math:`\lambda_1`  | Exponent of channel velocity discharge []                  |
++--------------------+------------------------------------------------------------+
+| :math:`\lambda_2`  | Exponent of channel velocity area []                       |
++--------------------+------------------------------------------------------------+
+| :math:`v_h`        | Velocity of water on the hillslope [:math:`m/s`\ ]         |
++--------------------+------------------------------------------------------------+
+| :math:`k_3`        | Infiltration from subsurface to channel [:math:`1/min`\ ]  |
++--------------------+------------------------------------------------------------+
+| :math:`\beta`      | Percentage of infiltration from top soil to subsurface []  |
++--------------------+------------------------------------------------------------+
+| :math:`h_b`        | Total hillslope depth [:math:`m`\ ]                        |
++--------------------+------------------------------------------------------------+
+| :math:`S_L`        | Total topsoil depth [:math:`m`\ ]                          |
++--------------------+------------------------------------------------------------+
+| :math:`v_B`        | Channel baseflow velocity [:math:`m/s`\ ]                  |
++--------------------+------------------------------------------------------------+
 
 
 IFC toplayer with offline precipitation and interflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The model ``259`` can be seen as an extension of model ``258``, adding the concept interflow adopted by model ``256``. 
+The model ``259`` can be seen as an extension of model ``258``, adding the concept interflow adopted by model ``256``. The states (:math:`q(t)` , :math:`s_p(t)`, :math:`s_t(t)`, :math:`s_s(t)`, :math:`s_{precip}(t)`, :math:`s_{evap}(t)`, :math:`V_r(t)`, :math:`q_b(t)`), forcings (:math:`r(t)`, :math:`i(t)`, :math:`e_{pot}(t)`, :math:`Res(t)`) and local parameters (:math:`A`, :math:`L`, :math:`A_h`), are the same as in model ``258``.
 
-**TODO**: Write equations and add tables
+A significative change in the interface is due to the inclusion of the global parameter :math:`k_{tc}` to govern the interflow, so the the set of global parameters is given by:
+
++--------------------+------------------------------------------------------------+
+| Parameters         | Description                                                |
++====================+============================================================+
+| :math:`v_r`        | Channel reference velocity [:math:`m/s`\ ]                 |
++--------------------+------------------------------------------------------------+
+| :math:`\lambda_1`  | Exponent of channel velocity discharge []                  |
++--------------------+------------------------------------------------------------+
+| :math:`\lambda_2`  | Exponent of channel velocity area []                       |
++--------------------+------------------------------------------------------------+
+| :math:`v_h`        | Velocity of water on the hillslope [:math:`m/s`\ ]         |
++--------------------+------------------------------------------------------------+
+| :math:`k_3`        | Infiltration from subsurface to channel [:math:`1/min`\ ]  |
++--------------------+------------------------------------------------------------+
+| :math:`\beta`      | Percentage of infiltration from top soil to subsurface []  |
++--------------------+------------------------------------------------------------+
+| :math:`h_b`        | Total hillslope depth [:math:`m`\ ]                        |
++--------------------+------------------------------------------------------------+
+| :math:`S_L`        | Total topsoil depth [:math:`m`\ ]                          |
++--------------------+------------------------------------------------------------+
+| :math:`v_B`        | Channel baseflow velocity [:math:`m/s`\ ]                  |
++--------------------+------------------------------------------------------------+
+| :math:`k_{tc}`     | Interflow coefficient [:math:`1/min`\ ]                    |
++--------------------+------------------------------------------------------------+
