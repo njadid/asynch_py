@@ -161,6 +161,269 @@ int Create_Rain_Data_Par(
     return 0;
 }
 
+//This reads in a set of irregular binary files for the rainfall at each link.
+//Assumes the file is full of floats. Assumes no IDs are in the file and that IDs are consecutive starting from 0
+//Link** sys: An array of links.
+//int N: The number of links in sys.
+//int my_N: The number of links assigned to this process.
+//UnivVars* GlobalVars: Contains all the information that is shared by every link in the system.
+//int* my_sys: Array of links assigned to this process (value is location in sys array).
+//int* assignments (set by this method): Will be an array with N entries. assignments[i] will the process link sys[i] is assigned to.
+//char strfilename[]: String of the filename for the rain file to read (NOT .str files). Filenames should be indexed.
+//unsigned int first: The index of the file to read first.
+//unsigned int last: The index of the file to read last.
+//double t_0: The time at which the first file starts.
+//double increment: The amount of time between consecutively indexed files.
+//int** id_to_loc (set by this method): Will be an array with N rows and 2 columns, sorted by first col. First col is a link id and second is
+//				the location of the id in sys.
+//unsigned int max_files: The maximum number of files to be read.
+int Create_Rain_Data_Par_IBin(
+    Link *sys, unsigned int N,
+    Link **my_sys, unsigned int my_N,
+    const GlobalVars * const globals,
+    int* assignments,
+    char strfilename[],
+    unsigned int first, unsigned int last,
+    double t_0, double increment,
+    Forcing* forcing, const Lookup * const id_to_loc, unsigned int max_files, unsigned int forcing_idx)
+{
+    unsigned int i, j, curr_idx, k, linkid_buffer;
+    unsigned int total_entry_index, total_entry_counts, entry_counts, entry_index;
+    Link* current;
+    float forcing_buffer;
+    unsigned int holder;
+    char filename[ASYNCH_MAX_PATH_LENGTH];
+    FILE* stormdata = NULL;
+    unsigned int numfiles = ((last - first) / forcing->increment);
+    int* ibin_link_id;
+    float* ibin_rain_intens;
+    int** ibin_link_id_set;
+    float** ibin_rain_intens_set;
+    unsigned int* entry_count_set;
+    unsigned int* timestamp_set;
+    unsigned int* timestamps;
+    unsigned int c_timestamp;
+    unsigned int next_exp_time;
+    int received_time;
+
+    // do something
+    unsigned int *total_times = (unsigned int*)calloc(my_N, sizeof(unsigned int));
+    for (i = 0; i < my_N; i++) {
+        total_times[i] = my_sys[i]->my->forcing_data[forcing_idx].num_points;
+        my_sys[i]->my->forcing_data[forcing_idx].num_points = 1;
+    }
+
+    // This is a time larger than any time in which the integrator is expected to get
+    double ceil_time = 1e300;
+    if (my_sys[0]->last_t > ceil_time * 0.1)
+        printf("[%i]: Warning: integrator time is extremely large (about %e). Loss of precision may occur.\n", my_rank, my_sys[0]->last_t);
+
+    if (my_rank == 0) {
+        // main process: read the files and broadcast the data
+
+        // Open memory for file buffers
+        if (numfiles > 0) {
+            ibin_link_id_set = malloc(numfiles * sizeof(int*));
+            ibin_rain_intens_set = malloc(numfiles * sizeof(float*));
+            entry_count_set = malloc(numfiles * sizeof(unsigned int));
+            timestamp_set = malloc(numfiles * sizeof(unsigned int));
+        }
+
+        // main process open the files and save them locally
+        for (k = 0; k < numfiles; k++) {
+            // open file and read the number of entries
+            c_timestamp = first + (k*forcing->increment);
+            sprintf(filename, "%s%i", strfilename, c_timestamp);  // define file name
+            timestamp_set[k] = c_timestamp;
+            stormdata = fopen(filename, "rb");
+            if (stormdata == NULL) {
+                entry_counts = 0;
+            }
+            else {
+                fread(&entry_counts, sizeof(int), 1, stormdata);
+            }
+
+            // allocate memory for those entries
+            entry_count_set[k] = entry_counts;
+            ibin_link_id_set[k] = malloc(entry_counts * sizeof(unsigned int));
+            ibin_rain_intens_set[k] = malloc(entry_counts * sizeof(float));
+
+            // read memory and fill the temporary data
+            if (entry_counts > 0) {
+                for (entry_index = 0; entry_index < entry_counts; entry_index++) {
+                    fread(&linkid_buffer, sizeof(unsigned int), 1, stormdata);
+                    fread(&forcing_buffer, sizeof(float), 1, stormdata);
+
+                    ibin_link_id_set[k][entry_index] = linkid_buffer;
+                    ibin_rain_intens_set[k][entry_index] = forcing_buffer;
+                }
+            }
+            if (stormdata != NULL) {
+                fclose(stormdata);
+            }
+        }
+
+        // count total number of entries and broadcast it
+        total_entry_counts = 0;
+        for (k = 0; k < numfiles; k++) {
+            total_entry_counts += entry_count_set[k];
+        }
+        MPI_Bcast(&total_entry_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // process if there is something to send
+        if (total_entry_counts > 0) {
+            // allocates final total space
+            ibin_link_id = malloc(total_entry_counts * sizeof(unsigned int));
+            ibin_rain_intens = malloc(total_entry_counts * sizeof(float));
+            timestamps = malloc(total_entry_counts * sizeof(unsigned int));
+
+            // reorganizes all data readen into a single buffer vector
+            total_entry_index = 0;
+            for (k = 0; k < numfiles; k++) {
+                for (entry_index = 0; entry_index < entry_count_set[k]; entry_index++) {
+                    ibin_link_id[total_entry_index] = ibin_link_id_set[k][entry_index];
+                    ibin_rain_intens[total_entry_index] = ibin_rain_intens_set[k][entry_index];
+                    timestamps[total_entry_index] = timestamp_set[k];
+                    total_entry_index += 1;
+                }
+            }
+
+            // broadcast-send single buffers
+            MPI_Bcast(ibin_link_id, total_entry_counts, MPI_FLOAT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(ibin_rain_intens, total_entry_counts, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(timestamps, total_entry_counts, MPI_INT, 0, MPI_COMM_WORLD);
+        }
+
+        // free memory of "(...)_set" variables
+        for (k = 0; k < numfiles; k++) {
+            free(ibin_link_id_set[k]);
+            free(ibin_rain_intens_set[k]);
+        }
+        free(ibin_link_id_set);
+        free(ibin_rain_intens_set);
+        free(timestamp_set);
+    }
+    else
+    {
+        // other processes: receive broadcasted data
+        MPI_Bcast(&total_entry_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+        // process if there is something to send
+        if (total_entry_counts > 0) {
+            // allocates final total space
+            ibin_link_id = malloc(total_entry_counts * sizeof(unsigned int));
+            ibin_rain_intens = malloc(total_entry_counts * sizeof(float));
+            timestamps = malloc(total_entry_counts * sizeof(unsigned int));
+
+            // broadcast-receive single buffers
+            MPI_Bcast(ibin_link_id, total_entry_counts, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(ibin_rain_intens, total_entry_counts, MPI_FLOAT, 0, MPI_COMM_WORLD);
+            MPI_Bcast(timestamps, total_entry_counts, MPI_INT, 0, MPI_COMM_WORLD);
+        }
+    } // end file reading
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    //Setup initial time in rainfall data with 0 rain
+    for (i = 0; i < my_N; i++)
+    {
+        my_sys[i]->my->forcing_data[forcing_idx].data[0].time = (int)(first - forcing->first_file) / 60.0;  // in minutes from 0
+        my_sys[i]->my->forcing_data[forcing_idx].data[0].value = 0.0;
+    }
+
+    // import data from buffer
+    for (i = 0; i < total_entry_counts; i++)
+    {
+        curr_idx = find_link_by_idtoloc(ibin_link_id[i], id_to_loc, N);
+
+        if (curr_idx < N && assignments[curr_idx] == my_rank)
+        {
+            k = sys[curr_idx].my->forcing_data[forcing_idx].num_points;
+            received_time = (timestamps[i] - forcing->first_file) / 60.0;  // minutes - time just read
+
+            if (received_time >(int) (sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].time + 0.01)) // if just read something after last timestamp in the timeseries
+            {
+                next_exp_time = (int)(sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].time) + (unsigned int)(forcing->file_time);
+                if ((received_time <= next_exp_time) || (sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].value == 0.0))
+                {
+                    // add the read value in the end of the time series
+                    sys[curr_idx].my->forcing_data[forcing_idx].data[k].time = received_time;
+                    sys[curr_idx].my->forcing_data[forcing_idx].data[k].value = ibin_rain_intens[i];
+                    sys[curr_idx].my->forcing_data[forcing_idx].num_points += 1;
+                }
+                else	//Add an intermediate 0 rainfall data
+                {
+                    // add the read value in the end of the time series
+                    sys[curr_idx].my->forcing_data[forcing_idx].data[k].time = next_exp_time;
+                    sys[curr_idx].my->forcing_data[forcing_idx].data[k].value = 0.0;
+                    sys[curr_idx].my->forcing_data[forcing_idx].data[k + 1].time = received_time;
+                    sys[curr_idx].my->forcing_data[forcing_idx].data[k + 1].value = ibin_rain_intens[i];
+                    sys[curr_idx].my->forcing_data[forcing_idx].num_points += 2;
+                }
+            }
+            else if (received_time <= (int)(sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].time + 0.01))	//If the initial rate needs to be reset
+            {
+                sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].time = received_time;
+                sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].value = ibin_rain_intens[i];
+            }
+            else
+            {
+                printf("!!!! Uh oh... !!!!\n");
+                printf("!!!! i = %i k = %i received = %i unix_time = %i raindb_start = %i\n", i, k, received_time, timestamps[i], forcing->raindb_start_time);
+            }
+
+        }
+    }
+
+    //Add ceiling terms
+    for (i = 0; i < my_N; i++)
+    {
+        curr_idx = my_sys[i]->location;
+        k = sys[curr_idx].my->forcing_data[forcing_idx].num_points;
+        if (sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].value == 0.0)	//No rain, add just a ceiling
+        {
+            //sys[curr_idx].my->forcing_data[forcing_idx]->rainfall[k].time = maxtime * (1.1) + 1.0;
+            sys[curr_idx].my->forcing_data[forcing_idx].data[k].time = ceil_time;
+            sys[curr_idx].my->forcing_data[forcing_idx].data[k].value = -1.0;
+        }
+        else	//Add a 0.0, and a ceiling
+        {
+            sys[curr_idx].my->forcing_data[forcing_idx].data[k].time = sys[curr_idx].my->forcing_data[forcing_idx].data[k - 1].time + forcing->file_time;
+            sys[curr_idx].my->forcing_data[forcing_idx].data[k].value = 0.0;
+
+            sys[curr_idx].my->forcing_data[forcing_idx].data[k + 1].time = ceil_time;
+            sys[curr_idx].my->forcing_data[forcing_idx].data[k + 1].value = -1.0;
+        }
+    }
+
+    for (i = 0; i < my_N; i++)	my_sys[i]->my->forcing_data[forcing_idx].num_points = total_times[i];
+
+    //Calculate the first rain change time and set rain_value
+    for (i = 0; i < my_N; i++)
+    {
+
+        current = my_sys[i];
+        forcing_buffer = current->my->forcing_data[forcing_idx].data[0].value; // why this? data[0] or data[1]?
+        current->my->forcing_values[forcing_idx] = forcing_buffer;
+        current->my->forcing_indices[forcing_idx] = 0;
+
+        for (j = 1; j < current->my->forcing_data[forcing_idx].num_points; j++)
+        {
+            if (fabs(forcing_buffer - current->my->forcing_data[forcing_idx].data[j].value) > 1e-14)
+            {
+                current->my->forcing_change_times[forcing_idx] = current->my->forcing_data[forcing_idx].data[j].time;
+                break;
+            }
+        }
+        if (j == current->my->forcing_data[forcing_idx].num_points)
+        {
+            current->my->forcing_change_times[forcing_idx] = current->my->forcing_data[forcing_idx].data[j - 1].time;
+        }
+    }
+
+    return 0;
+}
+
 #define ASYNCH_BUFFER_SIZE sizeof(unsigned int) + sizeof(float)
 
 /// This reads in a set of gzip compressed binary files for the rainfall at each link.

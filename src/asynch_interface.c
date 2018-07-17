@@ -466,16 +466,15 @@ void Asynch_Free(AsynchSolver* asynch)
     free(asynch);
 }
 
-void Asynch_Advance(AsynchSolver* asynch, bool print_flag)
+void Asynch_Advance(AsynchSolver* asynch, int print_level)
 {
-    if (print_flag && !AreOutputsSet(asynch->globals))
+    if ((print_level > 0) && !AreOutputsSet(asynch->globals))
     {
         printf("[%i]: Warning: Solver advance requested with data output enabled, but not all outputs are initialized. Continuing solver without outputing data.\n", my_rank);
-        print_flag = 0;
+        print_level = 0;
     }
-
     Advance(asynch->sys, asynch->N, asynch->my_sys, asynch->my_N, asynch->globals, asynch->assignments, asynch->getting, asynch->res_list, asynch->res_size,
-        asynch->id_to_loc, &asynch->workspace, asynch->forcings, asynch->db_connections, asynch->my_data, print_flag, asynch->outputfile);
+        asynch->id_to_loc, &asynch->workspace, asynch->forcings, asynch->db_connections, asynch->my_data, print_level, asynch->outputfile);
 }
 
 

@@ -19,6 +19,7 @@ unsigned int PassesDatabase_Irregular(Forcing* forcing, double maxtime, ConnData
 
 double NextForcingOther(Link* sys, unsigned int N, Link **my_sys, unsigned int my_N, int* assignments, const GlobalVars * const globals, Forcing* forcing, ConnData* db_connections, const Lookup * const id_to_loc, unsigned int forcing_idx);
 double NextForcingBinaryFiles(Link* sys, unsigned int N, Link **my_sys, unsigned int my_N, int* assignments, const GlobalVars * const globals, Forcing* forcing, ConnData* db_connections, const Lookup * const id_to_loc, unsigned int forcing_idx);
+double NextForcingIrregularBinaryFiles(Link* sys, unsigned int N, Link **my_sys, unsigned int my_N, int* assignments, const GlobalVars * const globals, Forcing* forcing, ConnData* db_connections, const Lookup * const id_to_loc, unsigned int forcing_idx);
 double NextForcingGZBinaryFiles(Link* sys, unsigned int N, Link **my_sys, unsigned int my_N, int* assignments, const GlobalVars * const globals, Forcing* forcing, ConnData* db_connections, const Lookup * const id_to_loc, unsigned int forcing_idx);
 double NextForcingGridCell(Link* sys, unsigned int N, Link **my_sys, unsigned int my_N, int* assignments, const GlobalVars * const globals, Forcing* forcing, ConnData* db_connections, const Lookup * const id_to_loc, unsigned int forcing_idx);
 double NextForcingDatabase(Link* sys, unsigned int N, Link **my_sys, unsigned int my_N, int* assignments, const GlobalVars * const globals, Forcing* forcing, ConnData* db_connections, const Lookup * const id_to_loc, unsigned int forcing_idx);

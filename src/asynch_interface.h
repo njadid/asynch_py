@@ -184,8 +184,8 @@ void Asynch_Calculate_Step_Sizes(AsynchSolver* asynch);
 ///
 /// \pre This routine should be called after *Asynch_Partition_Network* has been called.
 /// \param asynch A pointer to a AsynchSolver object to use.
-/// \param print_flag  If false, no time series information is produced. Otherwise, time series information is produced.
-void Asynch_Advance(AsynchSolver* asynch, bool print_flag);
+/// \param print_level  If 0, no time series information is produced. Otherwise, time series information is produced.
+void Asynch_Advance(AsynchSolver* asynch, int print_level);
 
 //Snapshot
 

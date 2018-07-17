@@ -1,0 +1,91 @@
+%Model UID
+192 
+
+%Begin and end date time
+2017-01-01 00:00
+2017-01-02 00:00
+
+0	%Parameters to filenames
+
+%Components to print
+3
+LinkID
+Time
+State0
+
+%Peakflow function
+Classic
+
+%Global parameters
+% v_r  lambda_1 lambda_2 k_I_factor v_h    k_3   v_b
+7 0.33   0.2     -0.1       3       0.1 2.04e-06  1
+
+%No. steps stored at each link and
+%Max no. steps transfered between procs
+%Discontinuity buffer size
+30 10 30
+
+%Topology (0 = .rvr, 1 = database)
+0 ../common/test.rvr
+
+%DEM Parameters (0 = .prm, 1 = database)
+0 test192.prm
+
+%Initial state (0 = .ini, 1 = .uini, 2 = .rec, 3 = .dbc)
+1 ../common/test.uini
+
+%Forcings (0 = none, 1 = .str, 2 = binary, 3 = database, 4 = .ustr, 5 = forecasting, 6 = .gz binary, 7 = recurring)
+3
+
+% forcing: 'Stage 4'
+1 ../common/test_100.str
+
+% forcing: 'Annual Average Quarter'
+7 ../common/evap.mon
+1398902400 1588291200
+
+% forcing: 'Reservoirs'
+0 
+
+%Dams (0 = no dam, 1 = .dam, 2 = .qvs)
+0
+
+%Reservoir ids (0 = no reservoirs, 1 = .rsv, 2 = .dbc file)
+0
+
+%Where to put hydrographs
+%(0 = no output, 1 = .dat file, 2 = .csv file, 3 = database, 5=.h5)
+2 5.0 results/test192_hydr.csv
+
+%Where to put peakflow data
+%(0 = no output, 1 = .pea file, 2 = database)
+1 results/test192_peak.pea
+
+%Save links for hydrographs and peak file
+%(0 = save no data, 1 = save link data, 2 = .dbc, 3 = all)
+1 ../common/test.sav %Hydrographs
+3 %Peakflows
+
+%Snapshot information (0 = none, 1 = .rec, 2 = .dbc, 3 = .h5)
+3 results/test192_snap.h5
+
+%Filename for scratch work
+tmp
+
+%Numerical solver settings follow
+
+%facmin, facmax, fac
+.1 10.0 .9
+
+%Solver flag (0 = data below, 1 = .rkd)
+0
+%Numerical solver index (0-3 explicit, 4 implicit)
+2
+%Error tolerances (abs, rel, abs dense, rel dense)
+1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
+1e-6 1e-6 1e-6 1e-6 1e-4 1e-4 1e-4
+1e-4 1e-4 1e-4 1e-4 1e-4 1e-4 1e-4
+1e-6 1e-6 1e-6 1e-6 1e-4 1e-4 1e-4
+
+# %End of file
+-------------------------------

@@ -47,6 +47,7 @@ double InitialStepSize(double t, Link* link_i, const GlobalVars * const globals,
     unsigned int* dense_indices = link_i->dense_indices;
     double *parents_approx = workspace->parents_approx;
     ErrorData* error = link_i->my->error_data;
+	bool from_reservoir;
 
     //Build SC for this link
     for (unsigned int i = 0; i < dim; i++)
@@ -130,7 +131,18 @@ double InitialStepSize(double t, Link* link_i, const GlobalVars * const globals,
     h1 = (largest < 1e-1) ? max(1e-6, h0*1e-3) : pow(1e-2 / largest, 1.0 / (p + 1.0));
 
     //Step f
-    h1 = min(100.0*h0, h1);
+    // adlzanchetta: if has a parent reservoir, ignores h0
+	from_reservoir = false;
+	for (unsigned int i = 0; i < link_i->num_parents; i++)
+	{
+		Link *curr_parent = link_i->parents[i];
+		if (curr_parent->has_res) {
+			from_reservoir = true;
+		}
+	}
+	if (!from_reservoir) {
+		h1 = min(100.0*h0, h1);
+	}
 
     //Make sure returned value is not too small. This can create roundoff problems when time gets larger
     //return h1;

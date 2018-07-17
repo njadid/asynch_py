@@ -1959,6 +1959,48 @@ int Load_Forcings(
                 if (assignments[i] == my_rank)
                     system[i].my->forcing_data[l].data = NULL;
         }
+        else if (forcings[l].flag == 5)	//Irregular Binary files
+        {
+            //Set routines
+            forcings[l].GetPasses = &PassesBinaryFiles;
+            forcings[l].GetNextForcing = &NextForcingIrregularBinaryFiles;
+
+            //Setup buffers at each link
+            //!!!! This should really be improved... it was just copied from above !!!!
+            for (unsigned int i = 0; i < N; i++)
+                if (assignments[i] == my_rank)
+                    system[i].my->forcing_data[l].data = NULL;
+
+            //Allocate memory as it is done with databases
+            for (unsigned int i = 0; i < N; i++)
+            {
+                if (assignments[i] == my_rank)
+                {
+                    TimeSerie* forcing_data = &system[i].my->forcing_data[l];
+
+                    if (!(globals->res_flag) || !(l == globals->res_forcing_idx) || system[i].has_res)
+                    {
+                        unsigned int m = forcings[l].increment + 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
+                        forcing_data->data = malloc(m * sizeof(DataPoint));
+                        forcing_data->num_points = m;
+
+                        forcing_data->data[0].time = globals->t_0;
+                        system[i].my->forcing_values[l] = 0.0;
+                        system[i].my->forcing_change_times[l] = fabs(globals->t_0 + globals->maxtime) + 10.0;	//Just pick something away from t_0, and positive
+                    }
+                    else	//Reservoir, so allocate only a little memory
+                    {
+                        unsigned int m = 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
+                        forcing_data->data = malloc(m * sizeof(DataPoint));
+                        forcing_data->num_points = m;
+
+                        forcing_data->data[0].time = globals->t_0;
+                        system[i].my->forcing_values[l] = 0.0;
+                        system[i].my->forcing_change_times[l] = fabs(globals->t_0 + globals->maxtime) + 10.0;	//Just pick something away from t_0, and positive
+                    }
+                }
+            }
+        }
         else if (forcings[l].flag == 6)	//GZ binary files
         {
             //Set routines
@@ -2369,11 +2411,7 @@ int Load_Dams(
     int* assignments, short int* getting, const Lookup * const id_to_loc, GlobalVars* globals, ErrorData* errors, ConnData* db_connections, unsigned int** res_list, unsigned int* res_size, unsigned int* my_res_size)
 {
 
-
-/*
-
     unsigned int i, j, k, m, num_dams, id, size, num_values;
-    //int error;
     Link* current;
     FILE* damfile = NULL;
     double* buffer = NULL;
@@ -2381,6 +2419,8 @@ int Load_Dams(
     //Read is_dam file
     if (globals->uses_dam && globals->dam_flag == 1)	//.dam file
     {
+		/*
+
         //VEC* buffer;
         size = globals->dam_params_size - the_model.num_params;
         buffer = (double*)malloc(size * sizeof(double));
@@ -2484,6 +2524,7 @@ int Load_Dams(
             globals->discont_tol = 1e-8;
             if (my_rank == 0)	printf("Notice: Discontinuity tolerance has been set to %e.\n", globals->discont_tol);
         }
+		*/
     }
     else if (globals->uses_dam && globals->dam_flag == 2)	//.qvs file
     {
@@ -2537,7 +2578,7 @@ int Load_Dams(
                 //Either store the parameters or send them
                 if (my_rank == assignments[m] || getting[m])
                 {
-                    system[m].is_dam = 1;
+                    system[m].has_dam = 1;
                     system[m].qvs = (QVSData*)malloc(sizeof(QVSData));
                     system[m].qvs->n_values = num_values;
                     system[m].qvs->points_array = (double*)malloc(2 * num_values * sizeof(double));
@@ -2546,8 +2587,10 @@ int Load_Dams(
 
                     for (j = 0; j < num_values; j++)
                     {
-                        system[m].qvs->points[j].time = buffer[2 * j];
-                        system[m].qvs->points[j].value = buffer[2 * j + 1];
+                        // system[m].qvs->points[j].time = buffer[2 * j];
+                        // system[m].qvs->points[j].value = buffer[2 * j + 1];
+						system[m].qvs->points[j][0] = buffer[2 * j];     // time
+						system[m].qvs->points[j][1] = buffer[2 * j + 1]; // value
                     }
                 }
 
@@ -2580,7 +2623,7 @@ int Load_Dams(
                     buffer = (double*)realloc(buffer, 2 * num_values * sizeof(double));
                     MPI_Recv(buffer, 2 * num_values, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                    system[m].is_dam = 1;
+                    system[m].has_dam = 1;
                     system[m].qvs = (QVSData*)malloc(sizeof(QVSData));
                     system[m].qvs->n_values = num_values;
                     system[m].qvs->points_array = (double*)malloc(2 * num_values * sizeof(double));
@@ -2589,8 +2632,10 @@ int Load_Dams(
 
                     for (j = 0; j < num_values; j++)
                     {
-                        system[m].qvs->points[j].time = buffer[2 * j];
-                        system[m].qvs->points[j].value = buffer[2 * j + 1];
+                        // system[m].qvs->points[j].time = buffer[2 * j];
+                        // system[m].qvs->points[j].value = buffer[2 * j + 1];
+						system[m].qvs->points[j][0] = buffer[2 * j];      // time
+						system[m].qvs->points[j][1] = buffer[2 * j + 1];  // value
                     }
                 }
             }
@@ -2682,7 +2727,7 @@ int Load_Dams(
                     if (mine)
                     {
                         current = &system[curr_loc];
-                        current->is_dam = 1;
+                        current->has_dam = 1;
                         current->qvs = (QVSData*)malloc(sizeof(QVSData));
                         current->qvs->n_values = num_values;
                         current->qvs->points_array = array_holder;
@@ -2722,7 +2767,7 @@ int Load_Dams(
                     array_holder = (double*)malloc(2 * num_values * sizeof(double));
                     MPI_Recv(array_holder, 2 * num_values, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                     current = &system[curr_loc];
-                    current->is_dam = 1;
+                    current->has_dam = 1;
                     current->qvs = (QVSData*)malloc(sizeof(QVSData));
                     current->qvs->n_values = num_values;
                     current->qvs->points_array = array_holder;
@@ -2798,7 +2843,7 @@ int Load_Dams(
             {
                 (*my_res_size)++;
                 current = &system[k];
-                current->res = 1;
+                current->has_res = 1;
             }
         }
     }
@@ -2807,7 +2852,7 @@ int Load_Dams(
         (*res_list) = NULL;
         *res_size = 0;
     }
-*/
+
     return 0;
 }
 

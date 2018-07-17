@@ -1,13 +1,13 @@
-AC_INIT([asynch], [1.4.1], [samuel-debionne@uiowa.edu])
+AC_INIT([asynch], [1.4.3], [andre-zanchetta@uiowa.edu])
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 
 # Check for programms
 AX_PROG_CC_MPI([], [], [AC_MSG_FAILURE([MPI compiler requested, but couldn't find MPI.])] )
 AC_PROG_CC_STDC #C99
 AM_PROG_CC_C_O  #automake < 1.14
-AM_PROG_AR
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_PROG_RANLIB
 
 # Checks for libraries
@@ -16,6 +16,13 @@ AX_LIB_HDF5([serial])
 AX_LIB_POSTGRESQL
 AX_BLAS
 AX_LAPACK
+
+AC_DEFINE([OS_VERSION], ["Not specified"], [TODO])
+AC_DEFINE([CC_VERSION], ["Not specified"], [TODO])
+AC_DEFINE([HDF5_VERSION], ["Not specified"], [TODO])
+AC_DEFINE([SZ_VERSION], ["Not specified"], [TODO])
+AC_DEFINE([ZL_VERSION], ["Not specified"], [TODO])
+AC_DEFINE([PQ_VERSION], ["Not specified"], [TODO])
 
 # Checks for packages
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.8], [found_libcheck=1], [found_libcheck=0])

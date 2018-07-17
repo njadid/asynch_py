@@ -21,7 +21,7 @@ void Advance(
     Forcing* forcings,
     ConnData* db_connections,
     TransData* my_data,
-    bool print_flag,
+    int print_level,
     FILE* outputfile);
 
 #endif //ASYNCH_ADVANCE_H
