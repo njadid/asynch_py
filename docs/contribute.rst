@@ -21,6 +21,99 @@ When contributing code, then please follow the standard Contribution Guidelines 
 .. _Sprintable: https://github.com/rtfd/readthedocs.org/issues?q=is%3Aopen+is%3Aissue+label%3ASprintable
 .. _contribution-guide.org: http://www.contribution-guide.org/#submitting-bugs
 
+Keeping the documentation updated
+---------------------------------
+
+Whenever an update in the code adds, changes or removes elements that affect the user experience (i.e.: changes in input forcing formats, existing hlm models, global file format, etc ), it is expected from the developer to perform the respective updates in the ``Read the Docs`` documentation.
+
+Here are some tips and explanations regarding the Read the Docs documentation.
+
+Documentation structure
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The documentation publicly available at ``http://asynch.readthedocs.io`` is hosted by `Read the Docs <https://readthedocs.org/>`__ in a project that is maintained by the same maintainers of Asynch.
+
+This documentation is written in ``reStructuredText`` formatting language (*.rst files) and uses Sphinx with Read the Docs libraries for compilation purposes. All the files are relevant for the documentation are located in the ``doc/`` folder.
+
+Working locally
+~~~~~~~~~~~~~~~
+
+A desktop environment can be set up to compile the documentation locally. This approach is good for debugging the result before publishing it publicly.
+
+For setting up the environment, you will have to install Read the Docs on your machine in a separated virtual Python environment.
+
+Ensure **git 1.5** or higher, **Python 3.6** or higher, and both Python **virtualenv** and **virtualenvwrapper** are installed. If using Windows, ensure Python **virtualenvwrapper-win** and `cmder <http://cmder.net/>`__ are also installed (use **cmder** to perform the following command operations).
+
+Create a virtual environment for compiling Read the Docs documentations:
+  
+.. code-block:: sh
+
+   mkvirtualenv readthedocs
+
+If your command session does not activate the newly created virtual environment automatically, activate it:
+
+.. code-block:: sh
+
+   workon readthedocs
+   
+Navigate to this virtualenv directory:
+
+.. code-block:: sh
+
+   cd [USER_HOME]\Env\readthedocs\
+
+Checkout Read the Docs into a new folder and enter there:
+
+.. code-block:: sh
+
+   mkdir checkouts
+   cd checkouts
+   git clone https://github.com/rtfd/readthedocs.org.git
+   cd readthedocs.org\
+
+Install all requirements for Read The Docs:
+  
+.. code-block:: sh
+
+   pip install -r requirements.txt
+  
+or:
+
+.. code-block:: sh
+
+   python -m pip install -r requirements.txt
+   
+Navigate to the ``docs`` directory of the local clone of Asynch repository:
+
+.. code-block:: sh
+
+   cd [ASYNCH]\docs\
+   
+Perform the changes you want in the ``.srt`` files within this folder. After that, compile using the command:
+
+.. code-block:: sh
+
+   make html
+   
+.. note::
+
+   1-) When compiling, ensure you are still working on the readthedocs virtual Python environment;
+   
+   2-) When compiling, some Python packages may be required. Be prepared to perform pip installs;
+   
+   3-) The command 'make' also works on Windows when runned within cmder.
+   
+Access the results opening the file ``[ASYNCH]/docs/.build/html/index.html`` with a web browser.
+
+This mini tutorial was adapted from `here <http://docs.readthedocs.io/en/latest/install.html>`__.
+     
+Publishing
+~~~~~~~~~~
+
+Everytime a git ``push`` or ``pull request`` is performed into the ``master`` or ``develop`` branches in the Git Hub repository, or on a branch that creates a new ``tag``, the Read the Docs server reads, compiles and publishes the documentation online.
+
+This connection between Git Hub and Read the Docs is established through the so called *webhooks*. The official Asynch Git Hub account has a webhook that triggers the compiling steps from the Read the Docs server.
+
 Managing releases
 -----------------
 
@@ -29,7 +122,7 @@ Once you are happy with your changes in the ``develop`` branch and ran a couple 
 Branch
 ~~~~~~
 
-Create a branch for the release following the ``release-x.y.z`` naming scheme and [semantic versionning](http://semver.org/) rules :
+Create a branch for the release following the ``release-x.y.z`` naming scheme and `semantic versionning <http://semver.org/>`__ rules :
 
 .. code-block:: sh
 

@@ -306,6 +306,26 @@ Format:
 
 A forcing flag of ``4`` indicates a forcing that is uniform in space. The forcings are given by a uniform storm file (.ustr).
 
+.. _forcing_5_call:
+
+Irregular Binary Files
+^^^^^^^^^^^^^^^^^^^^^^
+
+Format:
+
+::
+
+  5 {binary file prefix identifier}
+  {chunk size} {time resolution in minutes} {beginning unix time} {ending unix time}
+
+A forcing of flag ``5`` indicates a collection of irregular binaries forcing files. The files are expected to be named ending by the *unix timestamp* of the time when they start to affect, without any extention. The identifier can be adorned with a path to the binary files. The chunck size indicates the time interval, in seconds, related to the binary forcings that need to be extracted on each access to the file system. The time resolution indicates the amount of time, in minutes, between successively irregular binary files. The beginning and ending unix times indicate the limits, in the simulation time, of the forcing action.
+
+.. warning::
+
+	A reported bug leads to unexpected behavior when the chunk size provided does not coincide with the value of the time resolution converted to seconds.
+	
+More information about the internal structure of those irregular binary files :ref:`forcing_5_file`.
+
 GZipped Binary
 ^^^^^^^^^^^^^^
 
@@ -774,6 +794,27 @@ Binary storm files (no extension) may also be used. Instead of a single file, th
   {link id 3 value}
 
 Each file is simply a list of forcing values for each link. Because link ids are not present, the values are assumed to be in the same order as the link ids from the link connectivity input. Further, a value must be specified for every link. The filename of each binary file should end with an integer value. The index of each file should be numbered consecutively. The time step size between files, as well as the range of files to use, are specified in the global file (see 6 1 10). If the simulation goes beyond the last file, all further forcing values are assumed to be ``0`` for all links. The values in binary storm files are stored as single precision floating point numbers, with endianness different from the native machine. These files are read into memory chunk by chunk. This allows for a ceiling on the memory used, independent of the number of files.
+
+.. _forcing_5_file:
+
+Irregular Binary Storm Files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Irregular binary storm files are designed to be a more flexible and compact file format than the simple binary storm files. Also a collection of files providinf forcings ad different times, they are named having the respective unix time as a sufix (and no file extensions). Each file may contain a variable number of links and should present the following structure: 
+
+::
+	
+	{number of links}
+	{link id 1}
+	{value 1}
+	{link id 2}
+	{value 2}
+
+The number of links and the link ids are in unsigned integers, while values as floats. Each of these values written in 4 bytes. Asynch does not try to distinguish between little endian ot big endian, but it little endian is recomended it has already been tested.
+
+In the absence of a single irregular binary file in the sequence, it is assumed a forcing value of zero for all links.
+
+For more information about referencing the irregular binary files in the global files, see :ref:`forcing_5_call`.
 
 Gzipped Binary Storm Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

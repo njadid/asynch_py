@@ -1959,6 +1959,48 @@ int Load_Forcings(
                 if (assignments[i] == my_rank)
                     system[i].my->forcing_data[l].data = NULL;
         }
+        else if (forcings[l].flag == 5)	//Irregular Binary files
+        {
+            //Set routines
+            forcings[l].GetPasses = &PassesBinaryFiles;
+            forcings[l].GetNextForcing = &NextForcingIrregularBinaryFiles;
+
+            //Setup buffers at each link
+            //!!!! This should really be improved... it was just copied from above !!!!
+            for (unsigned int i = 0; i < N; i++)
+                if (assignments[i] == my_rank)
+                    system[i].my->forcing_data[l].data = NULL;
+
+            //Allocate memory as it is done with databases
+            for (unsigned int i = 0; i < N; i++)
+            {
+                if (assignments[i] == my_rank)
+                {
+                    TimeSerie* forcing_data = &system[i].my->forcing_data[l];
+
+                    if (!(globals->res_flag) || !(l == globals->res_forcing_idx) || system[i].has_res)
+                    {
+                        unsigned int m = forcings[l].increment + 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
+                        forcing_data->data = malloc(m * sizeof(DataPoint));
+                        forcing_data->num_points = m;
+
+                        forcing_data->data[0].time = globals->t_0;
+                        system[i].my->forcing_values[l] = 0.0;
+                        system[i].my->forcing_change_times[l] = fabs(globals->t_0 + globals->maxtime) + 10.0;	//Just pick something away from t_0, and positive
+                    }
+                    else	//Reservoir, so allocate only a little memory
+                    {
+                        unsigned int m = 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
+                        forcing_data->data = malloc(m * sizeof(DataPoint));
+                        forcing_data->num_points = m;
+
+                        forcing_data->data[0].time = globals->t_0;
+                        system[i].my->forcing_values[l] = 0.0;
+                        system[i].my->forcing_change_times[l] = fabs(globals->t_0 + globals->maxtime) + 10.0;	//Just pick something away from t_0, and positive
+                    }
+                }
+            }
+        }
         else if (forcings[l].flag == 6)	//GZ binary files
         {
             //Set routines

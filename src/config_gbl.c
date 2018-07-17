@@ -200,6 +200,9 @@ GlobalVars* Read_Global_Data(
     else
         SetParamSizes(globals, external);
 
+    //Define output data constrains
+    SetOutputConstraints(globals);
+
     //Find the states needed for printing
     globals->num_states_for_printing = 0;
     globals->print_indices = (unsigned int*)calloc(globals->num_outputs, sizeof(unsigned int));
@@ -294,7 +297,7 @@ GlobalVars* Read_Global_Data(
     }
 
     //Grab the forcing parameters
-    //0 for no rain, 1 for .str file, 2 for binary files, 3 for database, 4 for uniform rain (.ustr)
+    //0 for no rain, 1 for .str file, 2 for regular binary files, 3 for database, 4 for uniform rain (.ustr), 5 for irregular binary files, 6 for gzipped binary files, 7 for monthly recurrent, 8 for grid cell
     globals->hydro_table = globals->peak_table = NULL;
     for (i = 0; i < globals->num_forcings; i++)
     {
@@ -302,15 +305,15 @@ GlobalVars* Read_Global_Data(
         valsread = sscanf(line_buffer, "%hi", &(forcings[i].flag));
         if (ReadLineError(valsread, 1, "forcings flag"))	return NULL;
 
-        if (forcings[i].flag == 1 || forcings[i].flag == 2 || forcings[i].flag == 4 || forcings[i].flag == 6 || forcings[i].flag == 8)
+        if (forcings[i].flag == 1 || forcings[i].flag == 2 || forcings[i].flag == 4 || forcings[i].flag == 5 || forcings[i].flag == 6 || forcings[i].flag == 8)
         {
             forcings[i].filename = (char*)malloc(ASYNCH_MAX_PATH_LENGTH * sizeof(char));
             valsread = sscanf(line_buffer, "%*i %s", forcings[i].filename);
             if (ReadLineError(valsread, 1, "forcing data filename"))	return NULL;
             if (forcings[i].flag == 1 && !CheckFilenameExtension(forcings[i].filename, ".str"))	return NULL;
-            if (forcings[i].flag == 4 && !CheckFilenameExtension(forcings[i].filename, ".ustr"))	return NULL;
+            if (forcings[i].flag == 4 && !CheckFilenameExtension(forcings[i].filename, ".ustr")) return NULL;
 
-            if (forcings[i].flag == 2 || forcings[i].flag == 6)
+            if ((forcings[i].flag == 2) || (forcings[i].flag == 5) || (forcings[i].flag == 6))
             {
                 ReadLineFromTextFile(globalfile, line_buffer, line_buffer_len);
                 valsread = sscanf(line_buffer, "%u %lf %u %u", &(forcings[i].increment), &(forcings[i].file_time), &(forcings[i].first_file), &(forcings[i].last_file));

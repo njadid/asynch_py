@@ -141,7 +141,19 @@ These are the generic instruction for an out of source build (prefered method):
   make check
   make install
 
-.. note:: Newer version of gcc requires to add ``-Wno-format-security`` so the configure script should be invoked with ``../configure CFLAGS="-DNDEBUG -Wno-format-security"``.
+.. note::
+
+   Newer version of gcc requires to add ``-Wno-format-security`` to ``CFLAGS`` argument so that the configure script should be invoked with ``../configure CFLAGS="-DNDEBUG -Wno-format-security"``.
+   
+Other typical ``configure`` arguments are also available, such as:
+
+- **--prefix**: defines the folder path of the output compiled runnable.
+
+  - Example: ``--prefix=/home/user/asynch/dist``
+  
+- **CC**: defines the C compiler to be used.
+
+  - Example: ``CC=gcc`` (GNU compiler) or ``CC=icc`` (intel compiler)
 
 Iowa HPC Clusters
 -----------------
