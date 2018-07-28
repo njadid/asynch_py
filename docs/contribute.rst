@@ -24,9 +24,9 @@ When contributing code, then please follow the standard Contribution Guidelines 
 Keeping the documentation updated
 ---------------------------------
 
-Whenever an update in the code adds, changes or removes elements that affect the user experience (i.e.: changes in input forcing formats, existing hlm models, global file format, etc ), it is expected from the developer to perform the respective updates in the ``Read the Docs`` documentation.
+Whenever an update in the code adds, changes or removes elements that affect the user experience (i.e.: changes in input forcing formats, existing hlm models, global file format, etc ), it is expected from the developer to perform the respective updates in the *Read the Docs* documentation.
 
-Here are some tips and explanations regarding the Read the Docs documentation.
+Here are some tips and explanations regarding the documentation process.
 
 Documentation structure
 ~~~~~~~~~~~~~~~~~~~~~~~

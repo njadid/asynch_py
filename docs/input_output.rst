@@ -318,11 +318,7 @@ Format:
   5 {binary file prefix identifier}
   {chunk size} {time resolution in minutes} {beginning unix time} {ending unix time}
 
-A forcing of flag ``5`` indicates a collection of irregular binaries forcing files. The files are expected to be named ending by the *unix timestamp* of the time when they start to affect, without any extention. The identifier can be adorned with a path to the binary files. The chunck size indicates the time interval, in seconds, related to the binary forcings that need to be extracted on each access to the file system. The time resolution indicates the amount of time, in minutes, between successively irregular binary files. The beginning and ending unix times indicate the limits, in the simulation time, of the forcing action.
-
-.. warning::
-
-	A reported bug leads to unexpected behavior when the chunk size provided does not coincide with the value of the time resolution converted to seconds.
+A forcing of flag ``5`` indicates a collection of irregular binaries forcing files. The files are expected to be named ending by the *unix timestamp* of the time when they start to take affect, without any file extension. The *identifier* can be adorned with a relative or and absolute path to the binary files. The *chunck size* indicates the maximum number of files that will be read by Asynch on every moment the program stops to read the input files. As it happens with the database forcing (number ``3``), a *chunck size* of 10 tends to work well. The *time resolution* indicates the amount of time, in minutes, between successively irregular binary files. The beginning and ending *unix times* indicate the limits, in the simulation time, of the forcing influence.
 	
 More information about the internal structure of those irregular binary files :ref:`forcing_5_file`.
 
@@ -800,7 +796,7 @@ Each file is simply a list of forcing values for each link. Because link ids are
 Irregular Binary Storm Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Irregular binary storm files are designed to be a more flexible and compact file format than the simple binary storm files. Also a collection of files providinf forcings ad different times, they are named having the respective unix time as a sufix (and no file extensions). Each file may contain a variable number of links and should present the following structure: 
+Irregular binary storm files are designed to be a more flexible and compact file format than the simple binary storm files. Also a collection of files providing forcings at different times, they are named having the respective unix time as a sufix and no file extensions. Each file may contain a variable number of links and should present the following structure: 
 
 ::
 	
@@ -810,9 +806,9 @@ Irregular binary storm files are designed to be a more flexible and compact file
 	{link id 2}
 	{value 2}
 
-The number of links and the link ids are in unsigned integers, while values as floats. Each of these values written in 4 bytes. Asynch does not try to distinguish between little endian ot big endian, but it little endian is recomended it has already been tested.
+The number of links and the link ids are in *unsigned integers*, while values in *floats*. Each of these values is written in 4 bytes. Asynch does not try to distinguish between little endian or big endian, but little endian is recomended as it has already been tested on both Windows desktop and Linux-based server environments.
 
-In the absence of a single irregular binary file in the sequence, it is assumed a forcing value of zero for all links.
+This forcing structure is named *irregular* because forcing values of *zero* for a link do not need to be represented withing the file, causing the foncings that are naturally sparse present irregular, minimal file sizes. Also, in the absence of a single irregular binary file in the sequence, it is assumed a forcing value of *zero* for all links for the missing time period.
 
 For more information about referencing the irregular binary files in the global files, see :ref:`forcing_5_call`.
 

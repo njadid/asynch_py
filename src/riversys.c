@@ -1962,7 +1962,7 @@ int Load_Forcings(
         else if (forcings[l].flag == 5)	//Irregular Binary files
         {
             //Set routines
-            forcings[l].GetPasses = &PassesBinaryFiles;
+            forcings[l].GetPasses = &PassesIrregularBinaryFiles;
             forcings[l].GetNextForcing = &NextForcingIrregularBinaryFiles;
 
             //Setup buffers at each link
@@ -1982,6 +1982,10 @@ int Load_Forcings(
                     {
                         unsigned int m = forcings[l].increment + 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
                         forcing_data->data = malloc(m * sizeof(DataPoint));
+                        if (!forcing_data->data) {
+                            printf("Reached memory limit on link %u out of %u. Aborting.\n", i, N);
+                            exit(1);
+                        }
                         forcing_data->num_points = m;
 
                         forcing_data->data[0].time = globals->t_0;
@@ -2198,6 +2202,10 @@ int Load_Forcings(
                         unsigned int m = forcings[l].increment + 4;	//+1 for init, +1 for ceiling, +2 for when init time doesn't line up with file_time
                         forcing_data->data = malloc(m * sizeof(DataPoint));
                         forcing_data->num_points = m;
+
+                        if (i == 1000) {
+                            printf("For link %u we are allocating %u.\n", i, m);
+                        }
 
                         forcing_data->data[0].time = globals->t_0;
                         system[i].my->forcing_values[l] = 0.0;
