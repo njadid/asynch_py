@@ -194,7 +194,7 @@ int Create_Rain_Data_Par_IBin(
     unsigned int holder;
     char filename[ASYNCH_MAX_PATH_LENGTH];
     FILE* stormdata = NULL;
-    unsigned int numfiles = ((last - first) / forcing->increment);
+    unsigned int numfiles = ((last - first) / (forcing->file_time * 60));
     int* ibin_link_id;
     float* ibin_rain_intens;
     int** ibin_link_id_set;
@@ -232,7 +232,7 @@ int Create_Rain_Data_Par_IBin(
         // main process open the files and save them locally
         for (k = 0; k < numfiles; k++) {
             // open file and read the number of entries
-            c_timestamp = first + (k*forcing->increment);
+            c_timestamp = first + (k*(forcing->file_time*60));
             sprintf(filename, "%s%i", strfilename, c_timestamp);  // define file name
             timestamp_set[k] = c_timestamp;
             stormdata = fopen(filename, "rb");
@@ -299,9 +299,12 @@ int Create_Rain_Data_Par_IBin(
             free(ibin_link_id_set[k]);
             free(ibin_rain_intens_set[k]);
         }
-        free(ibin_link_id_set);
-        free(ibin_rain_intens_set);
-        free(timestamp_set);
+        
+        if (numfiles > 0) {
+            free(ibin_link_id_set);
+            free(ibin_rain_intens_set);
+            free(timestamp_set);
+        }
     }
     else
     {

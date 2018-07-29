@@ -13,6 +13,7 @@ void Forcing_Free(Forcing* forcing);
 
 unsigned int PassesOther(Forcing* forcing, double maxtime, ConnData* conninfo);
 unsigned int PassesBinaryFiles(Forcing* forcing, double maxtime, ConnData* conninfo);
+unsigned int PassesIrregularBinaryFiles(Forcing* forcing, double maxtime, ConnData* conninfo);
 unsigned int PassesDatabase(Forcing* forcing, double maxtime, ConnData* conninfo);
 unsigned int PassesRecurring(Forcing* forcing, double maxtime, ConnData* conninfo);
 unsigned int PassesDatabase_Irregular(Forcing* forcing, double maxtime, ConnData* conninfo);
