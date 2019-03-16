@@ -1,4 +1,4 @@
-SUBDIRS = src tests tools
+SUBDIRS = src py tests tools
 ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST = LICENSE README.md examples
 

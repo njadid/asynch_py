@@ -11,12 +11,13 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_PROG_RANLIB
 
 # Checks for libraries
+AX_LAPACK
 AX_CHECK_ZLIB
 AX_LIB_HDF5([serial])
 AX_LIB_POSTGRESQL
 AX_BLAS
-AX_LAPACK
-
+AX_PYTHON_DEVEL
+LT_INIT
 AC_DEFINE([OS_VERSION], ["Not specified"], [TODO])
 AC_DEFINE([CC_VERSION], ["Not specified"], [TODO])
 AC_DEFINE([HDF5_VERSION], ["Not specified"], [TODO])
@@ -40,6 +41,6 @@ AS_IF([test $found_petsc -eq 1], [AC_DEFINE([HAVE_PETSC], [1], [Defined if you h
 
 # Generate config header
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile tools/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile py/Makefile tests/Makefile tools/Makefile])
 
 AC_OUTPUT

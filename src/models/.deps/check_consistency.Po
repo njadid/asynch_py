@@ -1,0 +1,26 @@
+models/check_consistency.o: models/check_consistency.c ../config.h \
+ /usr/include/assert.h /usr/include/features.h /usr/include/stdc-predef.h \
+ /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-64.h \
+ /opt/apps/parallel_studio/2017.1/compilers_and_libraries_2017.1.132/linux/compiler/include/stddef.h \
+ ./models/check_consistency.h
+
+../config.h:
+
+/usr/include/assert.h:
+
+/usr/include/features.h:
+
+/usr/include/stdc-predef.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-64.h:
+
+/opt/apps/parallel_studio/2017.1/compilers_and_libraries_2017.1.132/linux/compiler/include/stddef.h:
+
+./models/check_consistency.h:

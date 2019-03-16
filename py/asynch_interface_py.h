@@ -13,7 +13,8 @@
 #else
 #include <Python.h>
 #endif
-
+#include <structs.h>
+#include <structs_fwd.h>
 #include <asynch_interface.h>
 
 typedef struct PythonInterface

@@ -1,3 +1,5 @@
+#include <mpi.h>
+#include "structs.h"
 #include "asynch_interface_py.h"
 
 

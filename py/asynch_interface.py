@@ -1,4 +1,5 @@
-from asynch_py import ASYNCH_LIBRARY_LOCATION
+# from asynch_py import ASYNCH_LIBRARY_LOCATION
+from py import ASYNCH_LIBRARY_LOCATION
 from ctypes import *
 from mpi4py import MPI
 import numpy
@@ -129,6 +130,7 @@ class asynchsolver:
 		ranks = range(0,self.np)
 		self.asynch_obj = self.lib.Asynch_Init_py(self.np,(c_int * self.np)(*ranks))
 		self.tempfiles_exist = False
+		
 		#ranks = numpy.zeros((self.np,1),numpy.dtype('i4'))
 		#for i in range(self.np):	ranks[i] = i
 		#self.asynch_obj = self.lib.Asynch_Init_py(self.np,ranks.ctypes.data)
@@ -274,13 +276,13 @@ class asynchsolver:
 
 	#Set and get routines
 	def Set_Database_Connection(self,database_info,conn_idx):
-		self.lib.Asynch_Set_Database_Connection(self.asynch,database_info,conn_idx)
+		self.lib.Asynch_Set_Database_Connection(self.asynch_obj,database_info,conn_idx)
 
 	def Get_Total_Simulation_Time(self):
 		return self.lib.Asynch_Get_Total_Simulation_Time(self.asynch_obj)
 
 	def Set_Total_Simulation_Time(self,new_time):
-		self.lib.Asynch_Set_Total_Simulation_Time(self.asynch_obj,c_double(new_time));
+		self.lib.Asynch_Set_Total_Simulation_Time(self.asynch_obj,c_double(new_time))
 
 	def Get_Last_Rainfall_Timestamp(self,forcing_idx):
 		return self.lib.Asynch_Get_Last_Rainfall_Timestamp(self.asynch_obj,forcing_idx)
@@ -375,7 +377,7 @@ class asynchsolver:
 		return [true_filename, ret_value]
 
 	def Set_Snapshot_Output_Name(self,filename):
-		return self.lib.Asynch_Get_Snapshot_Output_Name(asynch,filename)
+		return self.lib.Asynch_Get_Snapshot_Output_Name(self.asynch_obj,filename)
 
 	#Routines for output
 	def Set_Output(self,name,data_type,func,used_states_list):

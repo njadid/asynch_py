@@ -1,0 +1,3 @@
+optparse.o: optparse.c optparse.h
+
+optparse.h:

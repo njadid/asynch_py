@@ -1,4 +1,4 @@
-from asynch_py.asynch_interface import asynchsolver
+from py.asynch_interface import asynchsolver
 import sys
 
 #Parse command line arguments

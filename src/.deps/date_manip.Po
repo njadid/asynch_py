@@ -1,0 +1,46 @@
+date_manip.o: date_manip.c ../config.h /usr/include/memory.h \
+ /usr/include/features.h /usr/include/stdc-predef.h /usr/include/sys/cdefs.h \
+ /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-64.h /usr/include/string.h \
+ /opt/apps/parallel_studio/2017.1/compilers_and_libraries_2017.1.132/linux/compiler/include/stddef.h \
+ /usr/include/xlocale.h /usr/include/bits/string.h /usr/include/bits/string2.h \
+ ./date_manip.h /usr/include/time.h \
+ /opt/apps/parallel_studio/2017.1/compilers_and_libraries_2017.1.132/linux/compiler/include/stddef.h \
+ /usr/include/bits/time.h /usr/include/bits/types.h /usr/include/bits/wordsize.h \
+ /usr/include/bits/typesizes.h
+
+../config.h:
+
+/usr/include/memory.h:
+
+/usr/include/features.h:
+
+/usr/include/stdc-predef.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-64.h:
+
+/usr/include/string.h:
+
+/opt/apps/parallel_studio/2017.1/compilers_and_libraries_2017.1.132/linux/compiler/include/stddef.h:
+
+/usr/include/xlocale.h:
+
+/usr/include/bits/string.h:
+
+/usr/include/bits/string2.h:
+
+./date_manip.h:
+
+/usr/include/time.h:
+
+/usr/include/bits/time.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
