@@ -1,4 +1,4 @@
-from asynch_py.asynch_interface import *
+from py.asynch_interface import *
 import sys
 import timeit
 
